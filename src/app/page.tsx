@@ -164,10 +164,7 @@ export default function Page() {
                   I like building things
                 </h2>
                 <p className="text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                 
-🚀 I love building things from the ground up. Whether it's launching a new project, leading a team, or driving business success through clear goals and smart execution — I'm all in. I focus on every detail that matters and thrive when transforming ideas into real, measurable results.
-
-.
+                  🚀 I love building things from the ground up. Whether it&apos;s launching a new project, leading a team, or driving business success through clear goals and smart execution — I&apos;m all in. I focus on every detail that matters and thrive when transforming ideas into real, measurable results.
                 </p>
               </div>
             </div>
