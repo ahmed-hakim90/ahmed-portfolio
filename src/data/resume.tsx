@@ -138,7 +138,7 @@ export const DATA = {
     {
       title: "Counter Down",
       href: "https://ahmed-hakim90.github.io/timer.github.io/",
-      dates: " 7 Jul 2025 - 10 Jul 2025",
+      dates: "Jul 2025 -Jul 2025",
       active: true,
       description:
         "🚀 Delivered a countdown landing page for the Grand Egyptian Museum launch just 2 days before Eid, despite the holiday break. The task was requested urgently, and I managed to finalize and deliver it by the early hours of the third day of Eid, ahead of the (later postponed) opening. Client was in a rush, and I made it happen — even during the official holiday.",
