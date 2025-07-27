@@ -138,7 +138,7 @@ export const DATA = {
     {
       title: "Counter Down",
       href: "https://ahmed-hakim90.github.io/timer.github.io/",
-      dates: "Jul 2025 -Jul 2025",
+      dates: "Jul 2025 - Juj 2025",
       active: true,
       description:
         "🚀 Delivered a countdown landing page for the Grand Egyptian Museum launch just 2 days before Eid, despite the holiday break. The task was requested urgently, and I managed to finalize and deliver it by the early hours of the third day of Eid, ahead of the (later postponed) opening. Client was in a rush, and I made it happen — even during the official holiday.",
@@ -162,7 +162,7 @@ export const DATA = {
     {
       title: "Khatwa",
       href: "https://ahmed-hakim90.github.io/khatwa/",
-      dates: "June 2023 - Present",
+      dates: "June 2023",
       active: true,
       description:
         "🔧 I worked on 'Khotwa', a digital platform connecting freelancers with clients, with integrated Mada payment system. I contributed to the project from its early stages, starting 4 years ago. Today, the platform has evolved significantly, and due to client confidentiality, I can't showcase the full project — but it was a key experience in building real, scalable digital solutions.",
