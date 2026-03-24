@@ -10,10 +10,12 @@ export const DATA = {
   description:
     "Software Engineer turned Entrepreneur. I love building things and helping people.",
   summary:
-    " journey 5 years ago and worked on real-life project Founder My Own Business. One of my notable recent works was a countdown page for the Grand Egyptian Museum, delivered urgently during th\e Eid holiday, with full attention to detail and tight deadlines.Recently, I built my latest project using React.js + Vite, which reflects my current skills. Earlier projects were from the beginning of my journey, but they were essential foundations. I’m also passionate about entrepreneurship. I’ve previously launched my own business and now I'm back to the tech field — learning, growing, and working toward launching my own software company to power future projects. I value commitment, precision, and results — and I always strive to exceed expectations.",
+    "My journey started over five years ago: I have worked on real-life client projects and founded my own business. One of my notable recent works was a countdown page for the Grand Egyptian Museum, delivered urgently during the Eid holiday, with full attention to detail and tight deadlines. Recently, I built my latest project using React.js + Vite, which reflects my current skills. Earlier projects were from the beginning of my journey, but they were essential foundations. I’m also passionate about entrepreneurship. I’ve previously launched my own business and now I'm back to the tech field — learning, growing, and working toward launching my own software company to power future projects. I value commitment, precision, and results — and I always strive to exceed expectations.",
   avatarUrl: "/me1.jpg",
   skills: [
     "React",
+    "TypeScript",
+    "Firebase",
     "Git",
     "Bootstrap",
     "Postman",
@@ -80,10 +82,10 @@ export const DATA = {
       location: "Freelancer",
       title: "Frontend Developer",
       logoUrl: "https://www.visit-gem.com/assets/img/logo.png",
-      start: "Jul 2025",
-      end: "Jul 2025",
+      start: "Jul 2024",
+      end: "Jul 2024",
       description:
-        "Implemented the Counter Down Page with custom animations and responsive design and 2 Languages .",
+        "Implemented the countdown page with custom animations, responsive layout, and bilingual (Arabic/English) content.",
     },
     {
       company: "Mostaql",
@@ -136,9 +138,39 @@ export const DATA = {
   ],
   projects: [
     {
+      title: "HAKIMO Production System",
+      href: "https://production-line.vercel.app/",
+      dates: "2025 - Present",
+      active: true,
+      description:
+        "🏭 Internal ERP for production management: production lines, daily reports, dynamic RBAC, admin dashboards with KPIs and cost analytics, HR workflows, and approval chains. RTL Arabic UI deployed on Vercel.",
+      technologies: [
+        "React",
+        "TypeScript",
+        "Vite",
+        "Firebase",
+        "Zustand",
+        "Tailwind CSS",
+      ],
+      links: [
+        {
+          type: "Website",
+          href: "https://production-line.vercel.app/",
+          icon: <Icons.globe className="size-3" />,
+        },
+        {
+          type: "Source",
+          href: "https://github.com/ahmed-hakim90/production-line",
+          icon: <Icons.github className="size-3" />,
+        },
+      ],
+      image: "/hakimoerp.png",
+      video: "",
+    },
+    {
       title: "Counter Down",
       href: "https://ahmed-hakim90.github.io/timer.github.io/",
-      dates: "Jul 2025 - Juj 2025",
+      dates: "Jul 2024",
       active: true,
       description:
         "🚀 Delivered a countdown landing page for the Grand Egyptian Museum launch just 2 days before Eid, despite the holiday break. The task was requested urgently, and I managed to finalize and deliver it by the early hours of the third day of Eid, ahead of the (later postponed) opening. Client was in a rush, and I made it happen — even during the official holiday.",
@@ -213,7 +245,7 @@ export const DATA = {
         },
         {
           type: "Source",
-          href: "https://ahmed-hakim90.github.io/Personal/",
+          href: "https://github.com/ahmed-hakim90/Personal",
           icon: <Icons.github className="size-3" />,
         },
       ],
@@ -225,7 +257,7 @@ export const DATA = {
       href: "https://ahmed-hakim90.github.io/khalil.github.io/",
       active: true,
       description:
-        "Developed an AI Customer Support Chatbot which automatically responds to customer support tickets using the latest GPT models.",
+        "A responsive marketing landing page for a business client: semantic HTML structure, Bootstrap components, and custom CSS for layout, typography, and a clean presentation on all screen sizes.",
       technologies: [
         "HTML",
         "CSS",
@@ -236,6 +268,11 @@ export const DATA = {
           type: "Website",
           href: "https://ahmed-hakim90.github.io/khalil.github.io/",
           icon: <Icons.globe className="size-3" />,
+        },
+        {
+          type: "Source",
+          href: "https://github.com/ahmed-hakim90/khalil.github.io",
+          icon: <Icons.github className="size-3" />,
         },
       ],
       image: "/khalil.png",

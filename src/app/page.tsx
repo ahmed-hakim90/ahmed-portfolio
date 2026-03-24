@@ -1,4 +1,3 @@
-import { HackathonCard } from "@/components/hackathon-card";
 import BlurFade from "@/components/magicui/blur-fade";
 import BlurFadeText from "@/components/magicui/blur-fade-text";
 import { ProjectCard } from "@/components/project-card";
@@ -189,7 +188,7 @@ export default function Page() {
                   className="text-blue-500 hover:underline"
                 >
                   with a direct question on LinkedIn
-                </Link>{"https://www.linkedin.com/in/ahmed-abdulhakim-sayed-471752174/"}
+                </Link>{" "}
                 and I&apos;ll respond whenever I can. I will ignore all
                 soliciting.
               </p>
