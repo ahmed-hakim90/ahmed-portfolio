@@ -73,7 +73,7 @@ export async function saveUserSiteJson(userId: string, patch: Partial<SiteJson>)
     return {
       ok: false as const,
       error:
-        "Firestore is not configured. Set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY in .env.local (or Vercel env) and restart.",
+        "Firestore is not configured. Set FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_SERVICE_ACCOUNT_PATH in .env.local and restart the dev server.",
     };
   }
   try {

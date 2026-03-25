@@ -81,8 +81,7 @@ export async function countAdminUsers(): Promise<number> {
   try {
     const snap = await db.collection(COLLECTION).get();
     return snap.size;
-  } catch (e) {
-    console.error("countAdminUsers Firestore error:", e);
+  } catch {
     return -1;
   }
 }

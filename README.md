@@ -66,10 +66,8 @@ Create `.env.local` in the project root (never commit secrets). Typical variable
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `ADMIN_DASHBOARD_SECRET` | Yes (prod) | Secret for signing admin session cookies; **≥ 16 characters** recommended. |
-| `FIREBASE_PROJECT_ID` | For Firebase | GCP / Firebase project ID (from service account JSON). |
-| `FIREBASE_CLIENT_EMAIL` | For Firebase | Service account client email (`client_email` in JSON). |
-| `FIREBASE_PRIVATE_KEY` | For Firebase | Service account private key (`private_key` in JSON). Use `\n` for line breaks when pasting into Vercel. |
-| `NEXT_PUBLIC_SITE_URL` | Recommended | Public site URL (no trailing slash), e.g. `https://your-app.vercel.app`. |
+| `FIREBASE_SERVICE_ACCOUNT_JSON` | For Firebase | JSON string of the Firebase service account. |
+| `FIREBASE_SERVICE_ACCOUNT_PATH` | Alternative | Filesystem path to the service account JSON file. |
 | `ADMIN_BOOTSTRAP_USERNAME` | Bootstrap | Username for the one-time `/api/admin/bootstrap` flow. |
 | `ADMIN_BOOTSTRAP_PASSWORD` | Bootstrap | Password for bootstrap (use strong values). |
 | `SIGNUP_INVITE_SECRET` | For public signup | Secret used to validate invite-based sign-up requests. |
