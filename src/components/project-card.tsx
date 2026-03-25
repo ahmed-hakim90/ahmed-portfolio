@@ -26,6 +26,8 @@ interface Props {
     href: string;
   }[];
   className?: string;
+  /** When false, project title/image area and footer badges are not links. */
+  externalLinksEnabled?: boolean;
 }
 
 export function ProjectCard({
@@ -39,37 +41,50 @@ export function ProjectCard({
   video,
   links,
   className,
+  externalLinksEnabled = true,
 }: Props) {
+  const canLinkHeader = externalLinksEnabled && href && href.length > 0;
+
+  const mediaBlock = (
+    <>
+      {video && (
+        <video
+          src={video}
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="pointer-events-none mx-auto h-40 w-full object-cover object-top"
+        />
+      )}
+      {image && (
+        <Image
+          src={image}
+          alt={title}
+          width={500}
+          height={300}
+          className="h-40 w-full overflow-hidden object-cover object-top"
+        />
+      )}
+    </>
+  );
+
   return (
     <Card
       className={
         "flex flex-col overflow-hidden border hover:shadow-lg transition-all duration-300 ease-out h-full"
       }
     >
-      <Link
-        href={href || "#"}
-        className={cn("block cursor-pointer", className)}
-      >
-        {video && (
-          <video
-            src={video}
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="pointer-events-none mx-auto h-40 w-full object-cover object-top" // needed because random black line at bottom of video
-          />
-        )}
-        {image && (
-          <Image
-            src={image}
-            alt={title}
-            width={500}
-            height={300}
-            className="h-40 w-full overflow-hidden object-cover object-top"
-          />
-        )}
-      </Link>
+      {canLinkHeader ? (
+        <Link
+          href={href!}
+          className={cn("block cursor-pointer", className)}
+        >
+          {mediaBlock}
+        </Link>
+      ) : (
+        <div className={cn("block", className)}>{mediaBlock}</div>
+      )}
       <CardHeader className="px-2">
         <div className="space-y-1">
           <CardTitle className="mt-1 text-base">{title}</CardTitle>
@@ -100,14 +115,25 @@ export function ProjectCard({
       <CardFooter className="px-2 pb-2">
         {links && links.length > 0 && (
           <div className="flex flex-row flex-wrap items-start gap-1">
-            {links?.map((link, idx) => (
-              <Link href={link?.href} key={idx} target="_blank">
-                <Badge key={idx} className="flex gap-2 px-2 py-1 text-[10px]">
-                  {link.icon}
-                  {link.type}
+            {links?.map((linkItem, idx) =>
+              externalLinksEnabled ? (
+                <Link href={linkItem.href} key={idx} target="_blank">
+                  <Badge className="flex gap-2 px-2 py-1 text-[10px]">
+                    {linkItem.icon}
+                    {linkItem.type}
+                  </Badge>
+                </Link>
+              ) : (
+                <Badge
+                  key={idx}
+                  className="flex gap-2 px-2 py-1 text-[10px]"
+                  variant="secondary"
+                >
+                  {linkItem.icon}
+                  {linkItem.type}
                 </Badge>
-              </Link>
-            ))}
+              ),
+            )}
           </div>
         )}
       </CardFooter>

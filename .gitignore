@@ -8,6 +8,9 @@
 
 # testing
 /coverage
+/test-results/
+/playwright-report/
+/playwright/.cache/
 
 # next.js
 /.next/
@@ -27,6 +30,9 @@ yarn-error.log*
 
 # local env files
 .env*.local
+
+# Firebase service account (local path)
+/secrets/
 
 # vercel
 .vercel

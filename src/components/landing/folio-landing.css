@@ -1,0 +1,1203 @@
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,700;0,900;1,700&display=swap");
+
+/* Scoped marketing landing — all rules under .folioLanding */
+.folioLanding,
+.folioLanding *,
+.folioLanding *::before,
+.folioLanding *::after {
+  box-sizing: border-box;
+}
+
+.folioLanding {
+  --folio-w: #ffffff;
+  --folio-off: #f6f5f2;
+  --folio-off2: #efede9;
+  --folio-ink: #0e0e0c;
+  --folio-ink2: #424240;
+  --folio-ink3: #8a8a84;
+  --folio-line: #e2e0db;
+  --folio-line2: #d0cec9;
+  --folio-r: 12px;
+  --folio-rx: 18px;
+  --folio-arabic: "IBM Plex Sans Arabic", sans-serif;
+  --folio-serif: "Playfair Display", serif;
+
+  font-family: var(--folio-arabic);
+  background: var(--folio-w);
+  color: var(--folio-ink);
+  direction: rtl;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-align: right;
+}
+
+.folioLanding--customCursor {
+  cursor: none;
+}
+
+.folioLanding .folioCursor {
+  position: fixed;
+  width: 8px;
+  height: 8px;
+  background: var(--folio-ink);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  transition: width 0.25s, height 0.25s;
+}
+
+.folioLanding .folioCursorRing {
+  position: fixed;
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(14, 14, 12, 0.22);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9998;
+  transform: translate(-50%, -50%);
+  transition: width 0.3s, height 0.3s;
+}
+
+.folioLanding nav.folioNav {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 500;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2.5rem;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--folio-line);
+  transition: box-shadow 0.3s;
+}
+
+.folioLanding nav.folioNav.folioNavScrolled {
+  box-shadow: 0 1px 24px rgba(0, 0, 0, 0.06);
+}
+
+.folioLanding .folioLogo {
+  font-family: var(--folio-serif);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--folio-ink);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.folioLanding .folioLogoDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--folio-ink);
+  flex-shrink: 0;
+}
+
+.folioLanding .folioNavLinks {
+  display: flex;
+  gap: 2rem;
+}
+
+.folioLanding .folioNavLinks a {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--folio-ink3);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.folioLanding .folioNavLinks a:hover {
+  color: var(--folio-ink);
+}
+
+.folioLanding .folioNavRight {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.folioLanding .folioNbtn {
+  padding: 0.4rem 1rem;
+  font-family: var(--folio-arabic);
+  font-size: 0.8rem;
+  font-weight: 500;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+}
+
+.folioLanding .folioNbtn.folioNbtnGhost {
+  background: transparent;
+  border: 1px solid var(--folio-line);
+  color: var(--folio-ink2);
+}
+
+.folioLanding .folioNbtn.folioNbtnGhost:hover {
+  background: var(--folio-off);
+  border-color: var(--folio-line2);
+}
+
+.folioLanding .folioNbtn.folioNbtnSolid {
+  background: var(--folio-ink);
+  border: 1px solid var(--folio-ink);
+  color: #fff;
+}
+
+.folioLanding .folioNbtn.folioNbtnSolid:hover {
+  background: #2a2a28;
+}
+
+.folioLanding .folioTickerWrap {
+  margin-top: 64px;
+  height: 38px;
+  background: var(--folio-ink);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.folioLanding .folioTickerTrack {
+  display: flex;
+  animation: folioTicker 30s linear infinite;
+  white-space: nowrap;
+}
+
+.folioLanding.folioLanding--reduceMotion .folioTickerTrack {
+  animation: none;
+}
+
+.folioLanding .folioTickItem {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0 2.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.folioLanding .folioTickSep {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+@keyframes folioTicker {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.folioLanding .folioHero {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 6rem 2.5rem 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+  min-height: calc(100vh - 102px);
+}
+
+.folioLanding .folioHeroText {
+  padding-bottom: 5rem;
+}
+
+.folioLanding .folioHeroPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--folio-ink3);
+  border: 1px solid var(--folio-line);
+  border-radius: 100px;
+  padding: 0.3rem 1rem;
+  margin-bottom: 2.2rem;
+  opacity: 0;
+  animation: folioFadeUp 0.5s 0.2s ease forwards;
+}
+
+.folioLanding.folioLanding--reduceMotion .folioHeroPill {
+  opacity: 1;
+  animation: none;
+}
+
+.folioLanding .folioHeroPill i {
+  width: 5px;
+  height: 5px;
+  background: currentColor;
+  border-radius: 50%;
+  display: block;
+}
+
+.folioLanding h1.folioHeroTitle {
+  font-family: var(--folio-serif);
+  font-size: clamp(3rem, 4.5vw, 5rem);
+  font-weight: 900;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  opacity: 0;
+  animation: folioFadeUp 0.55s 0.3s ease forwards;
+}
+
+.folioLanding.folioLanding--reduceMotion h1.folioHeroTitle {
+  opacity: 1;
+  animation: none;
+}
+
+.folioLanding h1.folioHeroTitle em {
+  font-style: italic;
+  color: var(--folio-ink3);
+}
+
+.folioLanding .folioHeroBody {
+  margin-top: 1.6rem;
+  font-size: 0.97rem;
+  color: var(--folio-ink3);
+  line-height: 1.9;
+  max-width: 420px;
+  opacity: 0;
+  animation: folioFadeUp 0.55s 0.4s ease forwards;
+}
+
+.folioLanding.folioLanding--reduceMotion .folioHeroBody {
+  opacity: 1;
+  animation: none;
+}
+
+.folioLanding .folioHeroBtns {
+  margin-top: 2.5rem;
+  display: flex;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  opacity: 0;
+  animation: folioFadeUp 0.55s 0.5s ease forwards;
+}
+
+.folioLanding.folioLanding--reduceMotion .folioHeroBtns {
+  opacity: 1;
+  animation: none;
+}
+
+.folioLanding .folioHbtn {
+  padding: 0.78rem 1.8rem;
+  font-family: var(--folio-arabic);
+  font-size: 0.92rem;
+  font-weight: 600;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all 0.22s;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+}
+
+.folioLanding .folioHbtn.folioHbtnPrimary {
+  background: var(--folio-ink);
+  border: none;
+  color: #fff;
+}
+
+.folioLanding .folioHbtn.folioHbtnPrimary:hover {
+  background: #2a2a28;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+}
+
+.folioLanding .folioHbtn.folioHbtnOutline {
+  background: transparent;
+  border: 1px solid var(--folio-line);
+  color: var(--folio-ink2);
+}
+
+.folioLanding .folioHbtn.folioHbtnOutline:hover {
+  background: var(--folio-off);
+  border-color: var(--folio-line2);
+}
+
+.folioLanding .folioHeroMeta {
+  margin-top: 3.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--folio-line);
+  display: flex;
+  gap: 2.5rem;
+  opacity: 0;
+  animation: folioFadeUp 0.55s 0.6s ease forwards;
+}
+
+.folioLanding.folioLanding--reduceMotion .folioHeroMeta {
+  opacity: 1;
+  animation: none;
+}
+
+.folioLanding .folioMetaN {
+  font-family: var(--folio-serif);
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.folioLanding .folioMetaL {
+  font-size: 0.72rem;
+  color: var(--folio-ink3);
+  font-weight: 500;
+  margin-top: 0.25rem;
+}
+
+.folioLanding .folioHeroVisual {
+  padding-bottom: 5rem;
+  opacity: 0;
+  animation: folioFadeRight 0.7s 0.4s ease forwards;
+}
+
+.folioLanding.folioLanding--reduceMotion .folioHeroVisual {
+  opacity: 1;
+  animation: none;
+}
+
+.folioLanding .folioBrowser {
+  background: var(--folio-w);
+  border: 1px solid var(--folio-line);
+  border-radius: var(--folio-rx);
+  overflow: hidden;
+  box-shadow:
+    0 32px 80px rgba(0, 0, 0, 0.1),
+    0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.folioLanding .folioBbar {
+  background: var(--folio-off);
+  border-bottom: 1px solid var(--folio-line);
+  padding: 0.75rem 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.folioLanding .folioBdots {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.folioLanding .folioBdot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.folioLanding .folioBdot.folioBdotR {
+  background: #ff5f57;
+}
+.folioLanding .folioBdot.folioBdotY {
+  background: #febc2e;
+}
+.folioLanding .folioBdot.folioBdotG {
+  background: #28c840;
+}
+
+.folioLanding .folioBurl {
+  flex: 1;
+  background: var(--folio-w);
+  border: 1px solid var(--folio-line);
+  border-radius: 6px;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.7rem;
+  color: var(--folio-ink3);
+  text-align: center;
+  font-family: monospace;
+}
+
+.folioLanding .folioBbody {
+  padding: 1.5rem;
+}
+
+.folioLanding .folioPnav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.2rem;
+}
+
+.folioLanding .folioPnavLogo {
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.folioLanding .folioPtoggle {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.folioLanding .folioPtog {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  border: 1px solid var(--folio-line);
+  background: var(--folio-w);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.folioLanding .folioPtog.folioPtogActive {
+  background: var(--folio-ink);
+  border-color: var(--folio-ink);
+  color: #fff;
+}
+
+.folioLanding .folioPhero {
+  margin-bottom: 1.2rem;
+  padding: 1.2rem;
+  background: var(--folio-off);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.folioLanding .folioPavatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--folio-line2);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.folioLanding .folioPname {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.folioLanding .folioProle {
+  font-size: 0.7rem;
+  color: var(--folio-ink3);
+  margin-top: 0.1rem;
+}
+
+.folioLanding .folioPtags {
+  margin-top: 0.4rem;
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.folioLanding .folioPtag {
+  font-size: 0.6rem;
+  padding: 0.12rem 0.45rem;
+  background: var(--folio-line);
+  border-radius: 100px;
+  color: var(--folio-ink2);
+  font-weight: 500;
+}
+
+.folioLanding .folioPprojects {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+
+.folioLanding .folioPcard {
+  background: var(--folio-off);
+  border-radius: 8px;
+  padding: 0.75rem;
+  border: 1px solid var(--folio-line);
+}
+
+.folioLanding .folioPthumb {
+  width: 100%;
+  height: 38px;
+  border-radius: 5px;
+  margin-bottom: 0.5rem;
+}
+
+.folioLanding .folioPtitle {
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+.folioLanding .folioPdesc {
+  font-size: 0.6rem;
+  color: var(--folio-ink3);
+  margin-top: 0.1rem;
+}
+
+.folioLanding .folioPstats {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.folioLanding .folioPstat {
+  flex: 1;
+  background: var(--folio-off);
+  border: 1px solid var(--folio-line);
+  border-radius: 7px;
+  padding: 0.55rem 0.4rem;
+  text-align: center;
+}
+
+.folioLanding .folioPstatN {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+.folioLanding .folioPstatL {
+  font-size: 0.57rem;
+  color: var(--folio-ink3);
+  margin-top: 0.1rem;
+}
+
+.folioLanding .folioLogosBar {
+  border-top: 1px solid var(--folio-line);
+  border-bottom: 1px solid var(--folio-line);
+  background: var(--folio-off);
+  overflow: hidden;
+  padding: 1.5rem 0;
+}
+
+.folioLanding .folioLogosTrack {
+  display: flex;
+  animation: folioTicker 25s linear infinite;
+  white-space: nowrap;
+}
+
+.folioLanding.folioLanding--reduceMotion .folioLogosTrack {
+  animation: none;
+}
+
+.folioLanding .folioLogoChip {
+  padding: 0 3rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  border-left: 1px solid var(--folio-line);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--folio-ink3);
+}
+
+.folioLanding .folioLogoChip::before {
+  content: "";
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: var(--folio-line2);
+  display: block;
+  flex-shrink: 0;
+}
+
+.folioLanding .folioSection {
+  padding: 8rem 2.5rem;
+}
+
+.folioLanding .folioSectionInner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.folioLanding .folioSectionLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 1.2rem;
+}
+
+.folioLanding .folioSectionLabel::before {
+  content: "";
+  flex: 0 0 28px;
+  height: 1px;
+  background: var(--folio-line2);
+}
+
+.folioLanding .folioSectionLabel span {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--folio-ink3);
+}
+
+.folioLanding .folioSectionTitle {
+  font-family: var(--folio-serif);
+  font-size: clamp(2rem, 3.5vw, 3.2rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.18;
+  margin-bottom: 4rem;
+}
+
+.folioLanding .folioSectionTitle em {
+  font-style: italic;
+  color: var(--folio-ink3);
+}
+
+.folioLanding .folioFeatGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--folio-line);
+  border: 1px solid var(--folio-line);
+  border-radius: var(--folio-rx);
+  overflow: hidden;
+}
+
+.folioLanding .folioFeat {
+  background: var(--folio-w);
+  padding: 2.5rem 2rem;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.25s;
+}
+
+.folioLanding .folioFeat::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  left: 0;
+  height: 2px;
+  background: var(--folio-ink);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.35s ease;
+}
+
+.folioLanding .folioFeat:hover {
+  background: var(--folio-off);
+}
+
+.folioLanding .folioFeat:hover::after {
+  transform: scaleX(1);
+}
+
+.folioLanding .folioFeatNum {
+  font-family: var(--folio-serif);
+  font-size: 3.5rem;
+  font-weight: 700;
+  color: var(--folio-off2);
+  line-height: 1;
+  margin-bottom: 1.2rem;
+  letter-spacing: -0.03em;
+}
+
+.folioLanding .folioFeat h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
+}
+
+.folioLanding .folioFeat p {
+  font-size: 0.82rem;
+  color: var(--folio-ink3);
+  line-height: 1.85;
+}
+
+.folioLanding .folioHowBg {
+  background: var(--folio-off);
+  border-top: 1px solid var(--folio-line);
+  border-bottom: 1px solid var(--folio-line);
+}
+
+.folioLanding .folioHowGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6rem;
+  align-items: start;
+}
+
+.folioLanding .folioHowSticky {
+  position: sticky;
+  top: 120px;
+}
+
+.folioLanding .folioHowSticky h2 {
+  font-family: var(--folio-serif);
+  font-size: clamp(2rem, 3vw, 3rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin-bottom: 1rem;
+}
+
+.folioLanding .folioHowSticky p {
+  font-size: 0.9rem;
+  color: var(--folio-ink3);
+  line-height: 1.85;
+  max-width: 340px;
+}
+
+.folioLanding .folioStepsList {
+  display: flex;
+  flex-direction: column;
+}
+
+.folioLanding .folioStep {
+  padding: 2.2rem 0;
+  border-bottom: 1px solid var(--folio-line);
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+  opacity: 0;
+  transform: translateX(20px);
+  transition:
+    opacity 0.5s,
+    transform 0.5s;
+}
+
+.folioLanding .folioStep:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.folioLanding .folioStep.folioStepShow {
+  opacity: 1;
+  transform: none;
+}
+
+.folioLanding.folioLanding--reduceMotion .folioStep {
+  opacity: 1;
+  transform: none;
+}
+
+.folioLanding .folioStepN {
+  min-width: 40px;
+  height: 40px;
+  border-radius: 9px;
+  background: var(--folio-w);
+  border: 1px solid var(--folio-line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--folio-ink3);
+  flex-shrink: 0;
+  transition: all 0.3s;
+}
+
+.folioLanding .folioStep.folioStepShow .folioStepN {
+  background: var(--folio-ink);
+  border-color: var(--folio-ink);
+  color: #fff;
+}
+
+.folioLanding .folioStep h3 {
+  font-size: 0.98rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.35rem;
+}
+
+.folioLanding .folioStep p {
+  font-size: 0.82rem;
+  color: var(--folio-ink3);
+  line-height: 1.78;
+}
+
+.folioLanding .folioTgrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 4rem;
+}
+
+.folioLanding .folioTcard {
+  background: var(--folio-off);
+  border: 1px solid var(--folio-line);
+  border-radius: var(--folio-r);
+  padding: 2rem 1.8rem;
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 0.5s,
+    transform 0.5s,
+    background 0.25s,
+    box-shadow 0.25s;
+}
+
+.folioLanding .folioTcard.folioTcardShow {
+  opacity: 1;
+  transform: none;
+}
+
+.folioLanding.folioLanding--reduceMotion .folioTcard {
+  opacity: 1;
+  transform: none;
+}
+
+.folioLanding .folioTcard:hover {
+  background: var(--folio-w);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.07);
+}
+
+.folioLanding .folioTquote {
+  font-family: var(--folio-serif);
+  font-size: 2.5rem;
+  color: var(--folio-line2);
+  line-height: 1;
+  margin-bottom: 1rem;
+}
+
+.folioLanding .folioTcard p {
+  font-size: 0.87rem;
+  color: var(--folio-ink2);
+  line-height: 1.85;
+}
+
+.folioLanding .folioTauthor {
+  margin-top: 1.5rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--folio-line);
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.folioLanding .folioTavatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--folio-line2);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+}
+
+.folioLanding .folioTname {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.folioLanding .folioTrole {
+  font-size: 0.72rem;
+  color: var(--folio-ink3);
+  margin-top: 0.1rem;
+}
+
+.folioLanding .folioCtaWrap {
+  padding: 0 2.5rem 8rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.folioLanding .folioCtaBox {
+  background: var(--folio-ink);
+  border-radius: 24px;
+  padding: 6rem 5rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4rem;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.folioLanding .folioCtaBox::before {
+  content: "";
+  position: absolute;
+  top: -40%;
+  right: -10%;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  pointer-events: none;
+}
+
+.folioLanding .folioCtaBox h2 {
+  font-family: var(--folio-serif);
+  font-size: clamp(2rem, 3.5vw, 3.2rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  color: #fff;
+  max-width: 520px;
+  margin-bottom: 1rem;
+}
+
+.folioLanding .folioCtaBox h2 em {
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.folioLanding .folioCtaBox .folioCtaSub {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.45);
+  max-width: 420px;
+  line-height: 1.85;
+}
+
+.folioLanding .folioCtaBtns {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: flex-start;
+  flex-shrink: 0;
+}
+
+.folioLanding .folioCbtn {
+  padding: 0.82rem 2rem;
+  font-family: var(--folio-arabic);
+  font-size: 0.92rem;
+  font-weight: 600;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all 0.22s;
+  min-width: 200px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+}
+
+.folioLanding .folioCbtn.folioCbtnWhite {
+  background: #fff;
+  border: none;
+  color: var(--folio-ink);
+}
+
+.folioLanding .folioCbtn.folioCbtnWhite:hover {
+  background: #f0f0ee;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.folioLanding .folioCbtn.folioCbtnGhost {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.folioLanding .folioCbtn.folioCbtnGhost:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.folioLanding footer.folioFooter {
+  border-top: 1px solid var(--folio-line);
+  padding: 3rem 2.5rem 2.5rem;
+}
+
+.folioLanding .folioFooterTop {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.5fr repeat(3, 1fr);
+  gap: 3rem;
+  padding-bottom: 3rem;
+  border-bottom: 1px solid var(--folio-line);
+  margin-bottom: 2rem;
+}
+
+.folioLanding .folioFlogo {
+  font-family: var(--folio-serif);
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 0.8rem;
+}
+
+.folioLanding .folioFbrandP {
+  font-size: 0.8rem;
+  color: var(--folio-ink3);
+  line-height: 1.85;
+  max-width: 240px;
+}
+
+.folioLanding .folioFcol h4 {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--folio-ink3);
+  margin-bottom: 1rem;
+}
+
+.folioLanding .folioFcol a {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--folio-ink2);
+  text-decoration: none;
+  margin-bottom: 0.55rem;
+  transition: color 0.2s;
+}
+
+.folioLanding .folioFcol a:hover {
+  color: var(--folio-ink);
+}
+
+.folioLanding .folioFooterBottom {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.folioLanding .folioFcopy {
+  font-size: 0.75rem;
+  color: var(--folio-ink3);
+}
+
+.folioLanding .folioFsoc {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.folioLanding .folioSi {
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+  border: 1px solid var(--folio-line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  color: var(--folio-ink3);
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.folioLanding .folioSi:hover {
+  background: var(--folio-off);
+  color: var(--folio-ink);
+  border-color: var(--folio-line2);
+}
+
+.folioLanding .folioReveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition:
+    opacity 0.6s,
+    transform 0.6s;
+}
+
+.folioLanding .folioReveal.folioRevealShow {
+  opacity: 1;
+  transform: none;
+}
+
+.folioLanding.folioLanding--reduceMotion .folioReveal {
+  opacity: 1;
+  transform: none;
+}
+
+@keyframes folioFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes folioFadeRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .folioLanding .folioHero {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding-top: 5rem;
+    min-height: auto;
+  }
+  .folioLanding .folioHeroVisual,
+  .folioLanding .folioHeroText {
+    padding-bottom: 2rem;
+  }
+  .folioLanding .folioFeatGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .folioLanding .folioHowGrid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  .folioLanding .folioHowSticky {
+    position: static;
+  }
+  .folioLanding .folioTgrid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .folioLanding .folioCtaBox {
+    grid-template-columns: 1fr;
+    padding: 3.5rem 2.5rem;
+    gap: 2.5rem;
+  }
+  .folioLanding .folioFooterTop {
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .folioLanding nav.folioNav {
+    padding: 0 1.2rem;
+  }
+  .folioLanding .folioNavLinks {
+    display: none;
+  }
+  .folioLanding .folioSection {
+    padding: 5rem 1.2rem;
+  }
+  .folioLanding .folioFeatGrid,
+  .folioLanding .folioTgrid {
+    grid-template-columns: 1fr;
+  }
+  .folioLanding .folioCtaBox {
+    padding: 2.5rem 1.5rem;
+    border-radius: 14px;
+  }
+  .folioLanding .folioCtaWrap {
+    padding: 0 1.2rem 5rem;
+  }
+  .folioLanding .folioFooterTop {
+    grid-template-columns: 1fr;
+  }
+  .folioLanding footer.folioFooter {
+    padding: 2rem 1.2rem;
+  }
+  .folioLanding .folioHero {
+    padding: 4rem 1.2rem 0;
+  }
+}
