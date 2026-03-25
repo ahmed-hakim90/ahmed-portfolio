@@ -1,41 +1,66 @@
-import * as fs from "fs";
-import * as path from "path";
 import admin from "firebase-admin";
 import type { Firestore } from "firebase-admin/firestore";
+
+let loggedMissingConfig = false;
+let loggedInitFailure = false;
+
+function normalizePrivateKey(raw: string): string {
+  let k = raw.trim();
+  if (
+    (k.startsWith('"') && k.endsWith('"')) ||
+    (k.startsWith("'") && k.endsWith("'"))
+  ) {
+    k = k.slice(1, -1);
+  }
+  return k.replace(/\\n/g, "\n");
+}
 
 function tryInit(): admin.app.App | null {
   if (admin.apps.length > 0) {
     return admin.app();
   }
 
-  const jsonRaw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-  const jsonPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
+  const projectId = process.env.FIREBASE_PROJECT_ID?.trim() ?? "";
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL?.trim() ?? "";
+  const privateKey = normalizePrivateKey(
+    process.env.FIREBASE_PRIVATE_KEY ?? "",
+  );
 
-  try {
-    if (jsonPath) {
-      const resolved = path.isAbsolute(jsonPath)
-        ? jsonPath
-        : path.join(process.cwd(), jsonPath);
-      if (!fs.existsSync(resolved)) {
-        return null;
-      }
-      const sa = JSON.parse(fs.readFileSync(resolved, "utf8"));
-      return admin.initializeApp({
-        credential: admin.credential.cert(sa as admin.ServiceAccount),
-      });
+  const missing: string[] = [];
+  if (!projectId) missing.push("FIREBASE_PROJECT_ID");
+  if (!clientEmail) missing.push("FIREBASE_CLIENT_EMAIL");
+  if (!privateKey) missing.push("FIREBASE_PRIVATE_KEY");
+
+  if (missing.length > 0) {
+    if (!loggedMissingConfig) {
+      loggedMissingConfig = true;
+      console.error(
+        "[firebase-admin] Missing environment variables:",
+        missing.join(", "),
+      );
     }
-    if (jsonRaw) {
-      const sa = JSON.parse(jsonRaw);
-      return admin.initializeApp({
-        credential: admin.credential.cert(sa as admin.ServiceAccount),
-      });
-    }
-  } catch (e) {
-    console.error("Firebase admin init failed:", e);
     return null;
   }
 
-  return null;
+  try {
+    return admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId,
+        clientEmail,
+        privateKey,
+      }),
+    });
+  } catch (e) {
+    if (!loggedInitFailure) {
+      loggedInitFailure = true;
+      console.error(
+        "[firebase-admin] initializeApp failed:",
+        e instanceof Error ? e.message : e,
+        e instanceof Error ? e.stack : "",
+      );
+    }
+    return null;
+  }
 }
 
 export function getFirebaseAdminApp(): admin.app.App | null {

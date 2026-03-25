@@ -7,29 +7,40 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
 
+function normalizePrivateKey(raw) {
+  let k = (raw ?? "").trim();
+  if (
+    (k.startsWith('"') && k.endsWith('"')) ||
+    (k.startsWith("'") && k.endsWith("'"))
+  ) {
+    k = k.slice(1, -1);
+  }
+  return k.replace(/\\n/g, "\n");
+}
+
 function initAdmin() {
-  const jsonPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
-  const jsonRaw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-  if (jsonPath) {
-    const resolved = path.isAbsolute(jsonPath)
-      ? jsonPath
-      : path.join(root, jsonPath);
-    if (!fs.existsSync(resolved)) {
-      throw new Error(`Service account file not found: ${resolved}`);
-    }
-    const sa = JSON.parse(fs.readFileSync(resolved, "utf8"));
-    admin.initializeApp({ credential: admin.credential.cert(sa) });
-    return;
+  const projectId = process.env.FIREBASE_PROJECT_ID?.trim() ?? "";
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL?.trim() ?? "";
+  const privateKey = normalizePrivateKey(process.env.FIREBASE_PRIVATE_KEY ?? "");
+
+  const missing = [];
+  if (!projectId) missing.push("FIREBASE_PROJECT_ID");
+  if (!clientEmail) missing.push("FIREBASE_CLIENT_EMAIL");
+  if (!privateKey) missing.push("FIREBASE_PRIVATE_KEY");
+
+  if (missing.length > 0) {
+    throw new Error(
+      `Missing env: ${missing.join(", ")} (same as server; load .env.local before running this script).`,
+    );
   }
-  if (jsonRaw) {
-    admin.initializeApp({
-      credential: admin.credential.cert(JSON.parse(jsonRaw)),
-    });
-    return;
-  }
-  throw new Error(
-    "Set FIREBASE_SERVICE_ACCOUNT_PATH or FIREBASE_SERVICE_ACCOUNT_JSON",
-  );
+
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId,
+      clientEmail,
+      privateKey,
+    }),
+  });
 }
 
 async function main() {

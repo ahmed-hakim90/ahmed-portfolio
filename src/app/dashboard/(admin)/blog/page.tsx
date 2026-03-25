@@ -26,7 +26,8 @@ export default async function DashboardBlogListPage() {
   if (!db) {
     return (
       <p className="text-sm text-muted-foreground">
-        Firestore is not configured. Set Firebase Admin env vars.
+        Firestore is not configured. Set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and
+        FIREBASE_PRIVATE_KEY.
       </p>
     );
   }
