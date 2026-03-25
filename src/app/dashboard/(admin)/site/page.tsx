@@ -8,6 +8,7 @@ import { SiteWorkProjectsEditor } from "@/components/dashboard/site-work-project
 import { Button } from "@/components/ui/button";
 import type { SiteJson } from "@/data/site-defaults";
 import { captureAndSharePortfolioImage } from "@/lib/site-share-image";
+import { buildPublicPortfolioUrl, getEnvPublicSiteBase, resolvePublicSiteBase } from "@/lib/site-public-base";
 import { hydrateSiteJson, mergeSiteJsonForSave } from "@/lib/site-hydrate";
 import { Printer, Share2 } from "lucide-react";
 import Link from "next/link";
@@ -58,7 +59,7 @@ export default function DashboardSitePage() {
             typeof profile.slug === "string" ? profile.slug : "";
           if (!cancelled) {
             setSlug(currentSlug);
-            setPublicUrl(`${window.location.origin}/${currentSlug}`);
+            setPublicUrl(buildPublicPortfolioUrl(currentSlug));
           }
         }
         if (postsRes.ok) {
@@ -79,7 +80,7 @@ export default function DashboardSitePage() {
   }, []);
 
   useEffect(() => {
-    setOrigin(window.location.origin);
+    setOrigin(resolvePublicSiteBase());
   }, []);
 
   useEffect(() => {
@@ -242,7 +243,7 @@ export default function DashboardSitePage() {
       }
       if (typeof data.slug === "string") {
         setSlug(data.slug);
-        setPublicUrl(`${window.location.origin}/${data.slug}`);
+        setPublicUrl(buildPublicPortfolioUrl(data.slug));
       }
       setMessage("تم تحديث الرابط العام.");
     } catch {
@@ -329,9 +330,9 @@ export default function DashboardSitePage() {
                 </Button>
               </div>
               <div className="min-w-0 space-y-1 sm:col-span-1 sm:col-start-1 sm:row-start-3">
-                {origin && slugAvailability.normalized ? (
+                {(getEnvPublicSiteBase() || origin) && slugAvailability.normalized ? (
                   <p className="truncate font-mono text-xs text-muted-foreground">
-                    {`${origin}/${slugAvailability.normalized}`}
+                    {`${getEnvPublicSiteBase() || origin}/${slugAvailability.normalized}`}
                   </p>
                 ) : null}
                 <p className="text-xs">

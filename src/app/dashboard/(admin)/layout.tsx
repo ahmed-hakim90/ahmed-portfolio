@@ -1,3 +1,4 @@
+import { PlatformAnalyticsPing } from "@/components/analytics/platform-analytics-ping";
 import {
   AdminDashboardShell,
   type DashboardSidebarPost,
@@ -42,6 +43,7 @@ export default async function AdminDashboardLayout({
 
   return (
     <AdminDashboardShell isOwner={isOwner} publicBlogUrl={publicBlogUrl} blogPosts={blogPosts}>
+      <PlatformAnalyticsPing surface="dashboard" />
       {children}
     </AdminDashboardShell>
   );

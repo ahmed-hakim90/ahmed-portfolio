@@ -1,6 +1,7 @@
 "use client";
 
 import type { MergedSiteData } from "@/lib/site-hydrate";
+import { getEnvPublicSiteBase } from "@/lib/site-public-base";
 import { forwardRef } from "react";
 
 export type SiteShareCardProps = {
@@ -12,8 +13,30 @@ export type SiteShareCardProps = {
 
 function hostPathLabel(fullUrl: string): { host: string; path: string } {
   try {
-    const u = new URL(fullUrl);
+    const u = new URL(
+      fullUrl.startsWith("http://") || fullUrl.startsWith("https://")
+        ? fullUrl
+        : `https://${fullUrl.replace(/^\/+/, "")}`,
+    );
     const path = u.pathname.replace(/^\//, "") || "/";
+    const localHost =
+      u.hostname === "localhost" ||
+      u.hostname === "127.0.0.1" ||
+      u.hostname.endsWith(".local");
+    const envBase = getEnvPublicSiteBase();
+    if (localHost && envBase) {
+      const baseUrl = envBase.startsWith("http://") || envBase.startsWith("https://")
+        ? envBase
+        : `https://${envBase}`;
+      const bu = new URL(baseUrl);
+      const envIsLocal =
+        bu.hostname === "localhost" ||
+        bu.hostname === "127.0.0.1" ||
+        bu.hostname.endsWith(".local");
+      if (!envIsLocal) {
+        return { host: bu.host, path };
+      }
+    }
     return { host: u.host, path };
   } catch {
     return { host: "portfolio", path: "" };

@@ -1,3 +1,4 @@
+import { getPublicBuildLabel } from "@/lib/build-label";
 import type { PublicStats } from "@/lib/public-stats";
 import Link from "next/link";
 import "./folio-landing.css";
@@ -13,6 +14,7 @@ type FolioLandingProps = {
 };
 
 export function FolioLanding({ stats }: FolioLandingProps) {
+  const buildLabel = getPublicBuildLabel();
   const accounts =
     stats.users !== null ? `+${formatArNumber(stats.users)}` : "+٢٤٠٠";
   const projects = formatArNumber(stats.projectCards);
@@ -476,7 +478,17 @@ export function FolioLanding({ stats }: FolioLandingProps) {
           </div>
           <div className="folioFooterBottom">
             <div className="folioFcopy">
-              © ٢٠٢٥ HAKIMO CV — جميع الحقوق محفوظة
+              <div>© ٢٠٢٥ HAKIMO CV — جميع الحقوق محفوظة</div>
+              {buildLabel ? (
+                <div
+                  className="folioFversion"
+                  dir="ltr"
+                  translate="no"
+                  title="إصدار التطبيق ومرجع البناء"
+                >
+                  {buildLabel}
+                </div>
+              ) : null}
             </div>
             <div className="folioFsoc">
               <a className="folioSi" href="#" aria-label="LinkedIn">

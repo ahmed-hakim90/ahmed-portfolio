@@ -1067,6 +1067,18 @@
 .folioLanding .folioFcopy {
   font-size: 0.75rem;
   color: var(--folio-ink3);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.folioLanding .folioFversion {
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  color: var(--folio-ink3);
+  opacity: 0.85;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 .folioLanding .folioFsoc {

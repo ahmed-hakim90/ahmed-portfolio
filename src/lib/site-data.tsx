@@ -5,6 +5,7 @@ import {
   mergeSiteJsonForSave,
   type MergedSiteData,
 } from "@/lib/site-hydrate";
+import { FieldValue } from "firebase-admin/firestore";
 import { getFirestoreDb } from "@/lib/firebase-admin";
 import { cache } from "react";
 
@@ -57,10 +58,13 @@ export async function getUserSiteJsonFromFirestore(
     if (!options?.seedFromGlobalIfMissing) return null;
     const global = await getSiteJsonFromFirestore();
     const seeded = global ?? DEFAULT_SITE_JSON;
-    await ref.set({
-      json: seeded,
-      updatedAt: new Date().toISOString(),
-    });
+    await ref.set(
+      {
+        json: seeded,
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true },
+    );
     return seeded;
   } catch {
     return null;
@@ -79,10 +83,14 @@ export async function saveUserSiteJson(userId: string, patch: Partial<SiteJson>)
   try {
     const merged = mergeSiteJsonForSave(patch);
     const json = stripUndefinedDeep(merged);
-    await db.collection("sites").doc(userId).set({
-      json,
-      updatedAt: new Date().toISOString(),
-    });
+    await db.collection("sites").doc(userId).set(
+      {
+        json,
+        updatedAt: new Date().toISOString(),
+        dashboardSaveCount: FieldValue.increment(1),
+      },
+      { merge: true },
+    );
     return { ok: true as const };
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Firestore write failed";

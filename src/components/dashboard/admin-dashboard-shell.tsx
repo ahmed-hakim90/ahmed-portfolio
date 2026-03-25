@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import {
+  BarChart3,
   ChevronDown,
   ExternalLink,
   Eye,
@@ -89,7 +90,7 @@ const SITE_PREVIEW_ANCHOR = { hash: "site-preview", label: "المعاينة" } 
 
 function anchorLinkClass(active: boolean) {
   return cn(
-    "flex rounded-md px-2 py-1.5 text-xs transition-colors",
+    "flex min-h-10 items-center rounded-md px-3 py-2 text-xs transition-colors md:min-h-0 md:px-2 md:py-1.5",
     active
       ? "bg-muted font-medium text-foreground"
       : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -120,7 +121,7 @@ function SidebarContent({
 
   const linkClass = (href: string) =>
     cn(
-      "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted",
+      "flex min-h-11 touch-manipulation items-center gap-2 rounded-md px-3 py-2.5 text-sm transition-colors hover:bg-muted md:min-h-0 md:px-2 md:py-1.5",
       navActive(pathname, href) && "bg-muted font-medium text-foreground",
     );
 
@@ -145,7 +146,7 @@ function SidebarContent({
                     key={group.title}
                     className="group rounded-md border border-border/60 bg-muted/25"
                   >
-                    <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-2 py-1.5 text-[11px] font-medium text-muted-foreground [&::-webkit-details-marker]:hidden">
+                    <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-2 rounded-md px-2 py-2 text-[11px] font-medium text-muted-foreground touch-manipulation md:min-h-0 md:py-1.5 [&::-webkit-details-marker]:hidden">
                       <span>{group.title}</span>
                       <ChevronDown
                         className="size-3.5 shrink-0 opacity-70 transition-transform duration-200 group-open:rotate-180"
@@ -180,7 +181,7 @@ function SidebarContent({
                 <Link
                   href={`/dashboard/site#${SITE_PREVIEW_ANCHOR.hash}`}
                   className={cn(
-                    "flex items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors",
+                    "flex min-h-10 touch-manipulation items-center gap-2 rounded-md px-3 py-2 text-xs transition-colors md:min-h-0 md:px-2 md:py-1.5",
                     routeHash === SITE_PREVIEW_ANCHOR.hash
                       ? "bg-muted font-medium text-foreground"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -205,10 +206,20 @@ function SidebarContent({
             المدونة
           </Link>
           {isOwner ? (
-            <Link href="/dashboard/users" className={linkClass("/dashboard/users")} onClick={onNavigate}>
-              <Users className="size-4 shrink-0 opacity-70" aria-hidden />
-              المستخدمون
-            </Link>
+            <>
+              <Link
+                href="/dashboard/analytics"
+                className={linkClass("/dashboard/analytics")}
+                onClick={onNavigate}
+              >
+                <BarChart3 className="size-4 shrink-0 opacity-70" aria-hidden />
+                التحليلات
+              </Link>
+              <Link href="/dashboard/users" className={linkClass("/dashboard/users")} onClick={onNavigate}>
+                <Users className="size-4 shrink-0 opacity-70" aria-hidden />
+                المستخدمون
+              </Link>
+            </>
           ) : null}
         </nav>
       </div>
@@ -239,7 +250,7 @@ function SidebarContent({
         <p className="mb-2 truncate px-0.5 font-mono text-[11px] text-muted-foreground" title={publicBlogUrl}>
           {publicBlogUrl}
         </p>
-        <div className="max-h-[min(280px,38vh)] overflow-y-auto rounded-md border border-border bg-background/80">
+        <div className="max-h-[min(240px,min(38dvh,42svh))] overflow-y-auto overscroll-y-contain rounded-md border border-border bg-background/80 md:max-h-[min(280px,38vh)]">
           {blogPosts.length === 0 ? (
             <p className="p-3 text-xs text-muted-foreground">لا توجد مقالات بعد.</p>
           ) : (
@@ -287,7 +298,7 @@ function SidebarContent({
       <div className="flex flex-col gap-1">
         <Link
           href="/portfolio"
-          className="rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="flex min-h-11 touch-manipulation items-center rounded-md px-3 py-2.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground md:min-h-0 md:px-2 md:py-1.5"
           onClick={onNavigate}
         >
           عرض المحفظة
@@ -295,7 +306,7 @@ function SidebarContent({
         {isOwner ? (
           <Link
             href="/"
-            className="rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="flex min-h-11 touch-manipulation items-center rounded-md px-3 py-2.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground md:min-h-0 md:px-2 md:py-1.5"
             onClick={onNavigate}
           >
             الصفحة الرئيسية
@@ -343,7 +354,17 @@ export function AdminDashboardShell({
     };
   }, [mobileOpen]);
 
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [mobileOpen]);
+
   const closeMobile = useCallback(() => setMobileOpen(false), []);
+  const toggleMobile = useCallback(() => setMobileOpen((o) => !o), []);
 
   return (
     <AdminHeaderActionsContext.Provider value={contextValue}>
@@ -352,7 +373,7 @@ export function AdminDashboardShell({
         {mobileOpen ? (
           <button
             type="button"
-            className="fixed inset-0 z-40 bg-black/50 print:hidden md:hidden"
+            className="fixed inset-0 z-40 touch-none bg-black/50 backdrop-blur-[2px] print:hidden md:hidden"
             aria-label="إغلاق القائمة"
             onClick={closeMobile}
           />
@@ -375,21 +396,31 @@ export function AdminDashboardShell({
 
         {/* Drawer — mobile */}
         <aside
+          id="dashboard-mobile-drawer"
           aria-hidden={!mobileOpen}
+          aria-modal={mobileOpen}
+          role="dialog"
           className={cn(
-            "fixed inset-y-0 start-0 z-50 flex w-[min(100%,20rem)] max-w-[85vw] flex-col border-e border-border bg-background print:hidden transition-transform duration-200 md:hidden",
+            "fixed inset-y-0 start-0 z-50 flex w-[min(22rem,calc(100vw-0.75rem))] max-w-[min(92vw,22rem)] flex-col border-e border-border bg-background shadow-2xl print:hidden transition-transform duration-200 ease-out motion-reduce:transition-none md:hidden md:shadow-none",
             mobileOpen
               ? "translate-x-0"
-              : "pointer-events-none ltr:-translate-x-full rtl:translate-x-full",
+              : "pointer-events-none -translate-x-full rtl:translate-x-full",
           )}
         >
-          <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-3">
+          <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-3 pt-[env(safe-area-inset-top,0px)]">
             <span className="text-sm font-semibold">لوحة التحكم</span>
-            <Button type="button" variant="ghost" size="icon" onClick={closeMobile} aria-label="إغلاق">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-11 w-11 shrink-0 touch-manipulation"
+              onClick={closeMobile}
+              aria-label="إغلاق"
+            >
               <X className="size-5" />
             </Button>
           </div>
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className="flex-1 overflow-y-auto overscroll-y-contain p-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))]">
             <SidebarContent
               isOwner={isOwner}
               publicBlogUrl={publicBlogUrl}
@@ -401,26 +432,30 @@ export function AdminDashboardShell({
         </aside>
 
         <div className="md:ps-72 print:ps-0">
-          <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-3 border-b border-border bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 print:hidden">
+          <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-2 border-b border-border bg-background/95 px-3 py-2.5 pt-[max(0.625rem,env(safe-area-inset-top,0px))] backdrop-blur supports-[backdrop-filter]:bg-background/80 print:hidden sm:gap-3 sm:px-4 sm:py-3">
             <div className="flex min-w-0 flex-1 items-center gap-2">
               <Button
                 type="button"
                 variant="outline"
                 size="icon"
-                className="shrink-0 md:hidden"
-                onClick={() => setMobileOpen(true)}
-                aria-label="فتح القائمة"
+                className="h-11 w-11 shrink-0 touch-manipulation md:hidden"
+                onClick={toggleMobile}
+                aria-expanded={mobileOpen}
+                aria-controls="dashboard-mobile-drawer"
+                aria-label={mobileOpen ? "إغلاق القائمة" : "فتح القائمة"}
               >
                 <Menu className="size-5" />
               </Button>
-              <span className="truncate text-sm text-muted-foreground md:hidden">لوحة التحكم</span>
+              <span className="min-w-0 truncate text-sm font-medium text-muted-foreground md:hidden">
+                لوحة التحكم
+              </span>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {headerActions}
               <LogoutButton />
             </div>
           </header>
-          <main className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-10">{children}</main>
+          <main className="mx-auto max-w-7xl px-3 py-5 sm:px-4 sm:py-7 md:px-6 md:py-10">{children}</main>
         </div>
       </div>
     </AdminHeaderActionsContext.Provider>
