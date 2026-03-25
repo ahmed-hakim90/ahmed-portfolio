@@ -1,5 +1,5 @@
 import { isOwnerAuthenticated } from "@/lib/admin-request";
-import { createAdminUser, listAdminUsers } from "@/lib/admin-users";
+import { createAdminUserWithFirebaseAuth, listAdminUsers } from "@/lib/admin-users";
 import { getUserSiteJsonFromFirestore } from "@/lib/site-data";
 import { NextResponse } from "next/server";
 
@@ -9,6 +9,7 @@ export async function GET() {
   if (!(await isOwnerAuthenticated())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
   const users = await listAdminUsers();
   const withPhone = await Promise.all(
     users.map(async (u) => {
@@ -29,11 +30,11 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json().catch(() => ({}));
-  const username = typeof body.username === "string" ? body.username : "";
+  const email = typeof body.email === "string" ? body.email : "";
   const password = typeof body.password === "string" ? body.password : "";
   const role = body.role === "owner" ? "owner" : "client";
 
-  const created = await createAdminUser(username, password, role);
+  const created = await createAdminUserWithFirebaseAuth(email, password, role);
   if (!created.ok) {
     return NextResponse.json({ error: created.error }, { status: 400 });
   }

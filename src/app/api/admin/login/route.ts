@@ -2,11 +2,8 @@ import {
   ADMIN_SESSION_COOKIE,
   signAdminSessionToken,
 } from "@/lib/admin-auth";
-import {
-  countAdminUsers,
-  getAdminUserByUsername,
-  verifyAdminPassword,
-} from "@/lib/admin-users";
+import { getAdminUserById } from "@/lib/admin-users";
+import { getFirebaseAdminAuth } from "@/lib/firebase-admin";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
@@ -23,42 +20,42 @@ export async function POST(request: Request) {
     );
   }
 
-  const body = await request.json().catch(() => ({}));
-  const username = typeof body.username === "string" ? body.username : "";
-  const password = typeof body.password === "string" ? body.password : "";
-
-  if (!username || !password) {
+  const auth = getFirebaseAdminAuth();
+  if (!auth) {
     return NextResponse.json(
-      { error: "Username and password required" },
-      { status: 400 },
-    );
-  }
-
-  const n = await countAdminUsers();
-  if (n < 0) {
-    return NextResponse.json(
-      { error: "Firestore is not configured" },
+      { error: "Firebase Admin is not configured" },
       { status: 500 },
     );
   }
-  if (n === 0) {
+
+  const body = await request.json().catch(() => ({}));
+  const idToken = typeof body.idToken === "string" ? body.idToken : "";
+  if (!idToken) {
+    return NextResponse.json({ error: "idToken required" }, { status: 400 });
+  }
+
+  let decoded: { uid: string };
+  try {
+    decoded = await auth.verifyIdToken(idToken, true);
+  } catch {
+    return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
+  }
+
+  try {
+    const record = await auth.getUser(decoded.uid);
+    if (record.disabled) {
+      return NextResponse.json({ error: "Account disabled" }, { status: 403 });
+    }
+  } catch {
+    return NextResponse.json({ error: "User not found" }, { status: 401 });
+  }
+
+  const user = await getAdminUserById(decoded.uid);
+  if (!user || user.disabled) {
     return NextResponse.json(
-      {
-        error:
-          "No admin users yet. Call POST /api/admin/bootstrap with bootstrap credentials from your environment.",
-      },
+      { error: "No dashboard access for this account" },
       { status: 403 },
     );
-  }
-
-  const user = await getAdminUserByUsername(username);
-  if (!user || user.disabled) {
-    return NextResponse.json({ error: "Invalid username or password" }, { status: 401 });
-  }
-
-  const valid = await verifyAdminPassword(password, user.passwordHash);
-  if (!valid) {
-    return NextResponse.json({ error: "Invalid username or password" }, { status: 401 });
   }
 
   const jwt = await signAdminSessionToken({

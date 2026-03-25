@@ -17,7 +17,6 @@
     "@radix-ui/react-slot": "^1.2.0",
     "@radix-ui/react-tooltip": "^1.2.3",
     "@types/mdx": "^2.0.13",
-    "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "firebase": "^12.11.0",
@@ -46,7 +45,6 @@
   "devDependencies": {
     "@playwright/test": "^1.58.2",
     "@tailwindcss/typography": "^0.5.16",
-    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20.17.30",
     "@types/react": "^18.3.20",
     "@types/react-dom": "^18.3.6",

@@ -9,6 +9,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getFirebaseAuth } from "@/lib/firebase-client";
+import {
+  GoogleAuthProvider,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+} from "firebase/auth";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -20,7 +27,7 @@ import { useEffect, useState } from "react";
 export function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -38,6 +45,23 @@ export function SignupForm() {
     }
   }, [searchParams]);
 
+  async function registerWithToken(idToken: string) {
+    const res = await fetch("/api/public/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idToken, inviteCode }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setError(typeof data.error === "string" ? data.error : "Sign up failed");
+      return;
+    }
+    setMessage("Account created. Redirecting to login...");
+    setTimeout(() => {
+      router.replace("/dashboard/login");
+    }, 800);
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -50,20 +74,51 @@ export function SignupForm() {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/public/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password, inviteCode }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setError(data.error ?? "Sign up failed");
-        return;
+      const auth = getFirebaseAuth();
+      let idToken: string;
+      try {
+        const cred = await createUserWithEmailAndPassword(
+          auth,
+          email.trim(),
+          password,
+        );
+        idToken = await cred.user.getIdToken();
+      } catch (err: unknown) {
+        const code =
+          err && typeof err === "object" && "code" in err
+            ? String((err as { code: string }).code)
+            : "";
+        if (code === "auth/email-already-in-use") {
+          const cred = await signInWithEmailAndPassword(
+            auth,
+            email.trim(),
+            password,
+          );
+          idToken = await cred.user.getIdToken();
+        } else {
+          throw err;
+        }
       }
-      setMessage("Account created. Redirecting to login...");
-      setTimeout(() => {
-        router.replace("/dashboard/login");
-      }, 800);
+      await registerWithToken(idToken);
+    } catch {
+      setError("Could not create or sign in with this email.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function onGoogle() {
+    setError(null);
+    setMessage(null);
+    setLoading(true);
+    try {
+      const auth = getFirebaseAuth();
+      const provider = new GoogleAuthProvider();
+      const cred = await signInWithPopup(auth, provider);
+      const idToken = await cred.user.getIdToken();
+      await registerWithToken(idToken);
+    } catch {
+      setError("Google sign-in was cancelled or failed.");
     } finally {
       setLoading(false);
     }
@@ -77,10 +132,9 @@ export function SignupForm() {
             Create client account
           </CardTitle>
           <CardDescription>
-            Create a client login for the dashboard. Owner account must already
-            be initialized. If signup is invite-only, use the code from your
-            administrator—or open the invite link they sent you so the code is
-            filled in automatically.
+            Sign up with Firebase (email or Google). The owner must already have
+            completed setup. If signup is invite-only, use the code from your
+            administrator—or open the invite link so the code is filled in.
           </CardDescription>
         </CardHeader>
         <form onSubmit={onSubmit}>
@@ -106,15 +160,15 @@ export function SignupForm() {
               </p>
             </div>
             <div className="space-y-2">
-              <label htmlFor="username" className="text-sm font-medium leading-none">
-                Username
+              <label htmlFor="email" className="text-sm font-medium leading-none">
+                Email
               </label>
               <input
-                id="username"
-                type="text"
-                autoComplete="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                id="email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 required
               />
@@ -163,13 +217,24 @@ export function SignupForm() {
               </p>
             ) : null}
           </CardContent>
-          <CardFooter className="flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <CardFooter className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <Button asChild variant="ghost" className="w-full sm:w-auto">
               <Link href="/dashboard/login">Back to login</Link>
             </Button>
-            <Button type="submit" className="w-full sm:w-auto" disabled={loading}>
-              {loading ? "Creating..." : "Create account"}
-            </Button>
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+              <Button
+                type="button"
+                variant="secondary"
+                className="w-full sm:w-auto"
+                disabled={loading}
+                onClick={() => void onGoogle()}
+              >
+                Google
+              </Button>
+              <Button type="submit" className="w-full sm:w-auto" disabled={loading}>
+                {loading ? "Creating..." : "Create account"}
+              </Button>
+            </div>
           </CardFooter>
         </form>
       </Card>

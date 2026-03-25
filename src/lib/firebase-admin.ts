@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import admin from "firebase-admin";
+import { getAuth, type Auth } from "firebase-admin/auth";
 import type { Firestore } from "firebase-admin/firestore";
 
 function tryInit(): admin.app.App | null {
@@ -46,6 +47,12 @@ export function getFirestoreDb(): Firestore | null {
   const app = getFirebaseAdminApp();
   if (!app) return null;
   return app.firestore();
+}
+
+export function getFirebaseAdminAuth(): Auth | null {
+  const app = getFirebaseAdminApp();
+  if (!app) return null;
+  return getAuth(app);
 }
 
 export async function isFirestoreBlogActive(): Promise<boolean> {

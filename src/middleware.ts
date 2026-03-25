@@ -7,7 +7,10 @@ import { NextResponse } from "next/server";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  if (pathname.startsWith("/dashboard/login")) {
+  if (
+    pathname.startsWith("/dashboard/login") ||
+    pathname.startsWith("/dashboard/bootstrap")
+  ) {
     return NextResponse.next();
   }
   const token = request.cookies.get(ADMIN_SESSION_COOKIE)?.value;

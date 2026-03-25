@@ -9,6 +9,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { exchangeIdTokenForAdminSession } from "@/lib/admin-session-client";
+import { getFirebaseAuth } from "@/lib/firebase-client";
+import {
+  GoogleAuthProvider,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+} from "firebase/auth";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -17,28 +24,52 @@ export default function DashboardLoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get("next") ?? "/dashboard/site";
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  async function finishLogin(idToken: string) {
+    const session = await exchangeIdTokenForAdminSession(idToken);
+    if (!session.ok) {
+      setError(session.error);
+      return;
+    }
+    router.replace(next);
+    router.refresh();
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setError(data.error ?? "Login failed");
-        return;
-      }
-      router.replace(next);
-      router.refresh();
+      const auth = getFirebaseAuth();
+      const cred = await signInWithEmailAndPassword(
+        auth,
+        email.trim(),
+        password,
+      );
+      const idToken = await cred.user.getIdToken();
+      await finishLogin(idToken);
+    } catch {
+      setError("Invalid email or password");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function onGoogle() {
+    setError(null);
+    setLoading(true);
+    try {
+      const auth = getFirebaseAuth();
+      const provider = new GoogleAuthProvider();
+      const cred = await signInWithPopup(auth, provider);
+      const idToken = await cred.user.getIdToken();
+      await finishLogin(idToken);
+    } catch {
+      setError("Google sign-in was cancelled or failed.");
     } finally {
       setLoading(false);
     }
@@ -52,8 +83,11 @@ export default function DashboardLoginPage() {
             Dashboard
           </CardTitle>
           <CardDescription>
-            Sign in with your admin username and password. If this is your first
-            time, create the initial account from{" "}
+            Sign in with Firebase (email or Google).
+            {/* <Link href="/dashboard/bootstrap" className="underline underline-offset-4">
+              owner setup
+            </Link> */}
+            . Client accounts:{" "}
             <Link href="/signup" className="underline underline-offset-4">
               /signup
             </Link>
@@ -63,18 +97,15 @@ export default function DashboardLoginPage() {
         <form onSubmit={onSubmit}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <label
-                htmlFor="username"
-                className="text-sm font-medium leading-none"
-              >
-                Username
+              <label htmlFor="email" className="text-sm font-medium leading-none">
+                Email
               </label>
               <input
-                id="username"
-                type="text"
-                autoComplete="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                id="email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 required
               />
@@ -102,9 +133,15 @@ export default function DashboardLoginPage() {
               </p>
             ) : null}
           </CardContent>
-          <CardFooter className="flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <Button asChild variant="ghost" className="w-full sm:w-auto">
-              <Link href="/signup">Create account</Link>
+          <CardFooter className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full sm:w-auto"
+              disabled={loading}
+              onClick={() => void onGoogle()}
+            >
+              Google
             </Button>
             <Button type="submit" className="w-full sm:w-auto" disabled={loading}>
               {loading ? "Signing in…" : "Sign in"}

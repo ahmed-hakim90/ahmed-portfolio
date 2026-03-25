@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 
 type UserRow = {
   id: string;
+  email: string;
   username: string;
   slug: string;
   role: "owner" | "client";
@@ -17,7 +18,7 @@ export default function DashboardUsersPage() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
-  const [newUser, setNewUser] = useState("");
+  const [newEmail, setNewEmail] = useState("");
   const [newPass, setNewPass] = useState("");
   const [busy, setBusy] = useState(false);
   const [selfId, setSelfId] = useState<string | null>(null);
@@ -65,7 +66,7 @@ export default function DashboardUsersPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          username: newUser,
+          email: newEmail.trim(),
           password: newPass,
           role: "client",
         }),
@@ -75,7 +76,7 @@ export default function DashboardUsersPage() {
         setMessage(data.error ?? "Create failed");
         return;
       }
-      setNewUser("");
+      setNewEmail("");
       setNewPass("");
       await load();
       setMessage("User created.");
@@ -163,9 +164,9 @@ export default function DashboardUsersPage() {
       <div>
         <h1 className="text-xl font-semibold tracking-tight">Admin users</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Create accounts, view each user&apos;s public URL and phone, open their
-          site as visitors see it, disable access, set a password, or delete an
-          account.
+          Create Firebase accounts (email + password), view each user&apos;s public
+          URL and phone, open their site as visitors see it, disable access, reset
+          password, or delete an account.
         </p>
       </div>
 
@@ -181,14 +182,15 @@ export default function DashboardUsersPage() {
       >
         <h2 className="text-sm font-medium">New user</h2>
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
-          <div className="min-w-[140px] flex-1 space-y-1">
+          <div className="min-w-[180px] flex-1 space-y-1">
             <label htmlFor="nu" className="text-xs text-muted-foreground">
-              Username
+              Email
             </label>
             <input
               id="nu"
-              value={newUser}
-              onChange={(e) => setNewUser(e.target.value)}
+              type="email"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
               className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm"
               required
             />
@@ -214,9 +216,10 @@ export default function DashboardUsersPage() {
       </form>
 
       <div className="overflow-x-auto rounded-lg border border-border">
-        <table className="w-full min-w-[720px] text-left text-sm">
+        <table className="w-full min-w-[880px] text-left text-sm">
           <thead className="border-b border-border bg-muted/40">
             <tr>
+              <th className="px-3 py-2 font-medium">Email</th>
               <th className="px-3 py-2 font-medium">Username</th>
               <th className="px-3 py-2 font-medium">Slug</th>
               <th className="px-3 py-2 font-medium">Phone</th>
@@ -265,6 +268,9 @@ function UserActionsRow({
 
   return (
     <tr className="border-b border-border last:border-0">
+      <td className="max-w-[200px] truncate px-3 py-2 text-xs text-muted-foreground">
+        {user.email}
+      </td>
       <td className="px-3 py-2 font-mono text-xs">{user.username}</td>
       <td className="px-3 py-2 font-mono text-xs text-muted-foreground">
         {user.slug}
