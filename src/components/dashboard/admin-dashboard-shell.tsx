@@ -384,13 +384,18 @@ export function AdminDashboardShell({
           <div className="flex h-14 shrink-0 items-center border-b border-border px-4">
             <span className="text-sm font-semibold tracking-tight">لوحة التحكم</span>
           </div>
-          <div className="flex-1 overflow-y-auto p-4">
-            <SidebarContent
-              isOwner={isOwner}
-              publicBlogUrl={publicBlogUrl}
-              blogPosts={blogPosts}
-              pathname={pathname}
-            />
+          <div className="flex min-h-0 flex-1 flex-col">
+            <div className="min-h-0 flex-1 overflow-y-auto p-4">
+              <SidebarContent
+                isOwner={isOwner}
+                publicBlogUrl={publicBlogUrl}
+                blogPosts={blogPosts}
+                pathname={pathname}
+              />
+            </div>
+            <div className="shrink-0 border-t border-border/60 p-4">
+              <LogoutButton className="w-full justify-start" />
+            </div>
           </div>
         </aside>
 
@@ -420,14 +425,19 @@ export function AdminDashboardShell({
               <X className="size-5" />
             </Button>
           </div>
-          <div className="flex-1 overflow-y-auto overscroll-y-contain p-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))]">
-            <SidebarContent
-              isOwner={isOwner}
-              publicBlogUrl={publicBlogUrl}
-              blogPosts={blogPosts}
-              pathname={pathname}
-              onNavigate={closeMobile}
-            />
+          <div className="flex min-h-0 flex-1 flex-col">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain p-4 pb-3">
+              <SidebarContent
+                isOwner={isOwner}
+                publicBlogUrl={publicBlogUrl}
+                blogPosts={blogPosts}
+                pathname={pathname}
+                onNavigate={closeMobile}
+              />
+            </div>
+            <div className="shrink-0 border-t border-border/60 p-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))]">
+              <LogoutButton className="w-full justify-start" />
+            </div>
           </div>
         </aside>
 
@@ -450,10 +460,7 @@ export function AdminDashboardShell({
                 لوحة التحكم
               </span>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {headerActions}
-              <LogoutButton />
-            </div>
+            <div className="flex flex-wrap items-center gap-2">{headerActions}</div>
           </header>
           <main className="mx-auto max-w-7xl px-3 py-5 sm:px-4 sm:py-7 md:px-6 md:py-10">{children}</main>
         </div>

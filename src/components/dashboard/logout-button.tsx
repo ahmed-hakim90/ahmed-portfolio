@@ -2,8 +2,9 @@
 
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 
-export function LogoutButton() {
+export function LogoutButton({ className }: { className?: string }) {
   const router = useRouter();
 
   async function logout() {
@@ -13,8 +14,14 @@ export function LogoutButton() {
   }
 
   return (
-    <Button type="button" variant="outline" size="sm" onClick={logout}>
-      Log out
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      onClick={logout}
+      className={cn("w-full justify-start gap-2", className)}
+    >
+      تسجيل الخروج
     </Button>
   );
 }
