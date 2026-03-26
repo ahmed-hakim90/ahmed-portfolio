@@ -14,6 +14,10 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { exchangeIdTokenForAdminSession } from "@/lib/admin-session-client";
+import {
+  firebaseAuthErrorMessageAr,
+  getFirebaseAuthErrorCode,
+} from "@/lib/firebase-auth-errors";
 import { getFirebaseAuth } from "@/lib/firebase-client";
 import {
   GoogleAuthProvider,
@@ -71,8 +75,11 @@ export default function DashboardLoginPage() {
       );
       const idToken = await cred.user.getIdToken();
       await finishLogin(idToken);
-    } catch {
-      setError("البريد أو كلمة المرور غير صحيحة.");
+    } catch (err: unknown) {
+      const code = getFirebaseAuthErrorCode(err);
+      setError(
+        code ? firebaseAuthErrorMessageAr(code) : "تعذر تسجيل الدخول.",
+      );
     } finally {
       setLoading(false);
     }
@@ -87,8 +94,20 @@ export default function DashboardLoginPage() {
       const cred = await signInWithPopup(auth, provider);
       const idToken = await cred.user.getIdToken();
       await finishLogin(idToken);
-    } catch {
-      setError("تم إلغاء تسجيل الدخول عبر Google أو حدث خطأ.");
+    } catch (err: unknown) {
+      const code = getFirebaseAuthErrorCode(err);
+      if (
+        code === "auth/popup-closed-by-user" ||
+        code === "auth/cancelled-popup-request"
+      ) {
+        setError(null);
+      } else {
+        setError(
+          code
+            ? firebaseAuthErrorMessageAr(code)
+            : "تم إلغاء تسجيل الدخول عبر Google أو حدث خطأ.",
+        );
+      }
     } finally {
       setLoading(false);
     }

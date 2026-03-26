@@ -13,6 +13,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import {
+  firebaseAuthErrorMessageAr,
+  getFirebaseAuthErrorCode,
+} from "@/lib/firebase-auth-errors";
 import { getFirebaseAuth } from "@/lib/firebase-client";
 import {
   GoogleAuthProvider,
@@ -56,21 +60,6 @@ export function SignupForm() {
       setInviteCode(fromUrl);
     }
   }, [searchParams]);
-
-  function firebaseErrorMessage(code: string): string {
-    switch (code) {
-      case "auth/email-already-in-use":
-        return "البريد مستخدم مسبقاً.";
-      case "auth/invalid-email":
-        return "صيغة البريد الإلكتروني غير صالحة.";
-      case "auth/weak-password":
-        return "كلمة المرور ضعيفة. استخدم 8 أحرف على الأقل.";
-      case "auth/operation-not-allowed":
-        return "تسجيل البريد معطّل في إعدادات Firebase.";
-      default:
-        return "تعذر إنشاء الحساب أو تسجيل الدخول بهذا البريد.";
-    }
-  }
 
   async function registerWithToken(idToken: string) {
     const res = await fetch("/api/public/signup", {
@@ -125,13 +114,18 @@ export function SignupForm() {
           );
           idToken = await cred.user.getIdToken();
         } else {
-          setError(firebaseErrorMessage(code));
+          setError(firebaseAuthErrorMessageAr(code));
           return;
         }
       }
       await registerWithToken(idToken);
-    } catch {
-      setError("تعذر إنشاء الحساب أو تسجيل الدخول بهذا البريد.");
+    } catch (err: unknown) {
+      const c = getFirebaseAuthErrorCode(err);
+      setError(
+        c
+          ? firebaseAuthErrorMessageAr(c)
+          : "تعذر إنشاء الحساب أو تسجيل الدخول بهذا البريد.",
+      );
     } finally {
       setLoading(false);
     }
@@ -147,8 +141,20 @@ export function SignupForm() {
       const cred = await signInWithPopup(auth, provider);
       const idToken = await cred.user.getIdToken();
       await registerWithToken(idToken);
-    } catch {
-      setError("تم إلغاء تسجيل Google أو حدث خطأ.");
+    } catch (err: unknown) {
+      const code = getFirebaseAuthErrorCode(err);
+      if (
+        code === "auth/popup-closed-by-user" ||
+        code === "auth/cancelled-popup-request"
+      ) {
+        setError(null);
+      } else {
+        setError(
+          code
+            ? firebaseAuthErrorMessageAr(code)
+            : "تم إلغاء تسجيل Google أو حدث خطأ.",
+        );
+      }
     } finally {
       setLoading(false);
     }
