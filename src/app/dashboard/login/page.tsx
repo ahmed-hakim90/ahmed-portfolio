@@ -13,10 +13,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { dashboardLoginServerErrorAr } from "@/lib/admin-login-errors";
 import { exchangeIdTokenForAdminSession } from "@/lib/admin-session-client";
 import {
   firebaseAuthErrorMessageAr,
   getFirebaseAuthErrorCode,
+  resolveFirebaseClientAuthError,
 } from "@/lib/firebase-auth-errors";
 import { getFirebaseAuth } from "@/lib/firebase-client";
 import {
@@ -52,20 +54,11 @@ export default function DashboardLoginPage() {
     })();
   }, []);
 
-  async function finishLogin(idToken: string) {
-    const session = await exchangeIdTokenForAdminSession(idToken);
-    if (!session.ok) {
-      setError(session.error);
-      return;
-    }
-    router.replace(next);
-    router.refresh();
-  }
-
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
+    let idToken: string;
     try {
       const auth = getFirebaseAuth();
       const cred = await signInWithEmailAndPassword(
@@ -73,27 +66,32 @@ export default function DashboardLoginPage() {
         email.trim(),
         password,
       );
-      const idToken = await cred.user.getIdToken();
-      await finishLogin(idToken);
+      idToken = await cred.user.getIdToken();
     } catch (err: unknown) {
-      const code = getFirebaseAuthErrorCode(err);
-      setError(
-        code ? firebaseAuthErrorMessageAr(code) : "تعذر تسجيل الدخول.",
-      );
-    } finally {
+      setError(resolveFirebaseClientAuthError(err));
       setLoading(false);
+      return;
     }
+    const session = await exchangeIdTokenForAdminSession(idToken);
+    if (!session.ok) {
+      setError(dashboardLoginServerErrorAr(session.error));
+      setLoading(false);
+      return;
+    }
+    router.replace(next);
+    router.refresh();
+    setLoading(false);
   }
 
   async function onGoogle() {
     setError(null);
     setLoading(true);
+    let idToken: string;
     try {
       const auth = getFirebaseAuth();
       const provider = new GoogleAuthProvider();
       const cred = await signInWithPopup(auth, provider);
-      const idToken = await cred.user.getIdToken();
-      await finishLogin(idToken);
+      idToken = await cred.user.getIdToken();
     } catch (err: unknown) {
       const code = getFirebaseAuthErrorCode(err);
       if (
@@ -105,12 +103,21 @@ export default function DashboardLoginPage() {
         setError(
           code
             ? firebaseAuthErrorMessageAr(code)
-            : "تم إلغاء تسجيل الدخول عبر Google أو حدث خطأ.",
+            : resolveFirebaseClientAuthError(err),
         );
       }
-    } finally {
       setLoading(false);
+      return;
     }
+    const session = await exchangeIdTokenForAdminSession(idToken);
+    if (!session.ok) {
+      setError(dashboardLoginServerErrorAr(session.error));
+      setLoading(false);
+      return;
+    }
+    router.replace(next);
+    router.refresh();
+    setLoading(false);
   }
 
   return (

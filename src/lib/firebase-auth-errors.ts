@@ -34,8 +34,43 @@ export function firebaseAuthErrorMessageAr(code: string): string {
 }
 
 export function getFirebaseAuthErrorCode(err: unknown): string {
-  if (err && typeof err === "object" && "code" in err) {
-    return String((err as { code: string }).code);
+  if (!err || typeof err !== "object") return "";
+  const o = err as Record<string, unknown>;
+  if (typeof o.code === "string" && o.code.length > 0) {
+    return o.code;
+  }
+  if (err instanceof AggregateError && Array.isArray(err.errors)) {
+    for (const inner of err.errors) {
+      const c = getFirebaseAuthErrorCode(inner);
+      if (c) return c;
+    }
+  }
+  if (o.cause) {
+    return getFirebaseAuthErrorCode(o.cause);
   }
   return "";
+}
+
+/**
+ * Message for failures during Firebase client sign-in (before calling /api/admin/login).
+ */
+export function resolveFirebaseClientAuthError(err: unknown): string {
+  const code = getFirebaseAuthErrorCode(err);
+  if (code) {
+    return firebaseAuthErrorMessageAr(code);
+  }
+  if (err instanceof Error) {
+    const m = err.message;
+    if (m.includes("Missing NEXT_PUBLIC_FIREBASE")) {
+      return "إعدادات Firebase في المتصفح ناقصة. انسخ قيم NEXT_PUBLIC_FIREBASE_* من المحلي إلى Vercel (Production و Preview) ثم أعد نشر المشروع.";
+    }
+    if (
+      m.includes("Failed to fetch") ||
+      m.includes("NetworkError") ||
+      m.includes("Load failed")
+    ) {
+      return "تعذر الاتصال بالشبكة. تحقق من الاتصال أو من حظر الطلبات (CORS / حظر الإعلانات).";
+    }
+  }
+  return "تعذر تسجيل الدخول. إن استمرت المشكلة، افتح أدوات المطوّر (F12) → Console وابحث عن رسالة الخطأ.";
 }
