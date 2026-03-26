@@ -1,3 +1,5 @@
+import { DEFAULT_SITE_JSON, type SiteJson } from "@/data/site-defaults";
+import { saveUserSiteJson } from "@/lib/site-data";
 import { getFirebaseAdminAuth, getFirestoreDb } from "@/lib/firebase-admin";
 import { timingSafeEqual } from "node:crypto";
 
@@ -183,6 +185,145 @@ async function getUniqueSlugForUsername(username: string): Promise<string> {
   return `user-${Date.now().toString(36)}`;
 }
 
+function initialsFromDisplayName(name: string): string {
+  const t = name.trim();
+  if (t.length === 0) return "?";
+  const parts = t.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    const a = Array.from(parts[0]!)[0];
+    const b = Array.from(parts[1]!)[0];
+    return `${a ?? ""}${b ?? ""}`.toUpperCase();
+  }
+  return Array.from(t)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
+
+function publicPortfolioUrlForSlug(slug: string): string | undefined {
+  const base = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "").trim();
+  if (!base) return undefined;
+  return `${base}/${encodeURIComponent(slug)}`;
+}
+
+async function seedNewClientSiteJson(
+  uid: string,
+  email: string,
+  displayName: string,
+  phone: string,
+  publicSlug: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const normalizedEmail = normalizeEmail(email);
+  const mailto = `mailto:${normalizedEmail}`;
+  const trimmedName = displayName.trim();
+  const tel = phone.trim();
+  const baseSocial = DEFAULT_SITE_JSON.contact.social;
+  const portfolioUrl = publicPortfolioUrlForSlug(publicSlug);
+  const patch: Partial<SiteJson> = {
+    name: trimmedName,
+    initials: initialsFromDisplayName(trimmedName),
+    ...(portfolioUrl ? { url: portfolioUrl } : {}),
+    contact: {
+      ...DEFAULT_SITE_JSON.contact,
+      email: normalizedEmail,
+      tel,
+      social: {
+        ...baseSocial,
+        email: {
+          ...baseSocial.email,
+          url: mailto,
+        },
+      },
+    },
+  };
+  const saved = await saveUserSiteJson(uid, patch);
+  if (!saved.ok) return { ok: false, error: saved.error };
+  return { ok: true };
+}
+
+async function rollbackClientFirestoreOnly(uid: string): Promise<void> {
+  const db = getFirestoreDb();
+  if (!db) return;
+  try {
+    const siteRef = db.collection("sites").doc(uid);
+    const siteSnap = await siteRef.get();
+    if (siteSnap.exists) {
+      await db.recursiveDelete(siteRef);
+    }
+    await db.collection(COLLECTION).doc(uid).delete();
+  } catch {
+    /* ignore */
+  }
+}
+
+export type NewClientProfile = {
+  displayName: string;
+  phone: string;
+  slug: string;
+};
+
+/** Validates name, phone, slug (including global slug availability). */
+export async function validateNewClientProfileInput(
+  profile: NewClientProfile,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const displayName = profile.displayName.trim();
+  const phone = profile.phone.trim();
+  const slugRaw = profile.slug.trim();
+  if (displayName.length < 2) {
+    return { ok: false, error: "Invalid display name" };
+  }
+  if (phone.length < 5) {
+    return { ok: false, error: "Invalid phone number" };
+  }
+  const normalizedSlug = normalizeSlug(slugRaw);
+  if (!isSlugAllowed(normalizedSlug)) {
+    return { ok: false, error: "Invalid slug" };
+  }
+  if (await isSlugTaken(normalizedSlug)) {
+    return { ok: false, error: "Slug is already taken" };
+  }
+  return { ok: true };
+}
+
+/**
+ * After Firebase Auth user exists (email/password or Google): create `admin_users` + seed `sites/{uid}`.
+ * Does not delete the Auth user. Used by public `/signup` and internally by owner-driven creation.
+ */
+export async function registerClientProfileAfterAuth(
+  uid: string,
+  email: string,
+  profile: NewClientProfile,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail.includes("@")) {
+    return { ok: false, error: "Valid email is required" };
+  }
+  const valid = await validateNewClientProfileInput(profile);
+  if (!valid.ok) {
+    return valid;
+  }
+  const normalizedSlug = normalizeSlug(profile.slug.trim());
+
+  const created = await createAdminUserDocument(uid, normalizedEmail, "client", {
+    slugOverride: normalizedSlug,
+  });
+  if (!created.ok) {
+    return created;
+  }
+  const seeded = await seedNewClientSiteJson(
+    uid,
+    normalizedEmail,
+    profile.displayName.trim(),
+    profile.phone.trim(),
+    normalizedSlug,
+  );
+  if (!seeded.ok) {
+    await rollbackClientFirestoreOnly(uid);
+    return seeded;
+  }
+  return { ok: true };
+}
+
 /**
  * Creates Firestore admin_users/{uid} after Firebase Auth user exists.
  * Document id must equal Firebase Auth uid.
@@ -191,6 +332,7 @@ export async function createAdminUserDocument(
   uid: string,
   email: string,
   role: "owner" | "client" = "client",
+  options?: { slugOverride?: string },
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const db = getFirestoreDb();
   if (!db) return { ok: false, error: "Firestore is not configured" };
@@ -204,7 +346,19 @@ export async function createAdminUserDocument(
     return { ok: false, error: "This account is already registered" };
   }
   const username = await ensureUniqueUsername(usernameFromEmail(normalizedEmail));
-  const slug = await getUniqueSlugForUsername(username);
+  let slug: string;
+  if (typeof options?.slugOverride === "string" && options.slugOverride.length > 0) {
+    const s = normalizeSlug(options.slugOverride);
+    if (!isSlugAllowed(s)) {
+      return { ok: false, error: "Invalid slug" };
+    }
+    if (await isSlugTaken(s)) {
+      return { ok: false, error: "Slug is already taken" };
+    }
+    slug = s;
+  } else {
+    slug = await getUniqueSlugForUsername(username);
+  }
   await ref.set({
     email: normalizedEmail,
     username,
@@ -218,11 +372,13 @@ export async function createAdminUserDocument(
 
 /**
  * Owner-only: create Firebase Auth user + Firestore profile (same uid).
+ * For clients, pass `clientProfile` to set display name, phone, public slug, and seed `sites/{uid}`.
  */
 export async function createAdminUserWithFirebaseAuth(
   email: string,
   password: string,
   role: "owner" | "client" = "client",
+  clientProfile?: NewClientProfile | null,
 ): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
   const auth = getFirebaseAdminAuth();
   if (!auth) {
@@ -235,22 +391,41 @@ export async function createAdminUserWithFirebaseAuth(
   if (password.length < 8) {
     return { ok: false, error: "Password must be at least 8 characters" };
   }
+
+  if (role === "client" && clientProfile) {
+    const v = await validateNewClientProfileInput(clientProfile);
+    if (!v.ok) {
+      return v;
+    }
+  }
+
   try {
     const userRecord = await auth.createUser({
       email: normalizedEmail,
       password,
       emailVerified: false,
     });
-    const created = await createAdminUserDocument(
-      userRecord.uid,
-      normalizedEmail,
-      role,
-    );
+    const uid = userRecord.uid;
+
+    if (role === "client" && clientProfile) {
+      const registered = await registerClientProfileAfterAuth(
+        uid,
+        normalizedEmail,
+        clientProfile,
+      );
+      if (!registered.ok) {
+        await auth.deleteUser(uid).catch(() => {});
+        return registered;
+      }
+      return { ok: true, id: uid };
+    }
+
+    const created = await createAdminUserDocument(uid, normalizedEmail, role);
     if (!created.ok) {
-      await auth.deleteUser(userRecord.uid).catch(() => {});
+      await auth.deleteUser(uid).catch(() => {});
       return created;
     }
-    return { ok: true, id: userRecord.uid };
+    return { ok: true, id: uid };
   } catch (e: unknown) {
     const code =
       e && typeof e === "object" && "code" in e

@@ -8,6 +8,7 @@ import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 function isValidSitePayload(body: unknown): body is Partial<SiteJson> {
   if (!body || typeof body !== "object") return false;

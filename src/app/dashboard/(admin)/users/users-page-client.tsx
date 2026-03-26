@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export type UserRow = {
   id: string;
@@ -12,7 +12,11 @@ export type UserRow = {
   disabled: boolean;
   createdAt: string;
   phone: string | null;
+  /** From `sites/{id}.json` name when present */
+  displayName?: string | null;
 };
+
+type SlugAvailDetail = "invalid" | "available" | "taken" | null;
 
 export function UsersPageClient({ viewerId }: { viewerId: string }) {
   const [users, setUsers] = useState<UserRow[]>([]);
@@ -20,12 +24,23 @@ export function UsersPageClient({ viewerId }: { viewerId: string }) {
   const [message, setMessage] = useState<string | null>(null);
   const [newEmail, setNewEmail] = useState("");
   const [newPass, setNewPass] = useState("");
+  const [newDisplayName, setNewDisplayName] = useState("");
+  const [newPhone, setNewPhone] = useState("");
+  const [newSlug, setNewSlug] = useState("");
+  const [slugCheck, setSlugCheck] = useState<{
+    checking: boolean;
+    normalized: string;
+    detail: SlugAvailDetail;
+  }>({ checking: false, normalized: "", detail: null });
+  const slugCheckSeq = useRef(0);
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
     setMessage(null);
     try {
-      const res = await fetch("/api/admin/users", { cache: "no-store" });
+      const res = await fetch("/api/admin/users", {
+        cache: "no-store",
+      });
       if (!res.ok) {
         setMessage("تعذر تحميل المستخدمين");
         return;
@@ -43,9 +58,67 @@ export function UsersPageClient({ viewerId }: { viewerId: string }) {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    const raw = newSlug.trim();
+    if (raw.length === 0) {
+      slugCheckSeq.current += 1;
+      setSlugCheck({ checking: false, normalized: "", detail: null });
+      return;
+    }
+    const seq = ++slugCheckSeq.current;
+    setSlugCheck((s) => ({ ...s, checking: true }));
+    const t = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const res = await fetch(
+            `/api/admin/users/slug-availability?slug=${encodeURIComponent(raw)}`,
+            { cache: "no-store" },
+          );
+          const data = (await res.json().catch(() => ({}))) as {
+            normalized?: string;
+            detail?: string;
+          };
+          if (seq !== slugCheckSeq.current) return;
+          const detail = data.detail;
+          const normalized =
+            typeof data.normalized === "string" ? data.normalized : "";
+          if (
+            detail === "invalid" ||
+            detail === "available" ||
+            detail === "taken"
+          ) {
+            setSlugCheck({
+              checking: false,
+              normalized,
+              detail,
+            });
+          } else {
+            setSlugCheck({ checking: false, normalized: "", detail: null });
+          }
+        } catch {
+          if (seq !== slugCheckSeq.current) return;
+          setSlugCheck({ checking: false, normalized: "", detail: null });
+        }
+      })();
+    }, 400);
+    return () => window.clearTimeout(t);
+  }, [newSlug]);
+
   async function createUser(e: React.FormEvent) {
     e.preventDefault();
     setMessage(null);
+    if (newDisplayName.trim().length < 2) {
+      setMessage("أدخل الاسم الظاهر (حرفان على الأقل)");
+      return;
+    }
+    if (newPhone.trim().length < 5) {
+      setMessage("أدخل رقم هاتف صالح");
+      return;
+    }
+    if (slugCheck.detail !== "available") {
+      setMessage("تأكد أن مسار الموقع (slug) متاح قبل الإنشاء");
+      return;
+    }
     setBusy(true);
     try {
       const res = await fetch("/api/admin/users", {
@@ -54,6 +127,9 @@ export function UsersPageClient({ viewerId }: { viewerId: string }) {
         body: JSON.stringify({
           email: newEmail.trim(),
           password: newPass,
+          displayName: newDisplayName.trim(),
+          phone: newPhone.trim(),
+          slug: newSlug.trim(),
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -65,6 +141,10 @@ export function UsersPageClient({ viewerId }: { viewerId: string }) {
       }
       setNewEmail("");
       setNewPass("");
+      setNewDisplayName("");
+      setNewPhone("");
+      setNewSlug("");
+      setSlugCheck({ checking: false, normalized: "", detail: null });
       await load();
       setMessage("تم إنشاء المستخدم (عميل). يمكنه تسجيل الدخول من لوحة التحكم.");
     } finally {
@@ -157,8 +237,8 @@ export function UsersPageClient({ viewerId }: { viewerId: string }) {
       <div>
         <h1 className="text-xl font-semibold tracking-tight">المستخدمون</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          صاحب المنصة فقط يدير الحسابات. إنشاء حسابات Firebase (بريد + كلمة مرور)
-          لعملاء المنصة — يدخلون عبر{" "}
+          صاحب المنصة فقط يدير الحسابات. إنشاء حساب عميل بالاسم والهاتف ومسار الموقع
+          العام — يدخل عبر{" "}
           <span className="font-mono text-xs">/dashboard/login</span> بنفس جلسة
           JWT بعد التحقق من الهوية. صاحب المنصة يُنشأ مرة واحدة من{" "}
           <span className="font-medium">إعداد المنصة</span> وليس من هنا.
@@ -176,8 +256,75 @@ export function UsersPageClient({ viewerId }: { viewerId: string }) {
         className="space-y-3 rounded-lg border border-border bg-muted/20 p-4"
       >
         <h2 className="text-sm font-medium">عميل جديد</h2>
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
-          <div className="min-w-[180px] flex-1 space-y-1">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-1">
+            <label htmlFor="ndn" className="text-xs text-muted-foreground">
+              الاسم الظاهر
+            </label>
+            <input
+              id="ndn"
+              type="text"
+              value={newDisplayName}
+              onChange={(e) => setNewDisplayName(e.target.value)}
+              className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm"
+              required
+              minLength={2}
+              autoComplete="name"
+            />
+          </div>
+          <div className="space-y-1">
+            <label htmlFor="nph" className="text-xs text-muted-foreground">
+              الهاتف
+            </label>
+            <input
+              id="nph"
+              type="tel"
+              value={newPhone}
+              onChange={(e) => setNewPhone(e.target.value)}
+              className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm"
+              required
+              minLength={5}
+              autoComplete="tel"
+            />
+          </div>
+          <div className="space-y-1 sm:col-span-2 lg:col-span-1">
+            <label htmlFor="nslug" className="text-xs text-muted-foreground">
+              مسار الموقع (slug)
+            </label>
+            <input
+              id="nslug"
+              type="text"
+              value={newSlug}
+              onChange={(e) => setNewSlug(e.target.value)}
+              className="w-full rounded-md border border-input bg-background px-2 py-1.5 font-mono text-sm"
+              required
+              placeholder="مثال: ahmed-dev"
+              dir="ltr"
+              spellCheck={false}
+            />
+            <p className="text-xs text-muted-foreground" aria-live="polite">
+              {slugCheck.checking ? (
+                <>جاري التحقق…</>
+              ) : newSlug.trim().length === 0 ? (
+                <>أدخل مساراً فريداً (أحرف صغيرة وأرقام وشرطة).</>
+              ) : slugCheck.detail === "invalid" ? (
+                <>غير صالح — 3–48 حرفاً، بصيغة مثل{" "}
+                <span className="font-mono">my-name</span></>
+              ) : slugCheck.detail === "taken" ? (
+                <>المسار محجوز.</>
+              ) : slugCheck.detail === "available" ? (
+                <>
+                  متاح:{" "}
+                  <span className="font-mono" dir="ltr">
+                    /{slugCheck.normalized}
+                  </span>
+                </>
+              ) : (
+                <>تعذر التحقق.</>
+              )}
+            </p>
+          </div>
+          <div className="space-y-1">
             <label htmlFor="nu" className="text-xs text-muted-foreground">
               البريد
             </label>
@@ -188,9 +335,10 @@ export function UsersPageClient({ viewerId }: { viewerId: string }) {
               onChange={(e) => setNewEmail(e.target.value)}
               className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm"
               required
+              autoComplete="email"
             />
           </div>
-          <div className="min-w-[160px] flex-1 space-y-1">
+          <div className="space-y-1">
             <label htmlFor="np" className="text-xs text-muted-foreground">
               كلمة المرور (8 أحرف على الأقل)
             </label>
@@ -202,19 +350,31 @@ export function UsersPageClient({ viewerId }: { viewerId: string }) {
               className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm"
               required
               minLength={8}
+              autoComplete="new-password"
             />
           </div>
-          <Button type="submit" size="sm" disabled={busy}>
-            إضافة عميل
-          </Button>
+          <div className="flex items-end">
+            <Button
+              type="submit"
+              size="sm"
+              disabled={
+                busy ||
+                slugCheck.checking ||
+                slugCheck.detail !== "available"
+              }
+            >
+              إضافة عميل
+            </Button>
+          </div>
         </div>
       </form>
 
       <div className="overflow-x-auto rounded-lg border border-border">
-        <table className="w-full min-w-[880px] text-right text-sm">
+        <table className="w-full min-w-[960px] text-right text-sm">
           <thead className="border-b border-border bg-muted/40">
             <tr>
               <th className="px-3 py-2 font-medium">البريد</th>
+              <th className="px-3 py-2 font-medium">الاسم الظاهر</th>
               <th className="px-3 py-2 font-medium">اسم المستخدم</th>
               <th className="px-3 py-2 font-medium">المسار</th>
               <th className="px-3 py-2 font-medium">الهاتف</th>
@@ -265,11 +425,19 @@ function UserActionsRow({
   const canDelete = !isSelf && !isOwner;
   const canToggle = !isOwner;
   const canSetPassword = !isOwner || isSelf;
+  const subject = encodeURIComponent("رسالة من إدارة المنصة");
+  const mailtoHref = `mailto:${encodeURIComponent(user.email)}?subject=${subject}`;
+  const whatsappHref = user.phone
+    ? `https://wa.me/${encodeURIComponent(user.phone.replace(/[^\d]/g, ""))}`
+    : null;
 
   return (
     <tr className="border-b border-border last:border-0">
       <td className="max-w-[200px] truncate px-3 py-2 text-xs text-muted-foreground">
         {user.email}
+      </td>
+      <td className="max-w-[140px] truncate px-3 py-2 text-xs">
+        {user.displayName ?? "—"}
       </td>
       <td className="px-3 py-2 font-mono text-xs">{user.username}</td>
       <td className="px-3 py-2 font-mono text-xs text-muted-foreground">
@@ -304,6 +472,26 @@ function UserActionsRow({
           >
             عرض الموقع
           </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={busy}
+            onClick={() => window.open(mailtoHref, "_self")}
+          >
+            إرسال بريد
+          </Button>
+          {whatsappHref ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={busy}
+              onClick={() => window.open(whatsappHref, "_blank", "noopener,noreferrer")}
+            >
+              واتساب
+            </Button>
+          ) : null}
           {canToggle ? (
             <Button
               type="button"

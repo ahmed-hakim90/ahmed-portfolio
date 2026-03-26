@@ -1,7 +1,7 @@
 import {
   countAdminUsers,
-  createAdminUserDocument,
   getAdminUserById,
+  registerClientProfileAfterAuth,
 } from "@/lib/admin-users";
 import { isSignupInviteValid } from "@/lib/signup-invite";
 import { getFirebaseAdminAuth } from "@/lib/firebase-admin";
@@ -63,10 +63,11 @@ export async function POST(request: Request) {
     );
   }
 
+  const record = await auth.getUser(decoded.uid);
   const email =
     typeof decoded.email === "string" && decoded.email.length > 0
       ? decoded.email
-      : (await auth.getUser(decoded.uid)).email;
+      : record.email;
   if (!email) {
     return NextResponse.json(
       { error: "Firebase user must have an email" },
@@ -74,7 +75,24 @@ export async function POST(request: Request) {
     );
   }
 
-  const created = await createAdminUserDocument(decoded.uid, email, "client");
+  const displayName =
+    typeof body.displayName === "string" ? body.displayName.trim() : "";
+  const phone = typeof body.phone === "string" ? body.phone.trim() : "";
+  const slug = typeof body.slug === "string" ? body.slug.trim() : "";
+
+  let resolvedName = displayName;
+  if (resolvedName.length < 2 && typeof record.displayName === "string") {
+    const fromAuth = record.displayName.trim();
+    if (fromAuth.length >= 2) {
+      resolvedName = fromAuth;
+    }
+  }
+
+  const created = await registerClientProfileAfterAuth(decoded.uid, email, {
+    displayName: resolvedName,
+    phone,
+    slug,
+  });
   if (!created.ok) {
     return NextResponse.json({ error: created.error }, { status: 400 });
   }

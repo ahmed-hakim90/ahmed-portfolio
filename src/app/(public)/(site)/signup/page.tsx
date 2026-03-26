@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 function SignupFallback() {
   return (
-    <AuthShell>
+    <AuthShell contentMaxWidthClass="max-w-xl">
       <Card className="border-border/80 bg-white shadow-lg dark:bg-card">
         <CardHeader className="space-y-3 px-6 pb-0 pt-8 text-center sm:px-8 sm:pt-10">
           <div className="mx-auto h-8 w-48 animate-pulse rounded-md bg-muted" />

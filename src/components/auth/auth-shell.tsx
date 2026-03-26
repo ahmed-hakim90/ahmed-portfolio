@@ -16,6 +16,8 @@ type AuthShellProps = {
   dir?: "rtl" | "ltr";
   homeHref?: string;
   homeLabel?: string;
+  /** Max width for the main column (e.g. `max-w-xl` for longer signup forms). */
+  contentMaxWidthClass?: string;
 };
 
 export function AuthShell({
@@ -23,13 +25,19 @@ export function AuthShell({
   dir = "rtl",
   homeHref = "/",
   homeLabel = "العودة للرئيسية",
+  contentMaxWidthClass = "max-w-lg",
 }: AuthShellProps) {
   return (
     <div
       dir={dir}
       className="min-h-screen bg-white text-foreground dark:bg-background"
     >
-      <div className="mx-auto flex min-h-screen w-full max-w-lg flex-col px-4 py-8 sm:px-6 sm:py-10">
+      <div
+        className={cn(
+          "mx-auto flex min-h-screen w-full flex-col px-4 py-8 sm:px-6 sm:py-10",
+          contentMaxWidthClass,
+        )}
+      >
         <header className="mb-6 flex shrink-0 justify-center">
           <Link
             href={homeHref}

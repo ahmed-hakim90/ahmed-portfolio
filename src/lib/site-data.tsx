@@ -44,7 +44,7 @@ export async function getSiteJsonFromFirestore(): Promise<SiteJson | null> {
 
 export async function getUserSiteJsonFromFirestore(
   userId: string,
-  options?: { seedFromGlobalIfMissing?: boolean },
+  _options?: { seedFromGlobalIfMissing?: boolean },
 ): Promise<SiteJson | null> {
   const db = getFirestoreDb();
   if (!db) return null;
@@ -55,16 +55,10 @@ export async function getUserSiteJsonFromFirestore(
       const data = snap.data()?.json as SiteJson | undefined;
       return data ?? null;
     }
-    if (!options?.seedFromGlobalIfMissing) return null;
-    const seeded = structuredClone(DEFAULT_SITE_JSON);
-    await ref.set(
-      {
-        json: seeded,
-        updatedAt: new Date().toISOString(),
-      },
-      { merge: true },
-    );
-    return seeded;
+    // Do not persist DEFAULT_SITE_JSON here: a first read could race with
+    // owner-seeded `sites/{uid}` after client creation and overwrite real data
+    // with the template. Callers merge DEFAULT in memory when remote is null.
+    return null;
   } catch {
     return null;
   }

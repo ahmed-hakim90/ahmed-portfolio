@@ -42,9 +42,9 @@ export default function DashboardSitePage() {
     (async () => {
       try {
         const [siteRes, profileRes, postsRes] = await Promise.all([
-          fetch("/api/admin/site"),
-          fetch("/api/admin/profile"),
-          fetch("/api/admin/posts"),
+          fetch("/api/admin/site", { cache: "no-store" }),
+          fetch("/api/admin/profile", { cache: "no-store" }),
+          fetch("/api/admin/posts", { cache: "no-store" }),
         ]);
         if (!siteRes.ok) {
           setMessage("تعذّر تحميل بيانات الموقع");

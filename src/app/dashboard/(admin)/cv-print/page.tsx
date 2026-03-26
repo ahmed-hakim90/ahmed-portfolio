@@ -1,6 +1,8 @@
 import { CvPrintShell } from "@/components/dashboard/cv-print-shell";
-import { getMergedSiteData } from "@/data/resume";
+import { getAdminSession } from "@/lib/admin-request";
+import { getMergedSiteDataForUser } from "@/lib/site-data";
 import { getPortfolioHtmlAttrs } from "@/lib/portfolio-display";
+import { redirect } from "next/navigation";
 import { DM_Sans, Playfair_Display } from "next/font/google";
 import Image from "next/image";
 import type { Metadata } from "next";
@@ -33,7 +35,11 @@ function getSocialUrl(
 }
 
 export default async function CvPrintPage() {
-  const DATA = await getMergedSiteData();
+  const session = await getAdminSession();
+  if (!session) {
+    redirect("/dashboard/login?next=/dashboard/cv-print");
+  }
+  const DATA = await getMergedSiteDataForUser(session.sub);
   const { dir, lang } = getPortfolioHtmlAttrs(DATA.publicControls.ui);
   const topProjects = DATA.projects.slice(0, 4);
   const githubUrl = getSocialUrl(DATA.contact.social, ["GitHub", "github"]);
