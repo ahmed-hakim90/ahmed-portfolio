@@ -44,6 +44,9 @@ function deepMergePublicControls(
     ui: {
       dockMenu: patch.ui?.dockMenu ?? base.ui.dockMenu,
       themeToggle: patch.ui?.themeToggle ?? base.ui.themeToggle,
+      themePreset: patch.ui?.themePreset ?? base.ui.themePreset,
+      portfolioDir: patch.ui?.portfolioDir ?? base.ui.portfolioDir,
+      portfolioLang: patch.ui?.portfolioLang ?? base.ui.portfolioLang,
     },
     portfolioSections: {
       hero:

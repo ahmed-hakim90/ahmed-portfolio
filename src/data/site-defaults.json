@@ -7,6 +7,8 @@
   "description": "Software Engineer turned Entrepreneur. I love building things and helping people.",
   "summary": "My journey started over five years ago: I have worked on real-life client projects and founded my own business. One of my notable recent works was a countdown page for the Grand Egyptian Museum, delivered urgently during the Eid holiday, with full attention to detail and tight deadlines. Recently, I built my latest project using React.js + Vite, which reflects my current skills. Earlier projects were from the beginning of my journey, but they were essential foundations. I’m also passionate about entrepreneurship. I’ve previously launched my own business and now I'm back to the tech field — learning, growing, and working toward launching my own software company to power future projects. I value commitment, precision, and results — and I always strive to exceed expectations.",
   "avatarUrl": "/me1.jpg",
+  "heroGreetingLead": "Hi, I'm",
+  "heroGreetingEmoji": "👋",
   "skills": [
     "React",
     "TypeScript",
@@ -202,7 +204,10 @@
     },
     "ui": {
       "dockMenu": true,
-      "themeToggle": true
+      "themeToggle": true,
+      "themePreset": "default",
+      "portfolioDir": "ltr",
+      "portfolioLang": "en"
     },
     "portfolioSections": {
       "hero": true,

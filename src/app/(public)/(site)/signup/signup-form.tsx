@@ -1,5 +1,8 @@
 "use client";
 
+import { AuthShell, authFieldClass } from "@/components/auth/auth-shell";
+import { GoogleIcon } from "@/components/auth/google-icon";
+import { PasswordInput } from "@/components/auth/password-input";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { getFirebaseAuth } from "@/lib/firebase-client";
 import {
   GoogleAuthProvider,
@@ -16,9 +20,10 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
 } from "firebase/auth";
+import { Check, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 /**
  * Prefills invite from URL: /signup?invite=SECRET or ?code=SECRET
@@ -35,6 +40,13 @@ export function SignupForm() {
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const passwordRules = useMemo(() => {
+    const len = password.length >= 8;
+    const match =
+      confirmPassword.length > 0 && password === confirmPassword;
+    return { len, match };
+  }, [password, confirmPassword]);
+
   useEffect(() => {
     const fromUrl =
       searchParams.get("invite")?.trim() ||
@@ -45,6 +57,21 @@ export function SignupForm() {
     }
   }, [searchParams]);
 
+  function firebaseErrorMessage(code: string): string {
+    switch (code) {
+      case "auth/email-already-in-use":
+        return "البريد مستخدم مسبقاً.";
+      case "auth/invalid-email":
+        return "صيغة البريد الإلكتروني غير صالحة.";
+      case "auth/weak-password":
+        return "كلمة المرور ضعيفة. استخدم 8 أحرف على الأقل.";
+      case "auth/operation-not-allowed":
+        return "تسجيل البريد معطّل في إعدادات Firebase.";
+      default:
+        return "تعذر إنشاء الحساب أو تسجيل الدخول بهذا البريد.";
+    }
+  }
+
   async function registerWithToken(idToken: string) {
     const res = await fetch("/api/public/signup", {
       method: "POST",
@@ -53,13 +80,15 @@ export function SignupForm() {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      setError(typeof data.error === "string" ? data.error : "Sign up failed");
+      const err =
+        typeof data.error === "string" ? data.error : "فشل إنشاء الحساب";
+      setError(err);
       return;
     }
-    setMessage("Account created. Redirecting to login...");
+    setMessage("تم إنشاء الحساب. جاري التوجيه لتسجيل الدخول…");
     setTimeout(() => {
       router.replace("/dashboard/login");
-    }, 800);
+    }, 900);
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -68,7 +97,7 @@ export function SignupForm() {
     setMessage(null);
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setError("كلمتا المرور غير متطابقتين.");
       return;
     }
 
@@ -96,12 +125,13 @@ export function SignupForm() {
           );
           idToken = await cred.user.getIdToken();
         } else {
-          throw err;
+          setError(firebaseErrorMessage(code));
+          return;
         }
       }
       await registerWithToken(idToken);
     } catch {
-      setError("Could not create or sign in with this email.");
+      setError("تعذر إنشاء الحساب أو تسجيل الدخول بهذا البريد.");
     } finally {
       setLoading(false);
     }
@@ -118,30 +148,37 @@ export function SignupForm() {
       const idToken = await cred.user.getIdToken();
       await registerWithToken(idToken);
     } catch {
-      setError("Google sign-in was cancelled or failed.");
+      setError("تم إلغاء تسجيل Google أو حدث خطأ.");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-10">
-      <Card className="border-border shadow-sm">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-semibold tracking-tight">
-            Create client account
+    <AuthShell>
+      <Card className="border-border/80 bg-white shadow-lg shadow-black/5 dark:bg-card dark:shadow-black/20">
+        <CardHeader className="space-y-2 px-6 pb-2 pt-8 text-center sm:pt-10 sm:px-8">
+          <CardTitle className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            إنشاء حساب
           </CardTitle>
-          <CardDescription>
-            Sign up with Firebase (email or Google). The owner must already have
-            completed setup. If signup is invite-only, use the code from your
-            administrator—or open the invite link so the code is filled in.
+          <CardDescription className="text-center text-base leading-relaxed">
+            أنشئ حساباً للوصول إلى ملفك على المنصة. يجب أن يكون المالك قد أنهى
+            الإعداد مسبقاً. إذا كان التسجيل بالدعوة فقط، أدخل الرمز أو افتح رابط
+            الدعوة ليُعبأ تلقائياً.
           </CardDescription>
         </CardHeader>
-        <form onSubmit={onSubmit}>
-          <CardContent className="space-y-4">
+
+        <form onSubmit={onSubmit} className="space-y-0">
+          <CardContent className="space-y-5 px-6 pb-2 pt-4 sm:px-8">
             <div className="space-y-2">
-              <label htmlFor="inviteCode" className="text-sm font-medium leading-none">
-                Invite code
+              <label
+                htmlFor="inviteCode"
+                className="block text-center text-sm font-medium leading-none text-foreground"
+              >
+                رمز الدعوة{" "}
+                <span className="font-normal text-muted-foreground">
+                  (اختياري)
+                </span>
               </label>
               <input
                 id="inviteCode"
@@ -149,95 +186,181 @@ export function SignupForm() {
                 autoComplete="off"
                 value={inviteCode}
                 onChange={(e) => setInviteCode(e.target.value)}
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                placeholder="From your site administrator"
+                className={authFieldClass}
+                placeholder="من مسؤول الموقع"
+                disabled={loading}
               />
-              <p className="text-xs text-muted-foreground">
-                Required when invite-only signup is enabled; otherwise leave
-                blank. Opening a link like{" "}
-                <span className="font-mono">/signup?invite=…</span> fills this
-                for you.
+              <p className="text-center text-xs leading-relaxed text-muted-foreground">
+                مطلوب عند تفعيل وضع الدعوة فقط؛ وإلا اتركه فارغاً. الرابط{" "}
+                <span className="rounded bg-muted px-1 font-mono text-[0.7rem]">
+                  /signup?invite=…
+                </span>{" "}
+                يملأ الحقل تلقائياً.
               </p>
             </div>
+
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium leading-none">
-                Email
+              <label
+                htmlFor="email"
+                className="block text-center text-sm font-medium leading-none text-foreground"
+              >
+                البريد الإلكتروني
               </label>
               <input
                 id="email"
                 type="email"
                 autoComplete="email"
+                inputMode="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className={authFieldClass}
+                placeholder="you@example.com"
                 required
+                disabled={loading}
               />
             </div>
+
             <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium leading-none">
-                Password
+              <label
+                htmlFor="password"
+                className="block text-center text-sm font-medium leading-none text-foreground"
+              >
+                كلمة المرور
               </label>
-              <input
+              <PasswordInput
                 id="password"
-                type="password"
                 autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 required
                 minLength={8}
+                disabled={loading}
+                placeholder="8 أحرف على الأقل"
               />
             </div>
+
             <div className="space-y-2">
               <label
                 htmlFor="confirmPassword"
-                className="text-sm font-medium leading-none"
+                className="block text-center text-sm font-medium leading-none text-foreground"
               >
-                Confirm password
+                تأكيد كلمة المرور
               </label>
-              <input
+              <PasswordInput
                 id="confirmPassword"
-                type="password"
                 autoComplete="new-password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 required
                 minLength={8}
+                disabled={loading}
+                placeholder="أعد إدخال كلمة المرور"
               />
             </div>
+
+            <ul className="space-y-1.5 text-xs text-muted-foreground">
+              <li className="flex items-center justify-center gap-2">
+                <span
+                  className={
+                    passwordRules.len
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : ""
+                  }
+                >
+                  {passwordRules.len ? (
+                    <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
+                  ) : (
+                    <span className="inline-block h-3.5 w-3.5 rounded-full border border-border" />
+                  )}
+                </span>
+                8 أحرف على الأقل
+              </li>
+              <li className="flex items-center justify-center gap-2">
+                <span
+                  className={
+                    passwordRules.match
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : ""
+                  }
+                >
+                  {passwordRules.match ? (
+                    <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
+                  ) : (
+                    <span className="inline-block h-3.5 w-3.5 rounded-full border border-border" />
+                  )}
+                </span>
+                تطابق تأكيد كلمة المرور
+              </li>
+            </ul>
+
             {error ? (
-              <p className="text-sm text-destructive" role="alert">
+              <div
+                className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-center text-sm text-destructive"
+                role="alert"
+              >
                 {error}
-              </p>
+              </div>
             ) : null}
             {message ? (
-              <p className="text-sm text-emerald-600" role="status">
-                {message}
-              </p>
-            ) : null}
-          </CardContent>
-          <CardFooter className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <Button asChild variant="ghost" className="w-full sm:w-auto">
-              <Link href="/dashboard/login">Back to login</Link>
-            </Button>
-            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-              <Button
-                type="button"
-                variant="secondary"
-                className="w-full sm:w-auto"
-                disabled={loading}
-                onClick={() => void onGoogle()}
+              <div
+                className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 text-center text-sm text-emerald-700 dark:text-emerald-400"
+                role="status"
               >
-                Google
-              </Button>
-              <Button type="submit" className="w-full sm:w-auto" disabled={loading}>
-                {loading ? "Creating..." : "Create account"}
-              </Button>
+                {message}
+              </div>
+            ) : null}
+
+            <Button
+              type="submit"
+              className="h-11 w-full gap-2 text-base"
+              size="lg"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden />
+                  جاري الإنشاء…
+                </>
+              ) : (
+                "إنشاء الحساب"
+              )}
+            </Button>
+
+            <div className="relative py-1">
+              <div className="absolute inset-0 flex items-center">
+                <Separator className="w-full" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-3 text-muted-foreground">أو</span>
+              </div>
             </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11 w-full gap-2 border-border/80 text-base"
+              size="lg"
+              disabled={loading}
+              onClick={() => void onGoogle()}
+            >
+              <GoogleIcon className="shrink-0" />
+              المتابعة مع Google
+            </Button>
+          </CardContent>
+
+          <CardFooter className="flex flex-col gap-2 border-t border-border/60 bg-white px-6 py-5 sm:px-8 dark:bg-card/50">
+            <p className="text-center text-sm text-muted-foreground">
+              لديك حساب بالفعل؟{" "}
+              <Link
+                href="/dashboard/login"
+                className="font-medium text-foreground underline-offset-4 hover:underline"
+              >
+                تسجيل الدخول
+              </Link>
+            </p>
           </CardFooter>
         </form>
       </Card>
-    </main>
+    </AuthShell>
   );
 }

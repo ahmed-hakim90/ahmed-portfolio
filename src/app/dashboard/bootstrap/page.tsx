@@ -41,13 +41,13 @@ export default function DashboardBootstrapPage() {
         const data = (await res.json()) as { needsBootstrap?: boolean };
         if (!res.ok) {
           setNeedsBootstrap(false);
-          setError("Could not check bootstrap status");
+          setError("تعذر التحقق من حالة الإعداد");
           return;
         }
         setNeedsBootstrap(!!data.needsBootstrap);
       } catch {
         setNeedsBootstrap(false);
-        setError("Could not check bootstrap status");
+        setError("تعذر التحقق من حالة الإعداد");
       } finally {
         setChecking(false);
       }
@@ -67,7 +67,9 @@ export default function DashboardBootstrapPage() {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      setError(typeof data.error === "string" ? data.error : "Bootstrap failed");
+      setError(
+        typeof data.error === "string" ? data.error : "فشل إعداد صاحب المنصة",
+      );
       return;
     }
     const session = await exchangeIdTokenForAdminSession(idToken);
@@ -83,7 +85,7 @@ export default function DashboardBootstrapPage() {
     e.preventDefault();
     setError(null);
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setError("كلمتا المرور غير متطابقتين");
       return;
     }
     setLoading(true);
@@ -112,10 +114,12 @@ export default function DashboardBootstrapPage() {
           const idToken = await cred.user.getIdToken();
           await runBootstrapAfterFirebaseUser(idToken);
         } catch {
-          setError("Email already in use — sign in with the correct password or use Google.");
+          setError(
+            "البريد مستخدم مسبقاً — سجّل الدخول بكلمة المرور الصحيحة أو استخدم Google.",
+          );
         }
       } else {
-        setError("Could not create Firebase account. Check email/password.");
+        setError("تعذر إنشاء حساب Firebase. تحقق من البريد وكلمة المرور.");
       }
     } finally {
       setLoading(false);
@@ -132,7 +136,7 @@ export default function DashboardBootstrapPage() {
       const idToken = await cred.user.getIdToken();
       await runBootstrapAfterFirebaseUser(idToken);
     } catch {
-      setError("Google sign-in was cancelled or failed.");
+      setError("تم إلغاء Google أو فشل الاتصال.");
     } finally {
       setLoading(false);
     }
@@ -140,25 +144,31 @@ export default function DashboardBootstrapPage() {
 
   if (checking) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-10">
-        <p className="text-sm text-muted-foreground">Loading…</p>
+      <main
+        className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-10"
+        dir="rtl"
+      >
+        <p className="text-sm text-muted-foreground">جاري التحميل…</p>
       </main>
     );
   }
 
   if (!needsBootstrap) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-10">
+      <main
+        className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-10"
+        dir="rtl"
+      >
         <Card>
           <CardHeader>
-            <CardTitle>Already set up</CardTitle>
+            <CardTitle>المنصة جاهزة</CardTitle>
             <CardDescription>
-              An owner account already exists. Sign in at the dashboard login page.
+              يوجد بالفعل صاحب منصة. سجّل الدخول من صفحة لوحة التحكم.
             </CardDescription>
           </CardHeader>
           <CardFooter>
             <Button asChild className="w-full">
-              <Link href="/dashboard/login">Go to login</Link>
+              <Link href="/dashboard/login">الذهاب لتسجيل الدخول</Link>
             </Button>
           </CardFooter>
         </Card>
@@ -167,18 +177,24 @@ export default function DashboardBootstrapPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-10">
+    <main
+      className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-10"
+      dir="rtl"
+    >
       <Card className="border-border shadow-sm">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-semibold tracking-tight">
-            First-time owner setup
+            إنشاء صاحب المنصة
           </CardTitle>
           <CardDescription>
-            Create your Firebase account (email or Google), then authorize with the
-            bootstrap secret or deploy credentials from your environment (
-            <code className="text-xs">ADMIN_BOOTSTRAP_SECRET</code> or{" "}
+            أنشئ حساب Firebase (بريد أو Google)، ثم أدخل سر الإعداد أو بيانات النشر
+            من البيئة (
+            <code className="text-xs">ADMIN_BOOTSTRAP_SECRET</code> أو{" "}
             <code className="text-xs">ADMIN_BOOTSTRAP_USERNAME</code> /{" "}
-            <code className="text-xs">ADMIN_BOOTSTRAP_PASSWORD</code>).
+            <code className="text-xs">ADMIN_BOOTSTRAP_PASSWORD</code>
+            ). بعد النجاح يُربط حسابك بدور{" "}
+            <span className="font-mono text-xs">owner</span> ويُصدر JWT للوحة
+            التحكم.
           </CardDescription>
         </CardHeader>
         <form onSubmit={onCreateOwnerEmail}>
@@ -188,7 +204,7 @@ export default function DashboardBootstrapPage() {
                 htmlFor="bs"
                 className="text-sm font-medium leading-none"
               >
-                Bootstrap secret (if set in env)
+                سر الإعداد (إن وُجد في البيئة)
               </label>
               <input
                 id="bs"
@@ -206,7 +222,7 @@ export default function DashboardBootstrapPage() {
                   htmlFor="bu"
                   className="text-sm font-medium leading-none"
                 >
-                  Deploy username (legacy)
+                  اسم مستخدم النشر (قديم)
                 </label>
                 <input
                   id="bu"
@@ -222,7 +238,7 @@ export default function DashboardBootstrapPage() {
                   htmlFor="bp"
                   className="text-sm font-medium leading-none"
                 >
-                  Deploy password (legacy)
+                  كلمة مرور النشر (قديم)
                 </label>
                 <input
                   id="bp"
@@ -235,13 +251,13 @@ export default function DashboardBootstrapPage() {
               </div>
             </div>
             <p className="text-xs text-muted-foreground">
-              If <code className="text-xs">ADMIN_BOOTSTRAP_SECRET</code> is set (16+
-              chars), only the secret field is used. Otherwise use deploy username +
-              password matching your env.
+              إذا وُجد <code className="text-xs">ADMIN_BOOTSTRAP_SECRET</code> (16
+              حرفاً فأكثر) يُستخدم حقل السر فقط. وإلا استخدم اسم المستخدم وكلمة مرور
+              النشر كما في البيئة.
             </p>
             <div className="space-y-2">
               <label htmlFor="em" className="text-sm font-medium leading-none">
-                Email
+                البريد الإلكتروني
               </label>
               <input
                 id="em"
@@ -255,7 +271,7 @@ export default function DashboardBootstrapPage() {
             </div>
             <div className="space-y-2">
               <label htmlFor="pw" className="text-sm font-medium leading-none">
-                Password
+                كلمة المرور
               </label>
               <input
                 id="pw"
@@ -270,7 +286,7 @@ export default function DashboardBootstrapPage() {
             </div>
             <div className="space-y-2">
               <label htmlFor="pw2" className="text-sm font-medium leading-none">
-                Confirm password
+                تأكيد كلمة المرور
               </label>
               <input
                 id="pw2"
@@ -291,7 +307,7 @@ export default function DashboardBootstrapPage() {
           </CardContent>
           <CardFooter className="flex flex-col gap-3">
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Working…" : "Create owner (email)"}
+              {loading ? "جاري العمل…" : "إنشاء صاحب المنصة (بريد)"}
             </Button>
             <Button
               type="button"
@@ -300,10 +316,10 @@ export default function DashboardBootstrapPage() {
               disabled={loading}
               onClick={() => void onGoogle()}
             >
-              Continue with Google
+              المتابعة مع Google
             </Button>
             <Button asChild variant="ghost" className="w-full">
-              <Link href="/dashboard/login">Back to login</Link>
+              <Link href="/dashboard/login">العودة لتسجيل الدخول</Link>
             </Button>
           </CardFooter>
         </form>

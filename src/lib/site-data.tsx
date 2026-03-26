@@ -56,8 +56,7 @@ export async function getUserSiteJsonFromFirestore(
       return data ?? null;
     }
     if (!options?.seedFromGlobalIfMissing) return null;
-    const global = await getSiteJsonFromFirestore();
-    const seeded = global ?? DEFAULT_SITE_JSON;
+    const seeded = structuredClone(DEFAULT_SITE_JSON);
     await ref.set(
       {
         json: seeded,

@@ -1,5 +1,6 @@
-import { PrintCvToolbar } from "@/components/dashboard/print-cv-toolbar";
+import { CvPrintShell } from "@/components/dashboard/cv-print-shell";
 import { getMergedSiteData } from "@/data/resume";
+import { getPortfolioHtmlAttrs } from "@/lib/portfolio-display";
 import { DM_Sans, Playfair_Display } from "next/font/google";
 import Image from "next/image";
 import type { Metadata } from "next";
@@ -33,15 +34,20 @@ function getSocialUrl(
 
 export default async function CvPrintPage() {
   const DATA = await getMergedSiteData();
+  const { dir, lang } = getPortfolioHtmlAttrs(DATA.publicControls.ui);
   const topProjects = DATA.projects.slice(0, 4);
   const githubUrl = getSocialUrl(DATA.contact.social, ["GitHub", "github"]);
   const linkedinUrl = getSocialUrl(DATA.contact.social, ["LinkedIn", "linkedin"]);
   const portfolioUrl = DATA.url;
 
   return (
-    <div className={`${bodyFont.variable} ${headingFont.variable} cv-print-page`}>
-      <PrintCvToolbar />
-      <article className="mx-auto mb-8 w-full max-w-[210mm] bg-background p-6 text-[10pt] leading-relaxed shadow-sm sm:p-10 print:mb-0 print:max-w-none print:p-0 print:shadow-none">
+    <div className={`${bodyFont.variable} ${headingFont.variable}`}>
+      <CvPrintShell>
+      <article
+        dir={dir}
+        lang={lang}
+        className="mx-auto mb-8 w-full max-w-[210mm] bg-background p-6 text-[10pt] leading-relaxed shadow-sm sm:p-10 print:mb-0 print:max-w-none print:p-0 print:shadow-none"
+      >
         <header className="mb-6 flex items-start justify-between gap-6 border-b border-black/20 pb-4">
           <div className="min-w-0">
             <h1 className="cv-heading text-4xl font-semibold tracking-tight">
@@ -51,7 +57,7 @@ export default async function CvPrintPage() {
               {DATA.description}
             </p>
           </div>
-          <div className="shrink-0">
+          <div className="cv-print-avatar shrink-0">
             <Image
               src={DATA.avatarUrl}
               alt={DATA.name}
@@ -173,6 +179,23 @@ export default async function CvPrintPage() {
         .cv-print-page {
           font-family: var(--font-cv-body), sans-serif;
         }
+        .cv-print-preset-compact article {
+          font-size: 9pt;
+          line-height: 1.3;
+        }
+        .cv-print-preset-compact .cv-heading {
+          font-size: 0.95em;
+        }
+        .cv-print-preset-highContrast article {
+          color: #000 !important;
+        }
+        .cv-print-preset-highContrast .cv-heading,
+        .cv-print-preset-highContrast .font-semibold {
+          color: #000 !important;
+        }
+        .cv-print-page[data-cv-include-photo="false"] .cv-print-avatar {
+          display: none !important;
+        }
         @media print {
           @page {
             size: A4;
@@ -194,8 +217,19 @@ export default async function CvPrintPage() {
             font-size: 9.5pt;
             line-height: 1.35;
           }
+          .cv-print-preset-compact .cv-print-page,
+          .cv-print-preset-compact article {
+            font-size: 8.8pt !important;
+            line-height: 1.28 !important;
+          }
+          .cv-print-preset-highContrast article,
+          .cv-print-preset-highContrast article * {
+            color: #000 !important;
+            border-color: #000 !important;
+          }
         }
       `}</style>
+      </CvPrintShell>
     </div>
   );
 }

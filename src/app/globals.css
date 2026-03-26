@@ -154,3 +154,47 @@ code[data-line-numbers-max-digits="2"] > [data-line]::before {
 code[data-line-numbers-max-digits="3"] > [data-line]::before {
   width: 3rem;
 }
+
+/* Public portfolio accent presets (scoped on [data-portfolio-theme]) */
+@layer base {
+  [data-portfolio-theme="neutral"] {
+    --primary: 220 9% 46%;
+    --primary-foreground: 0 0% 98%;
+    --ring: 220 9% 46%;
+  }
+  .dark [data-portfolio-theme="neutral"] {
+    --primary: 220 14% 76%;
+    --primary-foreground: 224 71% 4%;
+    --ring: 220 14% 76%;
+  }
+  [data-portfolio-theme="blue"] {
+    --primary: 221 83% 40%;
+    --primary-foreground: 0 0% 98%;
+    --ring: 221 83% 40%;
+  }
+  .dark [data-portfolio-theme="blue"] {
+    --primary: 217 91% 60%;
+    --primary-foreground: 224 71% 4%;
+    --ring: 217 91% 60%;
+  }
+  [data-portfolio-theme="warm"] {
+    --primary: 24 95% 53%;
+    --primary-foreground: 0 0% 98%;
+    --ring: 24 95% 53%;
+  }
+  .dark [data-portfolio-theme="warm"] {
+    --primary: 31 97% 55%;
+    --primary-foreground: 24 10% 10%;
+    --ring: 31 97% 55%;
+  }
+  [data-portfolio-theme="forest"] {
+    --primary: 142 76% 36%;
+    --primary-foreground: 0 0% 98%;
+    --ring: 142 76% 36%;
+  }
+  .dark [data-portfolio-theme="forest"] {
+    --primary: 142 71% 45%;
+    --primary-foreground: 144 61% 8%;
+    --ring: 142 71% 45%;
+  }
+}

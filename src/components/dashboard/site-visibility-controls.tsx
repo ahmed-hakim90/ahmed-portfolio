@@ -1,6 +1,11 @@
 "use client";
 
-import { DEFAULT_SITE_JSON, type SiteJson } from "@/data/site-defaults";
+import {
+  DEFAULT_SITE_JSON,
+  type PortfolioTextDirection,
+  type PortfolioThemePreset,
+  type SiteJson,
+} from "@/data/site-defaults";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
@@ -27,6 +32,15 @@ function mergePublicControlsDefaults(j: SiteJson) {
       themeToggle:
         j.publicControls?.ui?.themeToggle ??
         DEFAULT_SITE_JSON.publicControls.ui.themeToggle,
+      themePreset:
+        j.publicControls?.ui?.themePreset ??
+        DEFAULT_SITE_JSON.publicControls.ui.themePreset,
+      portfolioDir:
+        j.publicControls?.ui?.portfolioDir ??
+        DEFAULT_SITE_JSON.publicControls.ui.portfolioDir,
+      portfolioLang:
+        (j.publicControls?.ui?.portfolioLang ??
+          DEFAULT_SITE_JSON.publicControls.ui.portfolioLang) as string,
     },
     portfolioSections: {
       hero:
@@ -162,6 +176,108 @@ export function SiteVisibilityControls({ data, onChange }: Props) {
             });
           }}
         />
+        <div className="sm:col-span-2 space-y-2 rounded-md border border-border bg-background/60 p-3">
+          <p className="text-xs font-medium text-muted-foreground">
+            ثيم المحفظة العامة
+          </p>
+          <p className="text-[11px] text-muted-foreground">
+            ألوان مميّزة للصفحة العامة؛ الوضع الفاتح/الداكن يبقى من مفتاح السمة.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                ["default", "افتراضي"],
+                ["neutral", "محايد"],
+                ["blue", "أزرق"],
+                ["warm", "دافئ"],
+                ["forest", "أخضر"],
+              ] as const satisfies readonly [PortfolioThemePreset, string][]
+            ).map(([value, label]) => (
+              <label
+                key={value}
+                className={cn(
+                  "flex cursor-pointer items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs transition-colors",
+                  pc.ui.themePreset === value
+                    ? "border-primary bg-primary/10 font-medium"
+                    : "border-border hover:bg-muted/50",
+                )}
+              >
+                <input
+                  type="radio"
+                  name="portfolio-theme-preset"
+                  className="sr-only"
+                  checked={pc.ui.themePreset === value}
+                  onChange={() =>
+                    apply((j) => {
+                      j.publicControls!.ui.themePreset = value;
+                    })
+                  }
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+        </div>
+        <div className="sm:col-span-2 space-y-2 rounded-md border border-border bg-background/60 p-3">
+          <p className="text-xs font-medium text-muted-foreground">
+            اتجاه ولغة المحفظة العامة
+          </p>
+          <p className="text-[11px] text-muted-foreground">
+            يطبّق على صفحة المحفظة والمدونة تحت رابطك ومعاينة المحرر وطباعة السيرة. لوحة التحكم تبقى عربية.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                ["rtl", "يمين لليسار (عربي)"],
+                ["ltr", "يسار لليمين (إنجليزي)"],
+              ] as const satisfies readonly [PortfolioTextDirection, string][]
+            ).map(([value, label]) => (
+              <label
+                key={value}
+                className={cn(
+                  "flex cursor-pointer items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs transition-colors",
+                  pc.ui.portfolioDir === value
+                    ? "border-primary bg-primary/10 font-medium"
+                    : "border-border hover:bg-muted/50",
+                )}
+              >
+                <input
+                  type="radio"
+                  name="portfolio-text-dir"
+                  className="sr-only"
+                  checked={pc.ui.portfolioDir === value}
+                  onChange={() =>
+                    apply((j) => {
+                      j.publicControls!.ui.portfolioDir = value;
+                    })
+                  }
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+          <div className="space-y-1">
+            <label
+              htmlFor="portfolio-lang"
+              className="text-[11px] text-muted-foreground"
+            >
+              لغة المحتوى (رمز BCP 47، مثل ar أو en)
+            </label>
+            <input
+              id="portfolio-lang"
+              className="w-full max-w-xs rounded-md border border-input bg-background px-2 py-1.5 font-mono text-xs"
+              value={pc.ui.portfolioLang}
+              placeholder="en"
+              maxLength={12}
+              onChange={(e) => {
+                const v = e.target.value.replace(/[^a-zA-Z0-9-]/g, "");
+                apply((j) => {
+                  j.publicControls!.ui.portfolioLang = v || "en";
+                });
+              }}
+            />
+          </div>
+        </div>
         <ToggleRow
           id="sec-work"
           label="Work experience links"

@@ -26,6 +26,10 @@ export async function generateMetadata({
     image,
   } = post.metadata;
   const baseUrl = site.url.replace(/\/$/, "");
+  const envBase = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "";
+  const canonicalBase = envBase || baseUrl;
+  const postPath = `/${user.slug}/blog/${post.slug}`;
+  const canonicalUrl = `${canonicalBase}${postPath}`;
   const ogImage = image
     ? `${baseUrl}${image}`
     : `${baseUrl}/og?title=${encodeURIComponent(title)}`;
@@ -33,6 +37,7 @@ export async function generateMetadata({
   return {
     title,
     description,
+    alternates: { canonical: canonicalUrl },
     openGraph: {
       title,
       description,

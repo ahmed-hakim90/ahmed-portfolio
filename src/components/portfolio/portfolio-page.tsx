@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { PortfolioSpotlightBlock } from "@/components/portfolio/portfolio-spotlight-block";
 import { DEFAULT_ABOUT_ME_SPOTLIGHT } from "@/lib/portfolio-default-copy";
+import { buildHeroGreetingLine } from "@/lib/portfolio-hero-text";
 import type { MergedSiteData } from "@/lib/site-data";
 import Link from "next/link";
 import Markdown from "react-markdown";
@@ -17,7 +18,11 @@ type PortfolioPageProps = {
 };
 
 export function PortfolioPage({ data: DATA }: PortfolioPageProps) {
-  const firstName = DATA.name.trim().split(" ")[0];
+  const heroLine = buildHeroGreetingLine(
+    DATA.name,
+    DATA.heroGreetingLead,
+    DATA.heroGreetingEmoji,
+  );
   const pc = DATA.publicControls;
   const linkedinEntry = DATA.contact.social.LinkedIn;
   const cs = DATA.contactSection;
@@ -36,7 +41,7 @@ export function PortfolioPage({ data: DATA }: PortfolioPageProps) {
                 delay={BLUR_FADE_DELAY}
                 className="text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none print:text-3xl"
                 yOffset={8}
-                text={`Hi, I'm ${firstName} 👋`}
+                text={heroLine}
               />
               <BlurFadeText
                 className="max-w-[600px] md:text-xl"

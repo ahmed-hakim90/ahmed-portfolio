@@ -3,13 +3,13 @@
 import { useAdminHeaderActions } from "@/components/dashboard/admin-dashboard-shell";
 import { SitePreviewPanel } from "@/components/dashboard/site-preview-panel";
 import { SiteShareCard } from "@/components/dashboard/site-share-card";
-import { SiteVisibilityControls } from "@/components/dashboard/site-visibility-controls";
 import { SiteWorkProjectsEditor } from "@/components/dashboard/site-work-projects-editor";
 import { Button } from "@/components/ui/button";
-import type { SiteJson } from "@/data/site-defaults";
+import type { PortfolioTextDirection, SiteJson } from "@/data/site-defaults";
 import { captureAndSharePortfolioImage } from "@/lib/site-share-image";
 import { buildPublicPortfolioUrl, getEnvPublicSiteBase, resolvePublicSiteBase } from "@/lib/site-public-base";
 import { hydrateSiteJson, mergeSiteJsonForSave } from "@/lib/site-hydrate";
+import { cn } from "@/lib/utils";
 import { Printer, Share2 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -35,6 +35,7 @@ export default function DashboardSitePage() {
   const [blogPostCount, setBlogPostCount] = useState(0);
   const [shareBusy, setShareBusy] = useState(false);
   const shareCardRef = useRef<HTMLDivElement>(null);
+  const [siteEditorTab, setSiteEditorTab] = useState<"general" | "profile" | "career">("general");
 
   useEffect(() => {
     let cancelled = false;
@@ -290,9 +291,37 @@ export default function DashboardSitePage() {
         <div id="site-public-link" className="scroll-mt-28">
           <h1 className="text-xl font-semibold tracking-tight">محتوى الموقع</h1>
           <p className="mt-1 max-w-prose text-sm text-muted-foreground">
-            عدّل الرابط العام والأقسام الظاهرة للزوار؛ عمود المعاينة يعرض التعديلات مباشرة مع تغيير
-            الحقول.
+            عدّل الرابط والمحتوى؛ الظهور للزوار والثيم من{" "}
+            <Link href="/dashboard/settings" className="font-medium text-primary underline-offset-4 hover:underline">
+              الإعدادات
+            </Link>
+            . المعاينة تتحدّث مع الحقول.
           </p>
+          <div className="mt-4 flex flex-wrap gap-2 border-b border-border pb-3">
+            {(
+              [
+                ["general", "عام"],
+                ["profile", "الملف والتواصل"],
+                ["career", "السيرة والمشاريع"],
+              ] as const
+            ).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setSiteEditorTab(key)}
+                className={cn(
+                  "rounded-md px-3 py-1.5 text-sm transition-colors",
+                  siteEditorTab === key
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted/60 text-muted-foreground hover:bg-muted",
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {siteEditorTab === "general" ? (
+          <>
           <div className="mt-4 rounded-lg border border-border bg-card p-4 shadow-sm">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               الرابط العام
@@ -355,6 +384,83 @@ export default function DashboardSitePage() {
               </div>
             </div>
           </div>
+          <div className="mt-4 rounded-lg border border-border bg-card p-4 shadow-sm">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              اتجاه ولغة المعاينة
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              نفس إعدادات المحفظة العامة؛ يُحفظ مع «حفظ». يفصل اتجاه المعاينة عن واجهة المحرر (عربي).
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {(
+                [
+                  ["ltr", "إنجليزي ← المعاينة يسار لليمين"],
+                  ["rtl", "عربي ← المعاينة يمين لليسار"],
+                ] as const satisfies readonly [PortfolioTextDirection, string][]
+              ).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() =>
+                    setSiteData((prev) => {
+                      if (!prev) return prev;
+                      const next: SiteJson = {
+                        ...prev,
+                        publicControls: {
+                          ...prev.publicControls,
+                          ui: {
+                            ...prev.publicControls.ui,
+                            portfolioDir: value,
+                          },
+                        },
+                      };
+                      return next;
+                    })
+                  }
+                  className={cn(
+                    "rounded-md border px-3 py-1.5 text-xs transition-colors",
+                    siteData.publicControls.ui.portfolioDir === value
+                      ? "border-primary bg-primary/10 font-medium"
+                      : "border-border bg-background hover:bg-muted/50",
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div className="mt-3 space-y-1">
+              <label
+                htmlFor="editor-portfolio-lang"
+                className="text-xs text-muted-foreground"
+              >
+                رمز اللغة للمعاينة (مثل en أو ar)
+              </label>
+              <input
+                id="editor-portfolio-lang"
+                className="w-full max-w-xs rounded-md border border-input bg-background px-2 py-1.5 font-mono text-sm"
+                value={siteData.publicControls.ui.portfolioLang}
+                placeholder="en"
+                maxLength={12}
+                onChange={(e) => {
+                  const v = e.target.value.replace(/[^a-zA-Z0-9-]/g, "");
+                  setSiteData((prev) => {
+                    if (!prev) return prev;
+                    const next: SiteJson = {
+                      ...prev,
+                      publicControls: {
+                        ...prev.publicControls,
+                        ui: {
+                          ...prev.publicControls.ui,
+                          portfolioLang: v || "en",
+                        },
+                      },
+                    };
+                    return next;
+                  });
+                }}
+              />
+            </div>
+          </div>
           <p className="mt-3 text-sm">
             <Link
               href="/dashboard/cv-print"
@@ -374,9 +480,15 @@ export default function DashboardSitePage() {
             <code className="rounded bg-muted px-1 py-0.5 font-mono text-[10px]">Home | Notebook</code>{" "}
             (Lucide).
           </p>
+          </>
+          ) : null}
         </div>
-        <SiteVisibilityControls data={siteData} onChange={setSiteData} />
-        <SiteWorkProjectsEditor data={siteData} onChange={setSiteData} />
+        {siteEditorTab === "profile" ? (
+          <SiteWorkProjectsEditor data={siteData} onChange={setSiteData} editorMode="profile" />
+        ) : null}
+        {siteEditorTab === "career" ? (
+          <SiteWorkProjectsEditor data={siteData} onChange={setSiteData} editorMode="career" />
+        ) : null}
       </div>
       <div id="site-preview" className="min-w-0 scroll-mt-28 xl:sticky xl:top-6">
         <SitePreviewPanel data={siteData} />

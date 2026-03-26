@@ -16,7 +16,8 @@ const fontSans = FontSans({
 
 export async function generateMetadata(): Promise<Metadata> {
   const data = await getMergedSiteData();
-  const base = data.url.trim();
+  const envBase = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  const base = (envBase || data.url).trim();
   let metadataBase: URL;
   try {
     metadataBase = new URL(base.endsWith("/") ? base : `${base}/`);

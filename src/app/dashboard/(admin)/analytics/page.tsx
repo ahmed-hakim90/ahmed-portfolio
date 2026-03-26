@@ -1,4 +1,11 @@
 import { PlatformActivityChart } from "@/components/analytics/platform-activity-chart";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { getAdminSession } from "@/lib/admin-request";
 import { getPlatformAnalyticsSnapshot } from "@/lib/platform-analytics";
 import {
@@ -54,113 +61,113 @@ export default async function PlatformAnalyticsPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <article className="rounded-xl border border-border bg-card p-5 shadow-sm">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                أجهزة (موقع عام)
-              </p>
-              <p className="mt-2 text-3xl font-semibold tabular-nums text-foreground">
+        <Card className="shadow-sm">
+          <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+            <div className="space-y-1">
+              <CardDescription>أجهزة (موقع عام)</CardDescription>
+              <CardTitle className="text-3xl font-semibold tabular-nums">
                 {fmt(data.uniqueDevicesPublic)}
-              </p>
-              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                أول زيارة مسجّلة لكل متصفح (معرّف محلي).
-              </p>
+              </CardTitle>
             </div>
             <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
               <Globe className="size-5" aria-hidden />
             </span>
-          </div>
-        </article>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground">
+              أول زيارة مسجّلة لكل متصفح (معرّف محلي).
+            </p>
+          </CardContent>
+        </Card>
 
-        <article className="rounded-xl border border-border bg-card p-5 shadow-sm">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                أجهزة (لوحة التحكم)
-              </p>
-              <p className="mt-2 text-3xl font-semibold tabular-nums text-foreground">
+        <Card className="shadow-sm">
+          <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+            <div className="space-y-1">
+              <CardDescription>أجهزة (لوحة التحكم)</CardDescription>
+              <CardTitle className="text-3xl font-semibold tabular-nums">
                 {fmt(data.uniqueDevicesDashboard)}
-              </p>
-              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                أول دخول مسجّل للوحة بعد تسجيل الدخول.
-              </p>
+              </CardTitle>
             </div>
             <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
               <LayoutDashboard className="size-5" aria-hidden />
             </span>
-          </div>
-        </article>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground">
+              أول دخول مسجّل للوحة بعد تسجيل الدخول.
+            </p>
+          </CardContent>
+        </Card>
 
-        <article className="rounded-xl border border-border bg-card p-5 shadow-sm">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                نقرات طباعة السيرة
-              </p>
-              <p className="mt-2 text-3xl font-semibold tabular-nums text-foreground">
+        <Card className="shadow-sm">
+          <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+            <div className="space-y-1">
+              <CardDescription>نقرات طباعة السيرة</CardDescription>
+              <CardTitle className="text-3xl font-semibold tabular-nums">
                 {fmt(data.totalPrintClicks)}
-              </p>
-              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                زر Print / Save PDF في صفحة طباعة السيرة.
-              </p>
+              </CardTitle>
             </div>
             <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
               <Printer className="size-5" aria-hidden />
             </span>
-          </div>
-        </article>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground">
+              زر Print / Save PDF في صفحة طباعة السيرة.
+            </p>
+          </CardContent>
+        </Card>
 
-        <article className="rounded-xl border border-border bg-card p-5 shadow-sm sm:col-span-2 xl:col-span-1">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                الحسابات
-              </p>
-              <p className="mt-2 text-3xl font-semibold tabular-nums text-foreground">
+        <Card className="shadow-sm sm:col-span-2 xl:col-span-1">
+          <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+            <div className="space-y-1">
+              <CardDescription>الحسابات</CardDescription>
+              <CardTitle className="text-3xl font-semibold tabular-nums">
                 {fmt(data.totalAccounts)}
-              </p>
-              <dl className="mt-3 space-y-1 text-xs text-muted-foreground">
-                <div className="flex justify-between gap-4">
-                  <dt>عملاء</dt>
-                  <dd className="font-medium tabular-nums text-foreground">
-                    {fmt(data.clientAccounts)}
-                  </dd>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <dt>عملاء نشطون (غير معطّلين)</dt>
-                  <dd className="font-medium tabular-nums text-foreground">
-                    {fmt(data.activeClientAccounts)}
-                  </dd>
-                </div>
-              </dl>
+              </CardTitle>
             </div>
             <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
               <Users className="size-5" aria-hidden />
             </span>
-          </div>
-        </article>
+          </CardHeader>
+          <CardContent>
+            <dl className="space-y-1 text-xs text-muted-foreground">
+              <div className="flex justify-between gap-4">
+                <dt>عملاء</dt>
+                <dd className="font-medium tabular-nums text-foreground">
+                  {fmt(data.clientAccounts)}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt>عملاء نشطون (غير معطّلين)</dt>
+                <dd className="font-medium tabular-nums text-foreground">
+                  {fmt(data.activeClientAccounts)}
+                </dd>
+              </div>
+            </dl>
+          </CardContent>
+        </Card>
 
-        <article className="rounded-xl border border-border bg-card p-5 shadow-sm sm:col-span-2">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                مواقع حُفظ محتواها من المحرر
-              </p>
-              <p className="mt-2 text-3xl font-semibold tabular-nums text-foreground">
+        <Card className="shadow-sm sm:col-span-2">
+          <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+            <div className="space-y-1">
+              <CardDescription>مواقع حُفظ محتواها من المحرر</CardDescription>
+              <CardTitle className="text-3xl font-semibold tabular-nums">
                 {fmt(data.sitesSavedFromEditor)}
-              </p>
-              <p className="mt-2 max-w-xl text-xs leading-relaxed text-muted-foreground">
-                عدد مستندات <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">sites</code>{" "}
-                التي مرّ عليها حفظ واحد على الأقل من صفحة المحرر (PUT). التلقائي
-                عند أول تحميل بدون حفظ لا يُحسب.
-              </p>
+              </CardTitle>
             </div>
             <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
               <MousePointerClick className="size-5" aria-hidden />
             </span>
-          </div>
-        </article>
+          </CardHeader>
+          <CardContent>
+            <p className="max-w-xl text-xs text-muted-foreground">
+              عدد مستندات <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">sites</code>{" "}
+              التي مرّ عليها حفظ واحد على الأقل من صفحة المحرر (PUT). التلقائي
+              عند أول تحميل بدون حفظ لا يُحسب.
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="flex items-center gap-2 text-sm text-muted-foreground">

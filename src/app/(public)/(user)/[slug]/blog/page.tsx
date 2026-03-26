@@ -1,13 +1,40 @@
 import BlurFade from "@/components/magicui/blur-fade";
 import { getBlogPostsForUser } from "@/data/blog";
 import { getAdminUserBySlug } from "@/lib/admin-users";
+import { getMergedSiteDataForUser } from "@/lib/site-data";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-export const metadata = {
-  title: "Blog",
-  description: "Posts",
-};
+function publicOrigin(): string {
+  return process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "";
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string };
+}): Promise<Metadata> {
+  const user = await getAdminUserBySlug(params.slug);
+  if (!user || user.disabled) return { title: "Blog" };
+  const site = await getMergedSiteDataForUser(user.id);
+  const posts = await getBlogPostsForUser(user.id);
+  const base = publicOrigin();
+  const pageUrl = base ? `${base}/${user.slug}/blog` : undefined;
+  const latest = posts[0]?.metadata;
+  const description =
+    latest?.summary?.trim().slice(0, 160) ||
+    `مقالات ${site.name.trim()} — ${posts.length} منشوراً`;
+  return {
+    title: `المدونة | ${site.name.trim()}`,
+    description,
+    alternates: pageUrl ? { canonical: pageUrl } : undefined,
+    openGraph: pageUrl
+      ? { title: `المدونة | ${site.name.trim()}`, description, url: pageUrl }
+      : undefined,
+    robots: { index: true, follow: true },
+  };
+}
 
 const BLUR_FADE_DELAY = 0.04;
 

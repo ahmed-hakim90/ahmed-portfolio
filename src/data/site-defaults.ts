@@ -11,6 +11,17 @@ export type ProjectLinkIconKey = "globe" | "github";
 
 export type NavLucideIcon = "Home" | "Notebook";
 
+/** Visual preset for public portfolio (light/dark still from theme toggle). */
+export type PortfolioThemePreset =
+  | "default"
+  | "neutral"
+  | "blue"
+  | "warm"
+  | "forest";
+
+/** Text direction for public portfolio + user blog + CV print preview. */
+export type PortfolioTextDirection = "rtl" | "ltr";
+
 export type PublicControls = {
   routes: {
     blog: { enabled: boolean };
@@ -18,6 +29,14 @@ export type PublicControls = {
   ui: {
     dockMenu: boolean;
     themeToggle: boolean;
+    /** Accent / palette preset for the public portfolio page. */
+    themePreset: PortfolioThemePreset;
+    /** Document direction for portfolio content (not the dashboard). */
+    portfolioDir: PortfolioTextDirection;
+    /**
+     * BCP 47 language tag (e.g. ar, en). Used on `lang` for SEO and typography.
+     */
+    portfolioLang: string;
   };
   /** Show/hide main portfolio blocks (hero, about, work, …). */
   portfolioSections: {
@@ -56,6 +75,13 @@ export interface SiteJson {
   description: string;
   summary: string;
   avatarUrl: string;
+  /**
+   * Hero line before the first word of `name` (e.g. "Hi, I'm" or "مرحبا، أنا").
+   * Shown as: `{heroGreetingLead} {firstName} {heroGreetingEmoji}`.
+   */
+  heroGreetingLead?: string;
+  /** Suffix after the first name in the hero; often an emoji. Empty string hides it. */
+  heroGreetingEmoji?: string;
   skills: string[];
   /** Optional overrides for the public "Contact / Get in Touch" block. */
   contactSection?: {

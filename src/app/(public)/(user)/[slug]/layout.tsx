@@ -1,6 +1,7 @@
 import Navbar from "@/components/navbar";
 import { SiteTopBar } from "@/components/site-top-bar";
 import { getAdminUserBySlug } from "@/lib/admin-users";
+import { getPortfolioHtmlAttrs } from "@/lib/portfolio-display";
 import { getEffectiveSiteJsonForUser } from "@/lib/site-data";
 import { withSlugPrefix } from "@/lib/slug-nav";
 import { cn } from "@/lib/utils";
@@ -20,14 +21,18 @@ export default async function UserSlugLayout({
     ...item,
     href: withSlugPrefix(user.slug, item.href),
   }));
+  const { dir, lang } = getPortfolioHtmlAttrs(json.publicControls.ui);
   return (
     <>
       <SiteTopBar />
       <div
+        dir={dir}
+        lang={lang}
         className={cn(
-          "mx-auto w-full max-w-2xl pt-12 pb-24",
+          "mx-auto w-full max-w-2xl pt-12 pb-24 [unicode-bidi:isolate]",
           "print:max-w-none print:pb-0 print:pt-0",
         )}
+        data-portfolio-theme={json.publicControls.ui.themePreset ?? "default"}
       >
         {children}
       </div>

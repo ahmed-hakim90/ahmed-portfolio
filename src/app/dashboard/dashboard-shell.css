@@ -1,0 +1,14 @@
+/* Dashboard-only: aligned with marketing Folio tokens without touching `/` landing */
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap");
+
+.dashboard-shell-root {
+  direction: rtl;
+  font-family: "IBM Plex Sans Arabic", var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  /* Match Folio --folio-r (12px) for cards/buttons under this subtree */
+  --radius: 0.75rem;
+  background-image: radial-gradient(
+    ellipse 120% 80% at 50% -20%,
+    hsl(var(--muted) / 0.35),
+    transparent 55%
+  );
+}

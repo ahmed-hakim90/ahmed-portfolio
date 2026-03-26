@@ -48,7 +48,7 @@ export default function NewBlogPostPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-4">
         <Button variant="ghost" size="sm" asChild>
-          <Link href="/dashboard/blog">← Back</Link>
+          <Link href="/dashboard/blog">← كل المقالات</Link>
         </Button>
         <h1 className="text-xl font-semibold tracking-tight">New post</h1>
       </div>

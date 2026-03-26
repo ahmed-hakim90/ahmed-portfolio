@@ -3,6 +3,7 @@
 import Navbar from "@/components/navbar";
 import { PortfolioHomeView } from "@/components/portfolio-home-view";
 import type { SiteJson } from "@/data/site-defaults";
+import { getPortfolioHtmlAttrs } from "@/lib/portfolio-display";
 import { hydrateSiteJson, mergeSiteJsonForSave } from "@/lib/site-hydrate";
 import { useMemo } from "react";
 
@@ -14,6 +15,7 @@ export function SitePreviewPanel({ data }: Props) {
   const mergedData = useMemo(() => {
     return hydrateSiteJson(mergeSiteJsonForSave(data));
   }, [data]);
+  const { dir, lang } = getPortfolioHtmlAttrs(mergedData.publicControls.ui);
 
   return (
     <div className="rounded-lg border border-border bg-background">
@@ -21,7 +23,11 @@ export function SitePreviewPanel({ data }: Props) {
         Live preview (unsaved changes)
       </div>
       <div className="max-h-[min(85vh,920px)] overflow-y-auto overscroll-contain">
-        <div className="mx-auto w-full max-w-2xl px-4 pt-6 pb-24">
+        <div
+          className="mx-auto w-full max-w-2xl px-4 pt-6 pb-24 [unicode-bidi:isolate]"
+          dir={dir}
+          lang={lang}
+        >
           <PortfolioHomeView data={mergedData} />
         </div>
         <Navbar

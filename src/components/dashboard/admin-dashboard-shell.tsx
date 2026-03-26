@@ -8,18 +8,18 @@ import {
   BarChart3,
   ChevronDown,
   ExternalLink,
-  Eye,
   FileText,
   LayoutDashboard,
   Menu,
   Pencil,
   Plus,
+  Settings,
   Users,
   X,
 } from "lucide-react";
 import { scrollToSiteEditorSection } from "@/lib/site-editor-scroll";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   createContext,
   useCallback,
@@ -52,41 +52,29 @@ function navActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-/** Anchor targets on `/dashboard/site` — keep in sync with section `id`s on that page. */
-const SITE_EDITOR_GROUPS: {
-  title: string;
-  items: { hash: string; label: string }[];
+/**
+ * Flat jump list for the site editor (no accordion).
+ * `page: "site"` → ids on `/dashboard/site` + `site-work-projects-editor`.
+ * `page: "settings"` → id on `/dashboard/settings` (visibility block).
+ */
+const SITE_EDITOR_ANCHORS: {
+  hash: string;
+  label: string;
+  page: "site" | "settings";
 }[] = [
-  {
-    title: "الرابط والإعدادات",
-    items: [
-      { hash: "site-public-link", label: "الرابط العام" },
-      { hash: "site-visibility", label: "الظهور والتبويبات" },
-    ],
-  },
-  {
-    title: "البطاقة والتواصل",
-    items: [
-      { hash: "site-profile", label: "الملف والبطاقة" },
-      { hash: "site-skills", label: "المهارات" },
-      { hash: "site-contact", label: "بيانات التواصل" },
-      { hash: "site-social", label: "الشبكات الاجتماعية" },
-      { hash: "site-get-in-touch", label: "قسم التواصل" },
-    ],
-  },
-  {
-    title: "السيرة والمشاريع",
-    items: [
-      { hash: "site-about-me", label: "نبذة عني" },
-      { hash: "site-custom-sections", label: "أقسام إضافية" },
-      { hash: "site-education", label: "التعليم" },
-      { hash: "site-work", label: "الخبرة العملية" },
-      { hash: "site-projects", label: "المشاريع" },
-    ],
-  },
+  // { hash: "site-public-link", label: "الرابط العام", page: "site" },
+  // { hash: "site-visibility", label: "الظهور والتبويبات", page: "settings" },
+  // { hash: "site-profile", label: "الملف والبطاقة", page: "site" },
+  // { hash: "site-skills", label: "المهارات", page: "site" },
+  // { hash: "site-contact", label: "بيانات التواصل", page: "site" },
+  // { hash: "site-social", label: "الشبكات الاجتماعية", page: "site" },
+  // { hash: "site-get-in-touch", label: "قسم التواصل", page: "site" },
+  // { hash: "site-about-me", label: "نبذة عني", page: "site" },
+  // { hash: "site-custom-sections", label: "أقسام إضافية", page: "site" },
+  // { hash: "site-education", label: "التعليم", page: "site" },
+  // { hash: "site-work", label: "الخبرة العملية", page: "site" },
+  // { hash: "site-projects", label: "المشاريع", page: "site" },
 ];
-
-const SITE_PREVIEW_ANCHOR = { hash: "site-preview", label: "المعاينة" } as const;
 
 function anchorLinkClass(active: boolean) {
   return cn(
@@ -111,6 +99,8 @@ function SidebarContent({
   onNavigate?: () => void;
 }) {
   const [routeHash, setRouteHash] = useState("");
+  const [blogListOpen, setBlogListOpen] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const sync = () => setRouteHash(window.location.hash.replace(/^#/, ""));
@@ -140,70 +130,61 @@ function SidebarContent({
               المحرر
             </Link>
             {onSite ? (
-              <div className="mt-2 space-y-1 border-s border-border ps-2 ms-2">
-                {SITE_EDITOR_GROUPS.map((group) => (
-                  <details
-                    key={group.title}
-                    className="group rounded-md border border-border/60 bg-muted/25"
-                  >
-                    <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-2 rounded-md px-2 py-2 text-[11px] font-medium text-muted-foreground touch-manipulation md:min-h-0 md:py-1.5 [&::-webkit-details-marker]:hidden">
-                      <span>{group.title}</span>
-                      <ChevronDown
-                        className="size-3.5 shrink-0 opacity-70 transition-transform duration-200 group-open:rotate-180"
-                        aria-hidden
-                      />
-                    </summary>
-                    <ul className="flex flex-col gap-px pb-2 pe-1 ps-1">
-                      {group.items.map(({ hash, label }) => {
-                        const active = routeHash === hash;
-                        return (
-                          <li key={hash}>
-                            <Link
-                              href={`/dashboard/site#${hash}`}
-                              className={anchorLinkClass(active)}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                setRouteHash(hash);
-                                onNavigate?.();
-                                window.requestAnimationFrame(() => {
-                                  scrollToSiteEditorSection(hash);
-                                });
-                              }}
-                            >
-                              {label}
-                            </Link>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </details>
-                ))}
-                <Link
-                  href={`/dashboard/site#${SITE_PREVIEW_ANCHOR.hash}`}
-                  className={cn(
-                    "flex min-h-10 touch-manipulation items-center gap-2 rounded-md px-3 py-2 text-xs transition-colors md:min-h-0 md:px-2 md:py-1.5",
-                    routeHash === SITE_PREVIEW_ANCHOR.hash
-                      ? "bg-muted font-medium text-foreground"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                  )}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setRouteHash(SITE_PREVIEW_ANCHOR.hash);
-                    onNavigate?.();
-                    window.requestAnimationFrame(() => {
-                      scrollToSiteEditorSection(SITE_PREVIEW_ANCHOR.hash);
-                    });
-                  }}
-                >
-                  <Eye className="size-3.5 shrink-0 opacity-70" aria-hidden />
-                  {SITE_PREVIEW_ANCHOR.label}
-                </Link>
+              <div className="mt-2 max-h-[min(52dvh,420px)] space-y-0.5 overflow-y-auto overscroll-y-contain border-s border-border ps-2 ms-2 md:max-h-[min(60vh,480px)]">
+                {SITE_EDITOR_ANCHORS.map(({ hash, label, page }) => {
+                  const active =
+                    routeHash === hash &&
+                    (page === "settings"
+                      ? pathname.startsWith("/dashboard/settings")
+                      : pathname.startsWith("/dashboard/site"));
+                  if (page === "settings") {
+                    return (
+                      <Link
+                        key={hash}
+                        href={`/dashboard/settings#${hash}`}
+                        className={anchorLinkClass(active)}
+                        onClick={() => {
+                          setRouteHash(hash);
+                          onNavigate?.();
+                        }}
+                      >
+                        {label}
+                      </Link>
+                    );
+                  }
+                  return (
+                    <Link
+                      key={hash}
+                      href={`/dashboard/site#${hash}`}
+                      className={anchorLinkClass(active)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setRouteHash(hash);
+                        onNavigate?.();
+                        if (!pathname.startsWith("/dashboard/site")) {
+                          router.push("/dashboard/site");
+                          window.setTimeout(() => scrollToSiteEditorSection(hash), 200);
+                          return;
+                        }
+                        window.requestAnimationFrame(() => {
+                          scrollToSiteEditorSection(hash);
+                        });
+                      }}
+                    >
+                      {label}
+                    </Link>
+                  );
+                })}
               </div>
             ) : null}
           </div>
           <Link href="/dashboard/blog" className={linkClass("/dashboard/blog")} onClick={onNavigate}>
             <FileText className="size-4 shrink-0 opacity-70" aria-hidden />
             المدونة
+          </Link>
+          <Link href="/dashboard/settings" className={linkClass("/dashboard/settings")} onClick={onNavigate}>
+            <Settings className="size-4 shrink-0 opacity-70" aria-hidden />
+            الإعدادات
           </Link>
           {isOwner ? (
             <>
@@ -250,47 +231,68 @@ function SidebarContent({
         <p className="mb-2 truncate px-0.5 font-mono text-[11px] text-muted-foreground" title={publicBlogUrl}>
           {publicBlogUrl}
         </p>
-        <div className="max-h-[min(240px,min(38dvh,42svh))] overflow-y-auto overscroll-y-contain rounded-md border border-border bg-background/80 md:max-h-[min(280px,38vh)]">
-          {blogPosts.length === 0 ? (
-            <p className="p-3 text-xs text-muted-foreground">لا توجد مقالات بعد.</p>
-          ) : (
-            <ul className="divide-y divide-border">
-              {blogPosts.map((p) => {
-                const publicPostUrl = `${publicBlogUrl}/${encodeURIComponent(p.slug)}`;
-                return (
-                  <li key={p.slug} className="p-2">
-                    <p className="truncate text-sm font-medium leading-snug" title={p.title || p.slug}>
-                      {p.title || p.slug}
-                    </p>
-                    {p.publishedAt ? (
-                      <p className="truncate text-[11px] text-muted-foreground">{p.publishedAt}</p>
-                    ) : null}
-                    <div className="mt-1.5 flex flex-wrap gap-2">
-                      <Link
-                        href={`/dashboard/blog/${encodeURIComponent(p.slug)}`}
-                        className="inline-flex items-center gap-1 text-xs text-primary underline-offset-4 hover:underline"
-                        onClick={onNavigate}
-                      >
-                        <Pencil className="size-3" aria-hidden />
-                        تحرير
-                      </Link>
-                      <Link
-                        href={publicPostUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs text-muted-foreground underline-offset-4 hover:underline"
-                        onClick={onNavigate}
-                      >
-                        <ExternalLink className="size-3" aria-hidden />
-                        عرض عام
-                      </Link>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
+        <button
+          type="button"
+          className="mb-2 flex w-full min-h-10 items-center justify-between gap-2 rounded-md border border-border/60 bg-background/80 px-2 py-2 text-start text-[11px] font-medium text-muted-foreground touch-manipulation hover:bg-muted/50 md:min-h-0 md:py-1.5"
+          aria-expanded={blogListOpen}
+          onClick={() => setBlogListOpen((o) => !o)}
+        >
+          <span>قائمة المقالات هنا ({blogPosts.length})</span>
+          <ChevronDown
+            className={cn(
+              "size-3.5 shrink-0 opacity-70 transition-transform duration-200",
+              blogListOpen && "rotate-180",
+            )}
+            aria-hidden
+          />
+        </button>
+        {blogListOpen ? (
+          <div className="max-h-[min(200px,32dvh)] overflow-y-auto overscroll-y-contain rounded-md border border-border bg-background/80 md:max-h-[min(240px,32vh)]">
+            {blogPosts.length === 0 ? (
+              <p className="p-3 text-xs text-muted-foreground">لا توجد مقالات بعد.</p>
+            ) : (
+              <ul className="divide-y divide-border">
+                {blogPosts.map((p) => {
+                  const publicPostUrl = `${publicBlogUrl}/${encodeURIComponent(p.slug)}`;
+                  return (
+                    <li key={p.slug} className="p-2">
+                      <p className="truncate text-sm font-medium leading-snug" title={p.title || p.slug}>
+                        {p.title || p.slug}
+                      </p>
+                      {p.publishedAt ? (
+                        <p className="truncate text-[11px] text-muted-foreground">{p.publishedAt}</p>
+                      ) : null}
+                      <div className="mt-1.5 flex flex-wrap gap-2">
+                        <Link
+                          href={`/dashboard/blog/${encodeURIComponent(p.slug)}`}
+                          className="inline-flex items-center gap-1 text-xs text-primary underline-offset-4 hover:underline"
+                          onClick={onNavigate}
+                        >
+                          <Pencil className="size-3" aria-hidden />
+                          تحرير
+                        </Link>
+                        <Link
+                          href={publicPostUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs text-muted-foreground underline-offset-4 hover:underline"
+                          onClick={onNavigate}
+                        >
+                          <ExternalLink className="size-3" aria-hidden />
+                          عرض عام
+                        </Link>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        ) : (
+          <p className="px-0.5 text-[10px] leading-relaxed text-muted-foreground">
+            القائمة الكاملة في صفحة «المدونة». افتح القائمة هنا عند الحاجة.
+          </p>
+        )}
       </div>
 
       <Separator />
@@ -301,7 +303,7 @@ function SidebarContent({
           className="flex min-h-11 touch-manipulation items-center rounded-md px-3 py-2.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground md:min-h-0 md:px-2 md:py-1.5"
           onClick={onNavigate}
         >
-          عرض المحفظة
+          عرض مثال
         </Link>
         {isOwner ? (
           <Link
