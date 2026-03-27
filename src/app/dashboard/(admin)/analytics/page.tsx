@@ -1,3 +1,4 @@
+import { AnalyticsSparkline } from "@/components/analytics/analytics-sparkline";
 import { PlatformActivityChart } from "@/components/analytics/platform-activity-chart";
 import {
   Card,
@@ -10,6 +11,7 @@ import { getAdminSession } from "@/lib/admin-request";
 import { getPlatformAnalyticsSnapshot } from "@/lib/platform-analytics";
 import {
   BarChart3,
+  FileDown,
   Globe,
   LayoutDashboard,
   MousePointerClick,
@@ -73,7 +75,12 @@ export default async function PlatformAnalyticsPage() {
               <Globe className="size-5" aria-hidden />
             </span>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-2">
+            <AnalyticsSparkline
+              rows={data.dailyActivity}
+              dataKey="publicPings"
+              color="hsl(var(--muted-foreground))"
+            />
             <p className="text-xs text-muted-foreground">
               أول زيارة مسجّلة لكل متصفح (معرّف محلي).
             </p>
@@ -92,7 +99,12 @@ export default async function PlatformAnalyticsPage() {
               <LayoutDashboard className="size-5" aria-hidden />
             </span>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-2">
+            <AnalyticsSparkline
+              rows={data.dailyActivity}
+              dataKey="dashboardPings"
+              color="hsl(var(--primary))"
+            />
             <p className="text-xs text-muted-foreground">
               أول دخول مسجّل للوحة بعد تسجيل الدخول.
             </p>
@@ -111,9 +123,38 @@ export default async function PlatformAnalyticsPage() {
               <Printer className="size-5" aria-hidden />
             </span>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-2">
+            <AnalyticsSparkline
+              rows={data.dailyActivity}
+              dataKey="prints"
+              color="#d97706"
+            />
             <p className="text-xs text-muted-foreground">
               زر Print / Save PDF في صفحة طباعة السيرة.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm">
+          <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+            <div className="space-y-1">
+              <CardDescription>تحميلات السيرة (PDF)</CardDescription>
+              <CardTitle className="text-3xl font-semibold tabular-nums">
+                {fmt(data.totalPdfDownloads)}
+              </CardTitle>
+            </div>
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+              <FileDown className="size-5" aria-hidden />
+            </span>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <AnalyticsSparkline
+              rows={data.dailyActivity}
+              dataKey="pdfDownloads"
+              color="#0284c7"
+            />
+            <p className="text-xs text-muted-foreground">
+              زر Download CV من صفحة المحفظة العامة.
             </p>
           </CardContent>
         </Card>

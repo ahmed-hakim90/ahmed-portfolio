@@ -2,14 +2,110 @@
 
 import { DriveUrlField } from "@/components/dashboard/drive-url-field";
 import { Button } from "@/components/ui/button";
-import type {
-  CustomPortfolioSection,
-  ProjectLinkIconKey,
-  SiteJson,
-  SocialIconKey,
+import { Switch } from "@/components/ui/switch";
+import {
+  DEFAULT_SITE_JSON,
+  type CustomPortfolioSection,
+  type ProjectLinkIconKey,
+  type SiteJson,
+  type SiteTestimonial,
+  type SocialIconKey,
 } from "@/data/site-defaults";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+
+type PortfolioSectionKey = keyof typeof DEFAULT_SITE_JSON.publicControls.portfolioSections;
+
+function mergedPortfolioSections(data: SiteJson) {
+  return {
+    ...DEFAULT_SITE_JSON.publicControls.portfolioSections,
+    ...data.publicControls?.portfolioSections,
+  };
+}
+
+function setPortfolioSectionVisibility(
+  apply: (fn: (j: SiteJson) => void) => void,
+  sectionKey: PortfolioSectionKey,
+  v: boolean,
+) {
+  apply((j) => {
+    j.publicControls = {
+      ...DEFAULT_SITE_JSON.publicControls,
+      ...j.publicControls,
+      portfolioSections: {
+        ...DEFAULT_SITE_JSON.publicControls.portfolioSections,
+        ...j.publicControls?.portfolioSections,
+        [sectionKey]: v,
+      },
+    };
+  });
+}
+
+function SectionVisibilityToggle({
+  sectionKey,
+  label,
+  data,
+  apply,
+}: {
+  sectionKey: PortfolioSectionKey;
+  label: string;
+  data: SiteJson;
+  apply: (fn: (j: SiteJson) => void) => void;
+}) {
+  const merged = mergedPortfolioSections(data);
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-background/80 px-3 py-2 sm:col-span-2">
+      <span className="text-xs font-medium leading-snug text-muted-foreground">
+        {label}
+      </span>
+      <Switch
+        id={`pv-${sectionKey}`}
+        checked={merged[sectionKey]}
+        onCheckedChange={(v) =>
+          setPortfolioSectionVisibility(apply, sectionKey, v)
+        }
+      />
+    </div>
+  );
+}
+
+function SectionHeaderWithVisibility({
+  title,
+  description,
+  sectionKey,
+  toggleLabel = "إظهار في الموقع",
+  data,
+  apply,
+}: {
+  title: string;
+  description?: string;
+  sectionKey: PortfolioSectionKey;
+  toggleLabel?: string;
+  data: SiteJson;
+  apply: (fn: (j: SiteJson) => void) => void;
+}) {
+  const merged = mergedPortfolioSections(data);
+  return (
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="min-w-0 flex-1">
+        <h2 className="text-sm font-semibold tracking-tight">{title}</h2>
+        {description ? (
+          <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+        ) : null}
+      </div>
+      <label className="flex shrink-0 cursor-pointer items-center gap-2 rounded-md border border-border bg-background px-2 py-1.5">
+        <span className="text-[11px] text-muted-foreground">{toggleLabel}</span>
+        <Switch
+          id={`pv-head-${sectionKey}`}
+          checked={merged[sectionKey]}
+          onCheckedChange={(v) =>
+            setPortfolioSectionVisibility(apply, sectionKey, v)
+          }
+        />
+      </label>
+    </div>
+  );
+}
 
 const ICON_OPTIONS: ProjectLinkIconKey[] = ["globe", "github"];
 const SOCIAL_ICON_OPTIONS: SocialIconKey[] = [
@@ -18,11 +114,19 @@ const SOCIAL_ICON_OPTIONS: SocialIconKey[] = [
   "x",
   "youtube",
   "email",
+  "whatsapp",
 ];
 const EMPTY_WORK: SiteJson["work"][number] = { company: "", href: "", badges: [], location: "", title: "", logoUrl: "", start: "", end: "", description: "" };
 const EMPTY_PROJECT: SiteJson["projects"][number] = { title: "", href: "", dates: "", active: true, description: "", technologies: [], links: [], image: "", video: "" };
 const EMPTY_LINK: SiteJson["projects"][number]["links"][number] = { type: "Website", href: "", icon: "globe" };
 const EMPTY_EDUCATION: SiteJson["education"][number] = { school: "", href: "", degree: "", logoUrl: "", start: "", end: "" };
+const EMPTY_TESTIMONIAL: SiteTestimonial = {
+  name: "",
+  role: "",
+  company: "",
+  text: "",
+  avatar: "",
+};
 
 function fieldClass() {
   return "w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs";
@@ -140,9 +244,14 @@ export function SiteWorkProjectsEditor({
       {showProfile ? (
       <>
       <div id="site-profile" className="scroll-mt-28 space-y-4">
-        <div>
-          <h2 className="text-sm font-semibold tracking-tight">الملف والبطاقة</h2>
-        </div>
+        <SectionHeaderWithVisibility
+          title="الملف والبطاقة"
+          description="الهيرو: الاسم، المقدمة، الصورة، الترحيب، شارة التوفر."
+          sectionKey="hero"
+          toggleLabel="إظهار الهيرو"
+          data={data}
+          apply={apply}
+        />
         <div className="grid gap-2 sm:grid-cols-2">
         <div className="space-y-1"><label className="text-xs text-muted-foreground">Name</label><input className={fieldClass()} value={data.name} onChange={(e) => apply((j) => { j.name = e.target.value; })} /></div>
         <div className="space-y-1"><label className="text-xs text-muted-foreground">Initials</label><input className={fieldClass()} value={data.initials} onChange={(e) => apply((j) => { j.initials = e.target.value; })} /></div>
@@ -181,18 +290,57 @@ export function SiteWorkProjectsEditor({
             </div>
           </div>
         </div>
+        <div className="space-y-1 sm:col-span-2 rounded-md border border-border/60 bg-background/50 p-3">
+          <p className="text-xs font-medium text-muted-foreground">شارة التوفر (أعلى الهيرو)</p>
+          <p className="mb-2 text-[10px] text-muted-foreground">
+            تشغيل/إيقاف الشارة من{" "}
+            <span className="font-medium">الإعدادات → الظهور والتبويبات</span>. هنا تكتب
+            نص الحالة كما يظهر للزوار.
+          </p>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground" htmlFor="available-for-work-badge">
+              نص الشارة
+            </label>
+            <input
+              id="available-for-work-badge"
+              className={fieldClass()}
+              value={data.availableForWorkBadgeText ?? ""}
+              placeholder="متاح لمشاريع فريلانس"
+              onChange={(e) =>
+                apply((j) => {
+                  j.availableForWorkBadgeText = e.target.value;
+                })
+              }
+            />
+          </div>
+        </div>
         {/* <div className="space-y-1"><label className="text-xs text-muted-foreground">Portfolio URL</label><input className={fieldClass()} value={data.url} onChange={(e) => apply((j) => { j.url = e.target.value; })} /></div> */}
         <div className="space-y-1"><label className="text-xs text-muted-foreground">Avatar URL</label><input className={fieldClass()} value={data.avatarUrl} onChange={(e) => apply((j) => { j.avatarUrl = e.target.value; })} /></div>
         <div className="space-y-1"><label className="text-xs text-muted-foreground">Location</label><input className={fieldClass()} value={data.location} onChange={(e) => apply((j) => { j.location = e.target.value; })} /></div>
         <div className="space-y-1"><label className="text-xs text-muted-foreground">Location Link</label><input className={fieldClass()} value={data.locationLink} onChange={(e) => apply((j) => { j.locationLink = e.target.value; })} /></div>
+        <SectionVisibilityToggle
+          sectionKey="about"
+          label="إظهار قسم About (النبذة) في الصفحة العامة"
+          data={data}
+          apply={apply}
+        />
         <div className="space-y-1 sm:col-span-2"><label className="text-xs text-muted-foreground">Summary</label><textarea className={cn(fieldClass(), "min-h-[100px] resize-y")} value={data.summary} onChange={(e) => apply((j) => { j.summary = e.target.value; })} /></div>
         </div>
       </div>
 
-      <div id="site-skills" className="scroll-mt-28 border-t border-border pt-4"><h2 className="text-sm font-semibold tracking-tight">المهارات</h2><p className="mt-1 text-xs text-muted-foreground">اكتب مهارة ثم اضغط Enter.</p></div>
-      <div className="space-y-2">
-        <input className={fieldClass()} value={skillInput} placeholder="Type skill and press Enter" onChange={(e) => setSkillInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === ",") { e.preventDefault(); addSkillFromInput(); } }} />
-        <div className="flex flex-wrap gap-2">{data.skills.map((skill, i) => <span key={`${skill}-${i}`} className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2 py-1 text-xs">{skill}<button type="button" className="text-muted-foreground hover:text-destructive" onClick={() => apply((j) => { j.skills.splice(i, 1); })} aria-label={`Remove ${skill}`}>×</button></span>)}</div>
+      <div id="site-skills" className="scroll-mt-28 space-y-4 border-t border-border pt-4">
+        <SectionHeaderWithVisibility
+          title="المهارات"
+          description="اكتب مهارة ثم اضغط Enter."
+          sectionKey="skills"
+          toggleLabel="إظهار القسم"
+          data={data}
+          apply={apply}
+        />
+        <div className="space-y-2">
+          <input className={fieldClass()} value={skillInput} placeholder="Type skill and press Enter" onChange={(e) => setSkillInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === ",") { e.preventDefault(); addSkillFromInput(); } }} />
+          <div className="flex flex-wrap gap-2">{data.skills.map((skill, i) => <span key={`${skill}-${i}`} className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2 py-1 text-xs">{skill}<button type="button" className="text-muted-foreground hover:text-destructive" onClick={() => apply((j) => { j.skills.splice(i, 1); })} aria-label={`Remove ${skill}`}>×</button></span>)}</div>
+        </div>
       </div>
 
       <div id="site-contact" className="scroll-mt-28 border-t border-border pt-4"><h2 className="text-sm font-semibold tracking-tight">بيانات التواصل</h2></div>
@@ -281,11 +429,15 @@ export function SiteWorkProjectsEditor({
         ))}
       </div>
 
-      <div id="site-get-in-touch" className="scroll-mt-28 border-t border-border pt-4">
-        <h2 className="text-sm font-semibold tracking-tight">قسم التواصل</h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          اختياري. إذا تركت &quot;Body&quot; فارغة، يظهر النص الإنجليزي الافتراضي مع رابط LinkedIn حسب الإعدادات.
-        </p>
+      <div id="site-get-in-touch" className="scroll-mt-28 space-y-4 border-t border-border pt-4">
+        <SectionHeaderWithVisibility
+          title="قسم التواصل"
+          description='اختياري. إذا تركت "Body" فارغة، يظهر النص الإنجليزي الافتراضي مع رابط LinkedIn حسب الإعدادات.'
+          sectionKey="contact"
+          toggleLabel="إظهار القسم"
+          data={data}
+          apply={apply}
+        />
       </div>
       <div className="grid gap-2 sm:grid-cols-2">
         <div className="space-y-1">
@@ -340,13 +492,15 @@ export function SiteWorkProjectsEditor({
 
       {showCareer ? (
       <>
-      <div id="site-about-me" className="scroll-mt-28 border-t border-border pt-4">
-        <h2 className="text-sm font-semibold tracking-tight">نبذة عني (مميزة)</h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          القسم الموسّط قبل التواصل. لإخفائه بالكامل استخدم{" "}
-          <span className="font-medium">Public visibility → About Me (spotlight)</span>.
-          اترك الحقول فارغة لاستخدام النص الإنجليزي الافتراضي.
-        </p>
+      <div id="site-about-me" className="scroll-mt-28 space-y-4 border-t border-border pt-4">
+        <SectionHeaderWithVisibility
+          title="نبذة عني (مميزة)"
+          description="قبل التواصل في الصفحة العامة. اترك الحقول فارغة لاستخدام النص الإنجليزي الافتراضي."
+          sectionKey="aboutMe"
+          toggleLabel="إظهار القسم"
+          data={data}
+          apply={apply}
+        />
       </div>
       <div className="grid gap-2 sm:grid-cols-2">
         <div className="space-y-1">
@@ -517,13 +671,37 @@ export function SiteWorkProjectsEditor({
         </Button>
       </div>
 
-      <div id="site-education" className="scroll-mt-28 border-t border-border pt-4"><h2 className="text-sm font-semibold tracking-tight">التعليم</h2></div>
+      <div id="site-education" className="scroll-mt-28 space-y-4 border-t border-border pt-4">
+        <SectionHeaderWithVisibility
+          title="التعليم"
+          sectionKey="education"
+          toggleLabel="إظهار القسم"
+          data={data}
+          apply={apply}
+        />
+      </div>
       <div className="space-y-4">{data.education.map((ed, i) => <div key={`edu-${i}`} className="space-y-2 rounded-md border border-border bg-background p-3"><div className="flex flex-wrap items-center justify-between gap-2"><span className="text-xs font-medium text-muted-foreground">Education #{i + 1}</span><Button type="button" variant="destructive" size="sm" className="h-7 text-xs" onClick={() => apply((j) => { j.education.splice(i, 1); })}>Remove</Button></div><div className="grid gap-2 sm:grid-cols-2"><div className="space-y-1"><label className="text-xs text-muted-foreground">School</label><input className={fieldClass()} value={ed.school} onChange={(e) => apply((j) => { if (j.education[i]) j.education[i].school = e.target.value; })} /></div><div className="space-y-1"><label className="text-xs text-muted-foreground">Degree</label><input className={fieldClass()} value={ed.degree} onChange={(e) => apply((j) => { if (j.education[i]) j.education[i].degree = e.target.value; })} /></div><div className="space-y-1 sm:col-span-2"><label className="text-xs text-muted-foreground">School URL</label><input className={fieldClass()} value={ed.href} onChange={(e) => apply((j) => { if (j.education[i]) j.education[i].href = e.target.value; })} /></div><DriveUrlField id={`edu-logo-${i}`} label="Logo URL" value={ed.logoUrl} onChange={(v) => apply((j) => { if (j.education[i]) j.education[i].logoUrl = v; })} className="sm:col-span-2" /><div className="space-y-1"><label className="text-xs text-muted-foreground">Start</label><input className={fieldClass()} value={ed.start} onChange={(e) => apply((j) => { if (j.education[i]) j.education[i].start = e.target.value; })} /></div><div className="space-y-1"><label className="text-xs text-muted-foreground">End</label><input className={fieldClass()} value={ed.end} onChange={(e) => apply((j) => { if (j.education[i]) j.education[i].end = e.target.value; })} /></div></div></div>)}<Button type="button" variant="outline" size="sm" className="text-xs" onClick={() => apply((j) => { j.education.push({ ...EMPTY_EDUCATION }); })}>Add education</Button></div>
 
-      <div id="site-work" className="scroll-mt-28 border-t border-border pt-4"><h2 className="text-sm font-semibold tracking-tight">الخبرة العملية</h2></div>
+      <div id="site-work" className="scroll-mt-28 space-y-4 border-t border-border pt-4">
+        <SectionHeaderWithVisibility
+          title="الخبرة العملية"
+          sectionKey="work"
+          toggleLabel="إظهار القسم"
+          data={data}
+          apply={apply}
+        />
+      </div>
       <div className="space-y-4">{data.work.map((w, i) => <div key={`work-${i}`} className="space-y-2 rounded-md border border-border bg-background p-3"><div className="flex flex-wrap items-center justify-between gap-2"><span className="text-xs font-medium text-muted-foreground">Job #{i + 1}</span><Button type="button" variant="destructive" size="sm" className="h-7 text-xs" onClick={() => apply((j) => { j.work.splice(i, 1); })}>Remove</Button></div><div className="grid gap-2 sm:grid-cols-2"><div className="space-y-1"><label className="text-xs text-muted-foreground">Company</label><input className={fieldClass()} value={w.company} onChange={(e) => apply((j) => { if (j.work[i]) j.work[i].company = e.target.value; })} /></div><div className="space-y-1"><label className="text-xs text-muted-foreground">Title</label><input className={fieldClass()} value={w.title} onChange={(e) => apply((j) => { if (j.work[i]) j.work[i].title = e.target.value; })} /></div><div className="space-y-1 sm:col-span-2"><label className="text-xs text-muted-foreground">Company URL</label><input className={fieldClass()} value={w.href} onChange={(e) => apply((j) => { if (j.work[i]) j.work[i].href = e.target.value; })} /></div><DriveUrlField id={`work-logo-${i}`} label="Logo URL" value={w.logoUrl} onChange={(v) => apply((j) => { if (j.work[i]) j.work[i].logoUrl = v; })} className="sm:col-span-2" /><div className="space-y-1"><label className="text-xs text-muted-foreground">Start</label><input className={fieldClass()} value={w.start} onChange={(e) => apply((j) => { if (j.work[i]) j.work[i].start = e.target.value; })} /></div><div className="space-y-1"><label className="text-xs text-muted-foreground">End</label><input className={fieldClass()} value={w.end} onChange={(e) => apply((j) => { if (j.work[i]) j.work[i].end = e.target.value; })} /></div><div className="space-y-1"><label className="text-xs text-muted-foreground">Location</label><input className={fieldClass()} value={w.location} onChange={(e) => apply((j) => { if (j.work[i]) j.work[i].location = e.target.value; })} /></div><div className="space-y-1"><label className="text-xs text-muted-foreground">Badges (comma-separated)</label><input className={fieldClass()} value={w.badges.join(", ")} onChange={(e) => apply((j) => { if (!j.work[i]) return; j.work[i].badges = e.target.value.split(",").map((s) => s.trim()).filter(Boolean); })} /></div><div className="space-y-1 sm:col-span-2"><label className="text-xs text-muted-foreground">Description</label><textarea className={cn(fieldClass(), "min-h-[72px] resize-y")} value={w.description} onChange={(e) => apply((j) => { if (j.work[i]) j.work[i].description = e.target.value; })} /></div></div></div>)}<Button type="button" variant="outline" size="sm" className="text-xs" onClick={() => apply((j) => { j.work.push({ ...EMPTY_WORK }); })}>Add work experience</Button></div>
 
-      <div id="site-projects" className="scroll-mt-28 border-t border-border pt-4"><h2 className="text-sm font-semibold tracking-tight">المشاريع</h2></div>
+      <div id="site-projects" className="scroll-mt-28 space-y-4 border-t border-border pt-4">
+        <SectionHeaderWithVisibility
+          title="المشاريع"
+          sectionKey="projects"
+          toggleLabel="إظهار القسم"
+          data={data}
+          apply={apply}
+        />
+      </div>
       <div className="space-y-4">{data.projects.map((p, pi) => <div key={`proj-${pi}`} className="space-y-2 rounded-md border border-border bg-background p-3"><div className="flex flex-wrap items-center justify-between gap-2"><span className="text-xs font-medium text-muted-foreground">Project #{pi + 1}</span><Button type="button" variant="destructive" size="sm" className="h-7 text-xs" onClick={() => apply((j) => { j.projects.splice(pi, 1); })}>Remove</Button></div><div className="grid gap-2 sm:grid-cols-2"><div className="space-y-1"><label className="text-xs text-muted-foreground">Title</label><input className={fieldClass()} value={p.title} onChange={(e) => apply((j) => { if (j.projects[pi]) j.projects[pi].title = e.target.value; })} /></div><div className="space-y-1"><label className="text-xs text-muted-foreground">Main URL</label><input className={fieldClass()} value={p.href} onChange={(e) => apply((j) => { if (j.projects[pi]) j.projects[pi].href = e.target.value; })} /></div><div className="space-y-1"><label className="text-xs text-muted-foreground">Dates</label><input className={fieldClass()} value={p.dates ?? ""} onChange={(e) => apply((j) => { if (j.projects[pi]) j.projects[pi].dates = e.target.value; })} /></div><label className="flex items-center gap-2 text-xs text-muted-foreground"><input type="checkbox" className="size-4 accent-primary" checked={p.active} onChange={(e) => apply((j) => { if (j.projects[pi]) j.projects[pi].active = e.target.checked; })} />Active</label><DriveUrlField id={`proj-img-${pi}`} label="Image URL" value={p.image} onChange={(v) => apply((j) => { if (j.projects[pi]) j.projects[pi].image = v; })} className="sm:col-span-2" /><div className="space-y-1 sm:col-span-2"><label className="text-xs text-muted-foreground">Video URL</label><input className={fieldClass()} value={p.video} onChange={(e) => apply((j) => { if (j.projects[pi]) j.projects[pi].video = e.target.value; })} /></div><ProjectTechnologiesInput
                   technologies={p.technologies}
                   onChange={(next) =>
@@ -532,6 +710,162 @@ export function SiteWorkProjectsEditor({
                     })
                   }
                 /><div className="space-y-1 sm:col-span-2"><label className="text-xs text-muted-foreground">Description</label><textarea className={cn(fieldClass(), "min-h-[80px] resize-y")} value={p.description} onChange={(e) => apply((j) => { if (j.projects[pi]) j.projects[pi].description = e.target.value; })} /></div></div><div className="space-y-2 border-t border-dashed border-border pt-2"><p className="text-xs font-medium text-muted-foreground">Links</p>{(p.links ?? []).map((link, li) => <div key={`${pi}-link-${li}`} className="flex flex-wrap items-end gap-2"><div className="min-w-[100px] flex-1 space-y-1"><label className="text-[10px] text-muted-foreground">Label</label><input className={fieldClass()} value={link.type} onChange={(e) => apply((j) => { const L = j.projects[pi]?.links?.[li]; if (L) L.type = e.target.value; })} /></div><div className="min-w-[140px] flex-[2] space-y-1"><label className="text-[10px] text-muted-foreground">URL</label><input className={fieldClass()} value={link.href} onChange={(e) => apply((j) => { const L = j.projects[pi]?.links?.[li]; if (L) L.href = e.target.value; })} /></div><div className="space-y-1"><label className="text-[10px] text-muted-foreground">Icon</label><select className={fieldClass()} value={link.icon} onChange={(e) => apply((j) => { const L = j.projects[pi]?.links?.[li]; if (L) L.icon = e.target.value as ProjectLinkIconKey; })}>{ICON_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}</select></div><Button type="button" variant="ghost" size="sm" className="h-8 text-xs text-destructive" onClick={() => apply((j) => { j.projects[pi]?.links?.splice(li, 1); })}>×</Button></div>)}<Button type="button" variant="outline" size="sm" className="text-xs" onClick={() => apply((j) => { if (!j.projects[pi]) return; if (!j.projects[pi].links) j.projects[pi].links = []; j.projects[pi].links.push({ ...EMPTY_LINK }); })}>Add link</Button></div></div>)}<Button type="button" variant="outline" size="sm" className="text-xs" onClick={() => apply((j) => { j.projects.push({ ...EMPTY_PROJECT, links: [{ ...EMPTY_LINK }] }); })}>Add project</Button></div>
+
+      <div id="site-testimonials" className="scroll-mt-28 space-y-4 border-t border-border pt-4">
+        <SectionHeaderWithVisibility
+          title="آراء العملاء (Testimonials)"
+          description="تظهر بعد المشاريع. يمكن إخفاء القسم من هنا أو من الإعدادات، أو بحذف كل الشهادات."
+          sectionKey="testimonials"
+          toggleLabel="إظهار القسم"
+          data={data}
+          apply={apply}
+        />
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <div className="space-y-1">
+          <label className="text-xs text-muted-foreground">Badge القسم</label>
+          <input
+            className={fieldClass()}
+            placeholder="Testimonials"
+            value={data.testimonialsSection?.badge ?? ""}
+            onChange={(e) =>
+              apply((j) => {
+                const v = e.target.value.trim();
+                j.testimonialsSection = {
+                  ...j.testimonialsSection,
+                  badge: v || undefined,
+                };
+              })
+            }
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs text-muted-foreground">عنوان القسم</label>
+          <input
+            className={fieldClass()}
+            placeholder="What clients say"
+            value={data.testimonialsSection?.heading ?? ""}
+            onChange={(e) =>
+              apply((j) => {
+                const v = e.target.value.trim();
+                j.testimonialsSection = {
+                  ...j.testimonialsSection,
+                  heading: v || undefined,
+                };
+              })
+            }
+          />
+        </div>
+      </div>
+      <div className="mt-4 space-y-3">
+        {(data.testimonials ?? []).map((row, ti) => (
+          <div
+            key={`tm-${ti}-${row.name}`}
+            className="space-y-2 rounded-md border border-border bg-background p-3"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs font-medium text-muted-foreground">
+                شهادة #{ti + 1}
+              </span>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() =>
+                  apply((j) => {
+                    const list = [...(j.testimonials ?? [])];
+                    list.splice(ti, 1);
+                    j.testimonials = list.length ? list : undefined;
+                  })
+                }
+              >
+                حذف
+              </Button>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">الاسم</label>
+                <input
+                  className={fieldClass()}
+                  value={row.name}
+                  onChange={(e) =>
+                    apply((j) => {
+                      const list = j.testimonials ?? [];
+                      if (list[ti]) list[ti].name = e.target.value;
+                    })
+                  }
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">الدور / المسمى</label>
+                <input
+                  className={fieldClass()}
+                  value={row.role}
+                  onChange={(e) =>
+                    apply((j) => {
+                      const list = j.testimonials ?? [];
+                      if (list[ti]) list[ti].role = e.target.value;
+                    })
+                  }
+                />
+              </div>
+              <div className="space-y-1 sm:col-span-2">
+                <label className="text-xs text-muted-foreground">الشركة / الجهة</label>
+                <input
+                  className={fieldClass()}
+                  value={row.company}
+                  onChange={(e) =>
+                    apply((j) => {
+                      const list = j.testimonials ?? [];
+                      if (list[ti]) list[ti].company = e.target.value;
+                    })
+                  }
+                />
+              </div>
+              <DriveUrlField
+                id={`tm-avatar-${ti}`}
+                label="رابط صورة الأفاتار"
+                value={row.avatar}
+                onChange={(v) =>
+                  apply((j) => {
+                    const list = j.testimonials ?? [];
+                    if (list[ti]) list[ti].avatar = v;
+                  })
+                }
+                className="sm:col-span-2"
+              />
+              <div className="space-y-1 sm:col-span-2">
+                <label className="text-xs text-muted-foreground">نص الشهادة</label>
+                <textarea
+                  className={cn(fieldClass(), "min-h-[100px] resize-y")}
+                  value={row.text}
+                  onChange={(e) =>
+                    apply((j) => {
+                      const list = j.testimonials ?? [];
+                      if (list[ti]) list[ti].text = e.target.value;
+                    })
+                  }
+                  spellCheck={false}
+                />
+              </div>
+            </div>
+          </div>
+        ))}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="text-xs"
+          onClick={() =>
+            apply((j) => {
+              j.testimonials = [...(j.testimonials ?? []), { ...EMPTY_TESTIMONIAL }];
+            })
+          }
+        >
+          إضافة شهادة
+        </Button>
+      </div>
       </>
       ) : null}
     </div>

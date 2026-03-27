@@ -1,5 +1,5 @@
 import { PortfolioPage } from "@/components/portfolio/portfolio-page";
-import { getMergedSiteData } from "@/lib/site-data";
+import { getEffectiveSiteJson, getMergedSiteData } from "@/lib/site-data";
 import type { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -24,6 +24,15 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function PortfolioRoutePage() {
-  const data = await getMergedSiteData();
-  return <PortfolioPage data={data} />;
+  const [data, siteJson] = await Promise.all([
+    getMergedSiteData(),
+    getEffectiveSiteJson(),
+  ]);
+  return (
+    <PortfolioPage
+      data={data}
+      projectsRaw={siteJson.projects}
+      cvPdfDownloadUrl="/api/public/cv/pdf"
+    />
+  );
 }

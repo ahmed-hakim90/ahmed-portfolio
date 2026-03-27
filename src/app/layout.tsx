@@ -1,10 +1,12 @@
-import Navbar from "@/components/navbar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { getEffectiveSiteJson, getMergedSiteData } from "@/lib/site-data";
+import { localeFromCookie } from "@/lib/i18n-messages";
 import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
 import { Inter as FontSans } from "next/font/google";
+import { cookies } from "next/headers";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 export const dynamic = "force-dynamic";
@@ -53,8 +55,10 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = localeFromCookie(cookies().get("portfolio_locale")?.value);
+  const dir = locale === "ar" ? "rtl" : "ltr";
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={locale} dir={dir} suppressHydrationWarning>
       <body
         className={cn(
           "min-h-screen bg-background px-6 font-sans antialiased",
@@ -63,7 +67,10 @@ export default function RootLayout({
         )}
       >
         <ThemeProvider attribute="class" defaultTheme="light">
-          <TooltipProvider delayDuration={0}>{children}</TooltipProvider>
+          <TooltipProvider delayDuration={0}>
+            {children}
+            <Toaster richColors position="top-center" />
+          </TooltipProvider>
         </ThemeProvider>
       </body>
     </html>

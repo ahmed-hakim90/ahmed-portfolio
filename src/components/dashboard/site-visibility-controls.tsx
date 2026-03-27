@@ -61,6 +61,9 @@ function mergePublicControlsDefaults(j: SiteJson) {
       projects:
         j.publicControls?.portfolioSections?.projects ??
         DEFAULT_SITE_JSON.publicControls.portfolioSections.projects,
+      testimonials:
+        j.publicControls?.portfolioSections?.testimonials ??
+        DEFAULT_SITE_JSON.publicControls.portfolioSections.testimonials,
       aboutMe:
         j.publicControls?.portfolioSections?.aboutMe ??
         DEFAULT_SITE_JSON.publicControls.portfolioSections.aboutMe,
@@ -326,6 +329,16 @@ export function SiteVisibilityControls({ data, onChange }: Props) {
         <p className="text-xs text-muted-foreground">
           إظهار أو إخفاء أقسام الصفحة الرئيسية للمحفظة.
         </p>
+        <ToggleRow
+          id="hero-available-work"
+          label="شارة «متاح للفريلانس» أعلى الهيرو (نص الشارة من المحرّر → الملف والبطاقة)"
+          checked={parsed.availableForWork ?? false}
+          onChange={(v) =>
+            apply((j) => {
+              j.availableForWork = v;
+            })
+          }
+        />
         <div className="grid gap-2 sm:grid-cols-2">
           <ToggleRow
             id="pg-hero"
@@ -384,6 +397,16 @@ export function SiteVisibilityControls({ data, onChange }: Props) {
             onChange={(v) =>
               apply((j) => {
                 j.publicControls!.portfolioSections.projects = v;
+              })
+            }
+          />
+          <ToggleRow
+            id="pg-testimonials"
+            label="آراء العملاء (Testimonials)"
+            checked={pc.portfolioSections.testimonials}
+            onChange={(v) =>
+              apply((j) => {
+                j.publicControls!.portfolioSections.testimonials = v;
               })
             }
           />

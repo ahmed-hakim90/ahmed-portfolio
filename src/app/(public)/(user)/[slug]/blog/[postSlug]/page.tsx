@@ -1,7 +1,16 @@
 import { getPostForUser } from "@/data/blog";
+import {
+  blogViewDocIdUser,
+  getBlogViewCount,
+  recordBlogPostView,
+} from "@/lib/blog-views";
 import { getAdminUserBySlug } from "@/lib/admin-users";
 import { getMergedSiteDataForUser } from "@/lib/site-data";
-import { formatDate } from "@/lib/utils";
+import {
+  formatDate,
+  formatReadingTimeAr,
+  formatViewCountAr,
+} from "@/lib/utils";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -66,6 +75,10 @@ export default async function UserBlogPostPage({
   const post = await getPostForUser(user.id, params.postSlug);
   if (!post) notFound();
 
+  const viewKey = blogViewDocIdUser(user.id, params.postSlug);
+  await recordBlogPostView(viewKey);
+  const viewCount = await getBlogViewCount(viewKey);
+
   const baseUrl = site.url.replace(/\/$/, "");
 
   return (
@@ -95,12 +108,18 @@ export default async function UserBlogPostPage({
       <h1 className="title max-w-[650px] text-2xl font-medium tracking-tighter">
         {post.metadata.title}
       </h1>
-      <div className="mb-8 mt-2 flex max-w-[650px] items-center justify-between text-sm">
+      <div className="mb-8 mt-2 flex max-w-[650px] flex-wrap items-center justify-between gap-2 text-sm">
         <Suspense fallback={<p className="h-5" />}>
           <p className="text-sm text-neutral-600 dark:text-neutral-400">
             {formatDate(post.metadata.publishedAt)}
           </p>
         </Suspense>
+        <p className="text-sm text-neutral-600 dark:text-neutral-400">
+          {formatReadingTimeAr(post.metadata.readingTime)}
+        </p>
+        <p className="text-sm text-neutral-600 dark:text-neutral-400">
+          {formatViewCountAr(viewCount)}
+        </p>
       </div>
       <article
         className="prose dark:prose-invert"

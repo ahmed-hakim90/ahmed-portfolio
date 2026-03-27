@@ -10,6 +10,7 @@ import {
   ExternalLink,
   FileText,
   LayoutDashboard,
+  Mail,
   Menu,
   Pencil,
   Plus,
@@ -181,6 +182,14 @@ function SidebarContent({
           <Link href="/dashboard/blog" className={linkClass("/dashboard/blog")} onClick={onNavigate}>
             <FileText className="size-4 shrink-0 opacity-70" aria-hidden />
             المدونة
+          </Link>
+          <Link
+            href="/dashboard/messages"
+            className={linkClass("/dashboard/messages")}
+            onClick={onNavigate}
+          >
+            <Mail className="size-4 shrink-0 opacity-70" aria-hidden />
+            الرسائل
           </Link>
           <Link href="/dashboard/settings" className={linkClass("/dashboard/settings")} onClick={onNavigate}>
             <Settings className="size-4 shrink-0 opacity-70" aria-hidden />

@@ -23,6 +23,7 @@ const SOCIAL_ICONS: Record<SocialIconKey, IconFn> = {
   x: Icons.x,
   youtube: Icons.youtube,
   email: Icons.email,
+  whatsapp: Icons.whatsapp,
 };
 
 const PROJECT_LINK_ICONS: Record<ProjectLinkIconKey, IconFn> = {
@@ -63,6 +64,9 @@ function deepMergePublicControls(
       projects:
         patch.portfolioSections?.projects ??
         base.portfolioSections.projects,
+      testimonials:
+        patch.portfolioSections?.testimonials ??
+        base.portfolioSections.testimonials,
       aboutMe:
         patch.portfolioSections?.aboutMe ??
         base.portfolioSections.aboutMe,
@@ -111,6 +115,14 @@ export function deepMergeSite(base: SiteJson, patch: Partial<SiteJson>): SiteJso
       patch.customSections !== undefined
         ? patch.customSections
         : base.customSections,
+    testimonials:
+      patch.testimonials !== undefined
+        ? patch.testimonials
+        : base.testimonials,
+    testimonialsSection: {
+      ...base.testimonialsSection,
+      ...patch.testimonialsSection,
+    },
     contact: {
       ...base.contact,
       ...(patch.contact ?? {}),

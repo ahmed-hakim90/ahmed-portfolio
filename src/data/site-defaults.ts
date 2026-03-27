@@ -5,7 +5,8 @@ export type SocialIconKey =
   | "linkedin"
   | "x"
   | "youtube"
-  | "email";
+  | "email"
+  | "whatsapp";
 
 export type ProjectLinkIconKey = "globe" | "github";
 
@@ -46,6 +47,8 @@ export type PublicControls = {
     education: boolean;
     skills: boolean;
     projects: boolean;
+    /** Client testimonials grid (requires non-empty `testimonials`). */
+    testimonials: boolean;
     /** Centered “About Me” spotlight (formerly hardcoded under #hackathons). */
     aboutMe: boolean;
     contact: boolean;
@@ -66,6 +69,14 @@ export type CustomPortfolioSection = {
   enabled?: boolean;
 };
 
+export type SiteTestimonial = {
+  name: string;
+  role: string;
+  company: string;
+  text: string;
+  avatar: string;
+};
+
 export interface SiteJson {
   name: string;
   initials: string;
@@ -82,6 +93,10 @@ export interface SiteJson {
   heroGreetingLead?: string;
   /** Suffix after the first name in the hero; often an emoji. Empty string hides it. */
   heroGreetingEmoji?: string;
+  /** Show “available for freelance” badge in the hero when true. */
+  availableForWork?: boolean;
+  /** Hero badge label when `availableForWork` is true (editable in site editor). */
+  availableForWorkBadgeText?: string;
   skills: string[];
   /** Optional overrides for the public "Contact / Get in Touch" block. */
   contactSection?: {
@@ -98,6 +113,13 @@ export interface SiteJson {
   };
   /** Extra spotlight-style sections (shown before Contact). Toggle each with `enabled` or remove the row. */
   customSections?: CustomPortfolioSection[];
+  /** Client quotes; shown when non-empty (between projects and about-me blocks). */
+  testimonials?: SiteTestimonial[];
+  /** Optional heading/badge for the testimonials section (defaults below). */
+  testimonialsSection?: {
+    badge?: string;
+    heading?: string;
+  };
   navbar: {
     href: string;
     label: string;

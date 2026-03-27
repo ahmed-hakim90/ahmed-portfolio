@@ -1,7 +1,10 @@
 import { PersonJsonLd } from "@/components/portfolio/person-json-ld";
 import { PortfolioPage } from "@/components/portfolio/portfolio-page";
 import { getAdminUserBySlug } from "@/lib/admin-users";
-import { getMergedSiteDataForUser } from "@/lib/site-data";
+import {
+  getEffectiveSiteJsonForUser,
+  getMergedSiteDataForUser,
+} from "@/lib/site-data";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -54,7 +57,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function PublicUserPage({ params }: PageProps) {
   const user = await getAdminUserBySlug(params.slug);
   if (!user || user.disabled) notFound();
-  const data = await getMergedSiteDataForUser(user.id);
+  const [data, siteJson] = await Promise.all([
+    getMergedSiteDataForUser(user.id),
+    getEffectiveSiteJsonForUser(user.id),
+  ]);
   const base = publicOrigin();
   let pageUrl = base ? `${base}/${user.slug}` : "";
   let assetOrigin = base;
@@ -70,7 +76,11 @@ export default async function PublicUserPage({ params }: PageProps) {
   return (
     <>
       <PersonJsonLd data={data} pageUrl={pageUrl} siteOrigin={assetOrigin} />
-      <PortfolioPage data={data} />
+      <PortfolioPage
+        data={data}
+        projectsRaw={siteJson.projects}
+        cvPdfDownloadUrl={`/api/public/cv/pdf?slug=${encodeURIComponent(user.slug)}`}
+      />
     </>
   );
 }

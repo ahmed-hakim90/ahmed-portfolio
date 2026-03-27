@@ -1,6 +1,8 @@
 import BlurFade from "@/components/magicui/blur-fade";
 import { getBlogPostsForUser } from "@/data/blog";
+import { blogViewDocIdUser, getBlogViewCounts } from "@/lib/blog-views";
 import { getAdminUserBySlug } from "@/lib/admin-users";
+import { formatReadingTimeAr, formatViewCountAr } from "@/lib/utils";
 import { getMergedSiteDataForUser } from "@/lib/site-data";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -46,6 +48,8 @@ export default async function UserBlogIndexPage({
   const user = await getAdminUserBySlug(params.slug);
   if (!user || user.disabled) notFound();
   const posts = await getBlogPostsForUser(user.id);
+  const viewKeys = posts.map((p) => blogViewDocIdUser(user.id, p.slug));
+  const viewCounts = await getBlogViewCounts(viewKeys);
 
   return (
     <section>
@@ -58,10 +62,16 @@ export default async function UserBlogIndexPage({
             className="mb-4 flex flex-col space-y-1"
             href={post.href}
           >
-            <div className="flex w-full flex-col">
+            <div className="flex w-full flex-col gap-0.5">
               <p className="tracking-tight">{post.metadata.title}</p>
-              <p className="h-6 text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 {post.metadata.publishedAt}
+                <span className="mx-1.5 text-muted-foreground/60">·</span>
+                {formatReadingTimeAr(post.metadata.readingTime)}
+                <span className="mx-1.5 text-muted-foreground/60">·</span>
+                {formatViewCountAr(
+                  viewCounts[blogViewDocIdUser(user.id, post.slug)] ?? 0,
+                )}
               </p>
             </div>
           </Link>

@@ -1,7 +1,7 @@
 "use client";
 
 import Navbar from "@/components/navbar";
-import { PortfolioHomeView } from "@/components/portfolio-home-view";
+import { PortfolioPage } from "@/components/portfolio/portfolio-page";
 import type { SiteJson } from "@/data/site-defaults";
 import { getPortfolioHtmlAttrs } from "@/lib/portfolio-display";
 import { hydrateSiteJson, mergeSiteJsonForSave } from "@/lib/site-hydrate";
@@ -9,13 +9,15 @@ import { useMemo } from "react";
 
 type Props = {
   data: SiteJson;
+  /** Public slug so the preview contact form can post to the same inbox as the live site. */
+  contactOwnerSlug?: string | null;
 };
 
-export function SitePreviewPanel({ data }: Props) {
-  const mergedData = useMemo(() => {
-    return hydrateSiteJson(mergeSiteJsonForSave(data));
-  }, [data]);
+export function SitePreviewPanel({ data, contactOwnerSlug }: Props) {
+  const normalized = useMemo(() => mergeSiteJsonForSave(data), [data]);
+  const mergedData = useMemo(() => hydrateSiteJson(normalized), [normalized]);
   const { dir, lang } = getPortfolioHtmlAttrs(mergedData.publicControls.ui);
+  const themePreset = mergedData.publicControls.ui.themePreset ?? "default";
 
   return (
     <div className="rounded-lg border border-border bg-background">
@@ -27,8 +29,16 @@ export function SitePreviewPanel({ data }: Props) {
           className="mx-auto w-full max-w-2xl px-4 pt-6 pb-24 [unicode-bidi:isolate]"
           dir={dir}
           lang={lang}
+          data-portfolio-theme={themePreset}
         >
-          <PortfolioHomeView data={mergedData} />
+          <PortfolioPage
+            data={mergedData}
+            projectsRaw={normalized.projects}
+            cvPdfDownloadUrl="/api/admin/cv/pdf"
+            cvDownloadLabel="تحميل السيرة PDF"
+            cvDownloadTitle="يحمّل السيرة المحفوظة من الخادم. احفظ من المحرر أولاً لتحديث الملف."
+            contactOwnerSlug={contactOwnerSlug}
+          />
         </div>
         <Navbar
           navbar={data.navbar}

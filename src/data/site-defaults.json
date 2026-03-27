@@ -9,6 +9,8 @@
   "avatarUrl": "/me1.jpg",
   "heroGreetingLead": "Hi, I'm",
   "heroGreetingEmoji": "👋",
+  "availableForWork": true,
+  "availableForWorkBadgeText": "متاح لمشاريع فريلانس",
   "skills": [
     "React",
     "TypeScript",
@@ -67,6 +69,13 @@
         "url": "mailto:ahmedabdulhakim90@gmail.com",
         "icon": "email",
         "navbar": true,
+        "enabled": true
+      },
+      "WhatsApp": {
+        "name": "WhatsApp",
+        "url": "https://wa.me/201552900017",
+        "icon": "whatsapp",
+        "navbar": false,
         "enabled": true
       }
     }
@@ -216,6 +225,7 @@
       "education": true,
       "skills": true,
       "projects": true,
+      "testimonials": true,
       "aboutMe": true,
       "contact": true
     },
@@ -226,5 +236,18 @@
       "contact": { "linkedinCtaEnabled": true }
     }
   },
+  "testimonialsSection": {
+    "badge": "Testimonials",
+    "heading": "What clients say"
+  },
+  "testimonials": [
+    {
+      "name": "Client Name",
+      "role": "CEO",
+      "company": "Example Co",
+      "text": "Ahmed delivered exceptional work on a tight timeline — clear communication and solid execution.",
+      "avatar": "/me1.jpg"
+    }
+  ],
   "hackathons": []
 }

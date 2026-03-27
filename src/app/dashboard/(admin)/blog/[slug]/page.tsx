@@ -1,5 +1,6 @@
 "use client";
 
+import { BlogMdxEditor } from "@/components/dashboard/blog-mdx-editor";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -148,11 +149,7 @@ export default function EditBlogPostPage() {
         </div>
         <div className="sm:col-span-2">
           <label className="mb-1 block text-xs text-muted-foreground">MDX / markdown</label>
-          <textarea
-            className="font-mono min-h-[320px] w-full rounded-md border border-input bg-background p-3 text-xs"
-            value={mdx}
-            onChange={(e) => setMdx(e.target.value)}
-          />
+          <BlogMdxEditor value={mdx} onChange={setMdx} height={400} />
         </div>
       </div>
       {message ? (

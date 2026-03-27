@@ -1,41 +1,88 @@
 import BlurFade from "@/components/magicui/blur-fade";
 import BlurFadeText from "@/components/magicui/blur-fade-text";
+import { PortfolioContactForm } from "@/components/portfolio/portfolio-contact-form";
+import { PortfolioCvDownload } from "@/components/portfolio/portfolio-cv-download";
+import { PortfolioProjectsSection } from "@/components/portfolio/portfolio-projects-section";
 import { ProjectCard } from "@/components/project-card";
 import { ResumeCard } from "@/components/resume-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { PortfolioSpotlightBlock } from "@/components/portfolio/portfolio-spotlight-block";
+import type { SiteJson } from "@/data/site-defaults";
 import { DEFAULT_ABOUT_ME_SPOTLIGHT } from "@/lib/portfolio-default-copy";
 import { buildHeroGreetingLine } from "@/lib/portfolio-hero-text";
 import type { MergedSiteData } from "@/lib/site-data";
-import Link from "next/link";
 import Markdown from "react-markdown";
 
 const BLUR_FADE_DELAY = 0.04;
 
 type PortfolioPageProps = {
   data: MergedSiteData;
+  /** Raw projects (with string link icons) for the filterable grid; defaults to merged card data when omitted. */
+  projectsRaw?: SiteJson["projects"];
+  /**
+   * GET URL that returns `application/pdf` (e.g. `/api/public/cv/pdf?slug=…`,
+   * `/api/public/cv/pdf` for global site, `/api/admin/cv/pdf` when logged in).
+   */
+  cvPdfDownloadUrl: string;
+  /** Override CV button label (e.g. Arabic in dashboard preview). */
+  cvDownloadLabel?: string;
+  /** Tooltip on CV button (e.g. explain saved vs unsaved). */
+  cvDownloadTitle?: string;
+  /** For contact form API routing in dashboard preview. */
+  contactOwnerSlug?: string | null;
 };
 
-export function PortfolioPage({ data: DATA }: PortfolioPageProps) {
+export function PortfolioPage({
+  data: DATA,
+  projectsRaw,
+  cvPdfDownloadUrl,
+  cvDownloadLabel,
+  cvDownloadTitle,
+  contactOwnerSlug,
+}: PortfolioPageProps) {
   const heroLine = buildHeroGreetingLine(
     DATA.name,
     DATA.heroGreetingLead,
     DATA.heroGreetingEmoji,
   );
   const pc = DATA.publicControls;
-  const linkedinEntry = DATA.contact.social.LinkedIn;
   const cs = DATA.contactSection;
   const contactBadge = cs?.badge ?? "Contact";
   const contactHeading = cs?.heading ?? "Get in Touch";
   const pv = DATA.publicControls.portfolioSections;
+  const availableBadgeText =
+    DATA.availableForWorkBadgeText?.trim() || "متاح لمشاريع فريلانس";
+  const testimonialsBadge =
+    DATA.testimonialsSection?.badge?.trim() || "Testimonials";
+  const testimonialsHeading =
+    DATA.testimonialsSection?.heading?.trim() || "What clients say";
 
   return (
     <main className="flex min-h-[100dvh] flex-col space-y-10 print:space-y-6 print:py-0">
       {pv.hero ? (
       <section id="hero">
         <div className="mx-auto w-full max-w-2xl space-y-8">
-          <div className="flex justify-between gap-2">
+          {DATA.availableForWork ? (
+            <BlurFade delay={BLUR_FADE_DELAY * 0.5}>
+              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                <span
+                  className="size-2 shrink-0 rounded-full bg-emerald-500 animate-pulse"
+                  aria-hidden
+                />
+                {availableBadgeText}
+              </div>
+            </BlurFade>
+          ) : null}
+          <div className="flex justify-between gap-4">
             <div className="flex flex-1 flex-col space-y-1.5">
               <BlurFadeText
                 delay={BLUR_FADE_DELAY}
@@ -49,11 +96,20 @@ export function PortfolioPage({ data: DATA }: PortfolioPageProps) {
                 text={DATA.description}
               />
             </div>
-            <BlurFade delay={BLUR_FADE_DELAY}>
+            <BlurFade
+              delay={BLUR_FADE_DELAY}
+              className="flex shrink-0 flex-col items-end gap-3"
+            >
               <Avatar className="size-28 border print:size-20">
                 <AvatarImage alt={DATA.name} src={DATA.avatarUrl} />
                 <AvatarFallback>{DATA.initials}</AvatarFallback>
               </Avatar>
+              <PortfolioCvDownload
+                pdfDownloadUrl={cvPdfDownloadUrl}
+                label={cvDownloadLabel}
+                title={cvDownloadTitle}
+                suggestedFileName={DATA.name}
+              />
             </BlurFade>
           </div>
         </div>
@@ -141,40 +197,93 @@ export function PortfolioPage({ data: DATA }: PortfolioPageProps) {
       ) : null}
       {pv.projects ? (
       <section id="projects">
-        <div className="w-full space-y-12 py-12 print:space-y-6 print:py-4">
-          <BlurFade delay={BLUR_FADE_DELAY * 11}>
-            <div className="flex flex-col items-center justify-center space-y-4 text-center">
-              <div className="space-y-2">
-                <div className="inline-block rounded-lg bg-foreground px-3 py-1 text-sm text-background">
-                  My Projects
+        {projectsRaw ? (
+          <PortfolioProjectsSection
+            projects={projectsRaw}
+            externalLinksEnabled={pc.sections.projects.linksEnabled}
+            blurStart={BLUR_FADE_DELAY * 11}
+          />
+        ) : (
+          <div className="w-full space-y-12 py-12 print:space-y-6 print:py-4">
+            <BlurFade delay={BLUR_FADE_DELAY * 11}>
+              <div className="flex flex-col items-center justify-center space-y-4 text-center">
+                <div className="space-y-2">
+                  <div className="inline-block rounded-lg bg-foreground px-3 py-1 text-sm text-background">
+                    My Projects
+                  </div>
+                  <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl print:text-2xl">
+                    Check out my latest work
+                  </h2>
+                  <p className="text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                    I&apos;ve worked on a variety of projects, from simple websites
+                    to complex web applications. Here are a few of my favorites.
+                  </p>
                 </div>
-                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl print:text-2xl">
-                  Check out my latest work
-                </h2>
-                <p className="text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                  I&apos;ve worked on a variety of projects, from simple websites
-                  to complex web applications. Here are a few of my favorites.
-                </p>
               </div>
+            </BlurFade>
+            <div className="mx-auto grid max-w-[800px] grid-cols-1 gap-3 sm:grid-cols-2 print:grid-cols-1">
+              {DATA.projects.map((project, id) => (
+                <BlurFade
+                  key={project.title}
+                  delay={BLUR_FADE_DELAY * 12 + id * 0.05}
+                >
+                  <ProjectCard
+                    href={project.href}
+                    title={project.title}
+                    description={project.description}
+                    dates={"dates" in project ? project.dates ?? " " : " "}
+                    tags={project.technologies}
+                    image={project.image}
+                    video={project.video}
+                    links={project.links}
+                    externalLinksEnabled={pc.sections.projects.linksEnabled}
+                  />
+                </BlurFade>
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
+      ) : null}
+      {pv.testimonials && DATA.testimonials && DATA.testimonials.length > 0 ? (
+      <section id="testimonials">
+        <div className="w-full space-y-8 py-12 print:space-y-4 print:py-6">
+          <BlurFade delay={BLUR_FADE_DELAY * 12}>
+            <div className="text-center">
+              <div className="inline-block rounded-lg bg-foreground px-3 py-1 text-sm text-background">
+                {testimonialsBadge}
+              </div>
+              <h2 className="mt-3 text-3xl font-bold tracking-tighter sm:text-5xl print:text-2xl">
+                {testimonialsHeading}
+              </h2>
             </div>
           </BlurFade>
-          <div className="mx-auto grid max-w-[800px] grid-cols-1 gap-3 sm:grid-cols-2 print:grid-cols-1">
-            {DATA.projects.map((project, id) => (
+          <div className="mx-auto grid max-w-[800px] grid-cols-1 gap-4 sm:grid-cols-2">
+            {DATA.testimonials.map((t, id) => (
               <BlurFade
-                key={project.title}
-                delay={BLUR_FADE_DELAY * 12 + id * 0.05}
+                key={`${t.name}-${id}`}
+                delay={BLUR_FADE_DELAY * 13 + id * 0.05}
               >
-                <ProjectCard
-                  href={project.href}
-                  title={project.title}
-                  description={project.description}
-                  dates={"dates" in project ? project.dates ?? " " : " "}
-                  tags={project.technologies}
-                  image={project.image}
-                  video={project.video}
-                  links={project.links}
-                  externalLinksEnabled={pc.sections.projects.linksEnabled}
-                />
+                <Card className="h-full border p-4 sm:p-5 transition-shadow hover:shadow-md">
+                  <CardHeader className="flex flex-row items-start gap-3 space-y-0 p-0">
+                    <Avatar className="size-12 shrink-0 border">
+                      <AvatarImage src={t.avatar} alt={t.name} />
+                      <AvatarFallback>{t.name.slice(0, 2)}</AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 space-y-1">
+                      <CardTitle className="text-base">{t.name}</CardTitle>
+                      <CardDescription>
+                        {t.role}
+                        {t.company ? ` · ${t.company}` : ""}
+                      </CardDescription>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-0 pt-4">
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                      {t.text}
+                    </p>
+                  </CardContent>
+                </Card>
               </BlurFade>
             ))}
           </div>
@@ -222,27 +331,14 @@ export function PortfolioPage({ data: DATA }: PortfolioPageProps) {
                 {contactHeading}
               </h2>
               {cs?.bodyMarkdown ? (
-                <Markdown className="prose mx-auto max-w-[600px] text-pretty font-sans text-muted-foreground dark:prose-invert md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed print:prose-invert">
+                <Markdown className="prose mx-auto w-full max-w-[600px] text-pretty font-sans text-muted-foreground dark:prose-invert md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed print:prose-invert">
                   {cs.bodyMarkdown}
                 </Markdown>
-              ) : (
-                <p className="mx-auto max-w-[600px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                  Want to chat? Just shoot me a dm{" "}
-                  {pc.sections.contact.linkedinCtaEnabled &&
-                  linkedinEntry?.url ? (
-                    <Link
-                      href={linkedinEntry.url}
-                      className="text-blue-500 hover:underline print:text-foreground"
-                    >
-                      with a direct question on LinkedIn
-                    </Link>
-                  ) : (
-                    <span>with a direct question on LinkedIn</span>
-                  )}{" "}
-                  and I&apos;ll respond whenever I can. I will ignore all
-                  soliciting.
-                </p>
-              )}
+              ) : null}
+              <PortfolioContactForm
+                ownerWhatsAppDigits={DATA.contact.tel}
+                ownerSlug={contactOwnerSlug}
+              />
             </div>
           </BlurFade>
         </div>

@@ -7,9 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **إنشاء عميل (المالك)** — في [`/dashboard/users`](./src/app/dashboard/(admin)/users/page.tsx): حقول الاسم الظاهر، الهاتف، ومسار الموقع (`slug`) مع تحقق فوري من التوفر عبر [`GET /api/admin/users/slug-availability`](./src/app/api/admin/users/slug-availability/route.ts)، ثم بذرة [`sites/{uid}`](./src/lib/site-data.tsx) بالاسم والهاتف و`mailto` للتواصل.
+- **تسجيل عام متوافق** — [`POST /api/public/signup`](./src/app/api/public/signup/route.ts) يستخدم [`registerClientProfileAfterAuth`](./src/lib/admin-users.ts) بنفس منطق العميل (بدون تكرار قالب افتراضي خاطئ عند الفشل الجزئي).
+- **تحقق عام من الـ slug** — [`GET /api/public/slug-availability`](./src/app/api/public/slug-availability/route.ts) لصفحة [`/signup`](./src/app/(public)/(site)/signup/page.tsx).
+- **دوال مساعدة** — [`validateNewClientProfileInput`](./src/lib/admin-users.ts)، [`registerClientProfileAfterAuth`](./src/lib/admin-users.ts)، وتراجع Firestore-only عند فشل بذرة الموقع.
+- **قائمة المستخدمين** — عمود الاسم الظاهر من `sites`؛ أزرار إرسال بريد وواتساب عند توفر رقم.
+- **AuthShell** — خاصية [`contentMaxWidthClass`](./src/components/auth/auth-shell.tsx) لعرض أوسع (مثل نموذج التسجيل).
+- **سجل دفعات تلقائي** — [`CHANGELOG_PUSHES.md`](./CHANGELOG_PUSHES.md) يُحدَّث بكل push عبر [`.github/workflows/changelog-log.yml`](./.github/workflows/changelog-log.yml) وسكربت [`scripts/append-push-changelog.mjs`](./scripts/append-push-changelog.mjs).
+
+### Changed
+
+- **طباعة السيرة (CV)** — [`/dashboard/cv-print`](./src/app/dashboard/(admin)/cv-print/page.tsx) يقرأ [`getMergedSiteDataForUser(session.sub)`](./src/lib/site-data.tsx) بدل الإعداد العام `config/site`.
+- **جلب الموقع في لوحة التحكم** — `fetch` مع `cache: "no-store"`؛ [`GET /api/admin/site`](./src/app/api/admin/site/route.ts) و[`GET /api/admin/profile`](./src/app/api/admin/profile/route.ts) مع `dynamic = "force-dynamic"`.
+- **`getUserSiteJsonFromFirestore`** — إيقاف كتابة [`DEFAULT_SITE_JSON`](./src/data/site-defaults.ts) تلقائياً في Firestore عند غياب المستند (يُدمج القالب في الذاكرة فقط عبر [`getEffectiveSiteJsonForUser`](./src/lib/site-data.tsx)).
+
+### Fixed
+
+- **عرض بيانات العميل** — تجنب سباق كان يعرض قالب المنصة بدل بيانات العميل عند أول تحميل للمحرر بعد التسجيل/الإنشاء.
+
+### UX
+
+- **صفحة التسجيل** (`/signup`) — أقسام مرقّمة، Google أولاً ثم البريد، معاينة رابط عام، وأيقونات حالة للـ slug ([`signup-form.tsx`](./src/app/(public)/(site)/signup/signup-form.tsx)).
+
+---
+
 ### Planned
 
-- Nothing scheduled for the next release yet.
+- (اختياري) ربط سجل الدفعات بإصدار semver عند وضع علامة `git tag`.
 
 ---
 

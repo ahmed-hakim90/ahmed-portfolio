@@ -2,6 +2,10 @@
 
 import { Icons } from "@/components/icons";
 import { Dock, DockIcon, type DockIconProps } from "@/components/magicui/dock";
+import {
+  PortfolioCommandMenu,
+  type CommandSearchIndex,
+} from "@/components/portfolio/portfolio-command-menu";
 import { ModeToggle } from "@/components/mode-toggle";
 import { buttonVariants } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -37,6 +41,7 @@ const SOCIAL_ICONS: Record<
   x: Icons.x,
   youtube: Icons.youtube,
   email: Icons.email,
+  whatsapp: Icons.whatsapp,
 };
 
 type OverflowEntry = {
@@ -53,6 +58,7 @@ type NavbarProps = {
   blogRouteEnabled: boolean;
   dockMenuEnabled: boolean;
   themeToggleEnabled: boolean;
+  commandSearch?: CommandSearchIndex;
 };
 
 function DockOverflowMenu({
@@ -161,6 +167,7 @@ export default function Navbar({
   blogRouteEnabled,
   dockMenuEnabled,
   themeToggleEnabled,
+  commandSearch,
 }: NavbarProps) {
   if (!dockMenuEnabled) return null;
 
@@ -257,6 +264,11 @@ export default function Navbar({
             </DockIcon>
           );
         })}
+        {commandSearch ? (
+          <DockIcon key="cmdk-search">
+            <PortfolioCommandMenu index={commandSearch} />
+          </DockIcon>
+        ) : null}
         <DockOverflowMenu entries={overflow} />
         {themeToggleEnabled ? (
           <Separator

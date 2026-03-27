@@ -1,6 +1,11 @@
 import { getBlogPosts, getPost } from "@/data/blog";
+import {
+  blogViewDocIdRoot,
+  getBlogViewCount,
+  recordBlogPostView,
+} from "@/lib/blog-views";
 import { getMergedSiteData } from "@/lib/site-data";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatReadingTimeAr, formatViewCountAr } from "@/lib/utils";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -33,7 +38,7 @@ export async function generateMetadata({
   } = post.metadata;
   let ogImage = image
     ? `${site.url}${image}`
-    : `${site.url}/og?title=${title}`;
+    : `${site.url}/og?title=${encodeURIComponent(title)}`;
 
   return {
     title,
@@ -73,6 +78,10 @@ export default async function Blog({
     notFound();
   }
 
+  const viewKey = blogViewDocIdRoot(params.slug);
+  await recordBlogPostView(viewKey);
+  const viewCount = await getBlogViewCount(viewKey);
+
   return (
     <section id="blog">
       <script
@@ -88,7 +97,7 @@ export default async function Blog({
             description: post.metadata.summary,
             image: post.metadata.image
               ? `${site.url}${post.metadata.image}`
-              : `${site.url}/og?title=${post.metadata.title}`,
+              : `${site.url}/og?title=${encodeURIComponent(post.metadata.title)}`,
             url: `${site.url}/blog/${post.slug}`,
             author: {
               "@type": "Person",
@@ -100,12 +109,18 @@ export default async function Blog({
       <h1 className="title max-w-[650px] text-2xl font-medium tracking-tighter">
         {post.metadata.title}
       </h1>
-      <div className="mb-8 mt-2 flex max-w-[650px] items-center justify-between text-sm">
+      <div className="mb-8 mt-2 flex max-w-[650px] flex-wrap items-center justify-between gap-2 text-sm">
         <Suspense fallback={<p className="h-5" />}>
           <p className="text-sm text-neutral-600 dark:text-neutral-400">
             {formatDate(post.metadata.publishedAt)}
           </p>
         </Suspense>
+        <p className="text-sm text-neutral-600 dark:text-neutral-400">
+          {formatReadingTimeAr(post.metadata.readingTime)}
+        </p>
+        <p className="text-sm text-neutral-600 dark:text-neutral-400">
+          {formatViewCountAr(viewCount)}
+        </p>
       </div>
       <article
         className="prose dark:prose-invert"

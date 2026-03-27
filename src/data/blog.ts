@@ -16,6 +16,8 @@ type PostMetadata = {
   publishedAt: string;
   summary: string;
   image?: string;
+  /** Minutes, min 1 */
+  readingTime: number;
 };
 
 /** One rendered post plus its public path (root legacy vs per-user blog). */
@@ -58,9 +60,13 @@ async function getPostFromFile(slug: string): Promise<BlogPostEntry | null> {
     const sourceFile = fs.readFileSync(filePath, "utf-8");
     const { content: rawContent, data: metadata } = matter(sourceFile);
     const content = await markdownToHTML(rawContent);
+    const meta = metadata as Omit<PostMetadata, "readingTime">;
     return {
       source: content,
-      metadata: metadata as PostMetadata,
+      metadata: {
+        ...meta,
+        readingTime: computeReadingTimeMinutes(rawContent),
+      },
       slug,
       href: `/blog/${slug}`,
     };
@@ -77,16 +83,29 @@ function mdxBodyForPipeline(raw: string) {
   return raw;
 }
 
+/** Words per minute for reading time estimate. */
+const READING_WPM = 200;
+
+export function computeReadingTimeMinutes(markdownBody: string): number {
+  const text = markdownBody.trim();
+  if (!text) return 1;
+  const wordCount = text.split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.ceil(wordCount / READING_WPM));
+}
+
 async function postFromFirestoreDoc(slug: string, data: DocumentData) {
+  const rawMdx = typeof data.mdx === "string" ? data.mdx : "";
+  const bodyForCount = mdxBodyForPipeline(rawMdx);
   const metadata: PostMetadata = {
     title: data.title ?? "",
     publishedAt: data.publishedAt ?? "",
     summary: data.summary ?? "",
+    readingTime: computeReadingTimeMinutes(bodyForCount),
     ...(typeof data.image === "string" && data.image
       ? { image: data.image }
       : {}),
   };
-  const source = await markdownToHTML(mdxBodyForPipeline(data.mdx ?? ""));
+  const source = await markdownToHTML(bodyForCount);
   return { source, metadata, slug };
 }
 

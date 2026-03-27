@@ -435,7 +435,7 @@ export function SignupForm() {
               </div>
 
               <div className="space-y-2">
-                <FieldLabel htmlFor="phone">رقم الهاتف</FieldLabel>
+                <FieldLabel htmlFor="phone">رقم الواتساب</FieldLabel>
                 <input
                   id="phone"
                   type="tel"

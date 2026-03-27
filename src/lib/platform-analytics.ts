@@ -17,6 +17,7 @@ export type DailyActivityRow = {
   publicPings: number;
   dashboardPings: number;
   prints: number;
+  pdfDownloads: number;
 };
 
 export type PlatformAnalyticsSnapshot = {
@@ -24,6 +25,7 @@ export type PlatformAnalyticsSnapshot = {
   uniqueDevicesPublic: number;
   uniqueDevicesDashboard: number;
   totalPrintClicks: number;
+  totalPdfDownloads: number;
   totalAccounts: number;
   clientAccounts: number;
   activeClientAccounts: number;
@@ -155,6 +157,40 @@ export async function recordPrintClick(): Promise<
   }
 }
 
+export async function recordPdfDownloadClick(): Promise<
+  { ok: true } | { ok: false; error: string }
+> {
+  const db = getFirestoreDb();
+  if (!db) return { ok: false, error: "Firestore is not configured" };
+
+  const dateKey = utcDateKey();
+  const sumRef = summaryRef(db);
+  const dailyRef = dayRef(db, dateKey);
+
+  try {
+    await db.runTransaction(async (tx) => {
+      tx.set(
+        sumRef,
+        { totalPdfDownloads: FieldValue.increment(1) },
+        { merge: true },
+      );
+      tx.set(
+        dailyRef,
+        {
+          pdfDownloads: FieldValue.increment(1),
+          date: dateKey,
+        },
+        { merge: true },
+      );
+    });
+    return { ok: true };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "PDF download analytics failed";
+    console.error("recordPdfDownloadClick:", e);
+    return { ok: false, error: msg };
+  }
+}
+
 async function countSitesWithEditorSaves(): Promise<number> {
   const db = getFirestoreDb();
   if (!db) return -1;
@@ -226,6 +262,7 @@ async function loadDailyActivity(
       publicPings: 0,
       dashboardPings: 0,
       prints: 0,
+      pdfDownloads: 0,
     };
     if (snap.exists) {
       const d = snap.data() as Record<string, unknown>;
@@ -233,6 +270,8 @@ async function loadDailyActivity(
       row.dashboardPings =
         typeof d.dashboardPings === "number" ? d.dashboardPings : 0;
       row.prints = typeof d.prints === "number" ? d.prints : 0;
+      row.pdfDownloads =
+        typeof d.pdfDownloads === "number" ? d.pdfDownloads : 0;
     }
     map.set(date, row);
   }
@@ -247,6 +286,7 @@ export async function getPlatformAnalyticsSnapshot(): Promise<PlatformAnalyticsS
       uniqueDevicesPublic: 0,
       uniqueDevicesDashboard: 0,
       totalPrintClicks: 0,
+      totalPdfDownloads: 0,
       totalAccounts: 0,
       clientAccounts: 0,
       activeClientAccounts: 0,
@@ -256,6 +296,7 @@ export async function getPlatformAnalyticsSnapshot(): Promise<PlatformAnalyticsS
         publicPings: 0,
         dashboardPings: 0,
         prints: 0,
+        pdfDownloads: 0,
       })),
     };
   }
@@ -279,6 +320,7 @@ export async function getPlatformAnalyticsSnapshot(): Promise<PlatformAnalyticsS
       uniqueDevicesPublic: num(s.uniqueDevicesPublic),
       uniqueDevicesDashboard: num(s.uniqueDevicesDashboard),
       totalPrintClicks: num(s.totalPrintClicks),
+      totalPdfDownloads: num(s.totalPdfDownloads),
       totalAccounts: userCounts.total,
       clientAccounts: userCounts.clients,
       activeClientAccounts: userCounts.activeClients,
@@ -292,6 +334,7 @@ export async function getPlatformAnalyticsSnapshot(): Promise<PlatformAnalyticsS
       uniqueDevicesPublic: 0,
       uniqueDevicesDashboard: 0,
       totalPrintClicks: 0,
+      totalPdfDownloads: 0,
       totalAccounts: -1,
       clientAccounts: -1,
       activeClientAccounts: -1,
@@ -301,6 +344,7 @@ export async function getPlatformAnalyticsSnapshot(): Promise<PlatformAnalyticsS
         publicPings: 0,
         dashboardPings: 0,
         prints: 0,
+        pdfDownloads: 0,
       })),
     };
   }

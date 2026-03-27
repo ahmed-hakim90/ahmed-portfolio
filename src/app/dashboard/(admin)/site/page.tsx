@@ -491,7 +491,10 @@ export default function DashboardSitePage() {
         ) : null}
       </div>
       <div id="site-preview" className="min-w-0 scroll-mt-28 xl:sticky xl:top-6">
-        <SitePreviewPanel data={siteData} />
+        <SitePreviewPanel
+          data={siteData}
+          contactOwnerSlug={slug.trim() || undefined}
+        />
       </div>
     </div>
     </>

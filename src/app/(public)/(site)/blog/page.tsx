@@ -1,5 +1,7 @@
 import BlurFade from "@/components/magicui/blur-fade";
 import { getBlogPosts } from "@/data/blog";
+import { blogViewDocIdRoot, getBlogViewCounts } from "@/lib/blog-views";
+import { formatReadingTimeAr, formatViewCountAr } from "@/lib/utils";
 import Link from "next/link";
 
 export const metadata = {
@@ -11,13 +13,16 @@ const BLUR_FADE_DELAY = 0.04;
 
 export default async function BlogPage() {
   const posts = await getBlogPosts();
+  const rootPosts = posts.filter((p) => p.href.startsWith("/blog/"));
+  const viewKeys = rootPosts.map((p) => blogViewDocIdRoot(p.slug));
+  const viewCounts = await getBlogViewCounts(viewKeys);
 
   return (
     <section>
       <BlurFade delay={BLUR_FADE_DELAY}>
         <h1 className="mb-8 text-2xl font-medium tracking-tighter">blog</h1>
       </BlurFade>
-      {posts
+      {rootPosts
         .sort((a, b) => {
           if (
             new Date(a.metadata.publishedAt) > new Date(b.metadata.publishedAt)
@@ -32,10 +37,16 @@ export default async function BlogPage() {
               className="mb-4 flex flex-col space-y-1"
               href={post.href}
             >
-              <div className="flex w-full flex-col">
+              <div className="flex w-full flex-col gap-0.5">
                 <p className="tracking-tight">{post.metadata.title}</p>
-                <p className="h-6 text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   {post.metadata.publishedAt}
+                  <span className="mx-1.5 text-muted-foreground/60">·</span>
+                  {formatReadingTimeAr(post.metadata.readingTime)}
+                  <span className="mx-1.5 text-muted-foreground/60">·</span>
+                  {formatViewCountAr(
+                    viewCounts[blogViewDocIdRoot(post.slug)] ?? 0,
+                  )}
                 </p>
               </div>
             </Link>

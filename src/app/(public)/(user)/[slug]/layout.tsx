@@ -1,10 +1,13 @@
 import Navbar from "@/components/navbar";
 import { SiteTopBar } from "@/components/site-top-bar";
+import { getBlogPostsForUser } from "@/data/blog";
 import { getAdminUserBySlug } from "@/lib/admin-users";
 import { getPortfolioHtmlAttrs } from "@/lib/portfolio-display";
 import { getEffectiveSiteJsonForUser } from "@/lib/site-data";
 import { withSlugPrefix } from "@/lib/slug-nav";
+import { getUiMessages, localeFromCookie } from "@/lib/i18n-messages";
 import { cn } from "@/lib/utils";
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 
 export default async function UserSlugLayout({
@@ -16,7 +19,23 @@ export default async function UserSlugLayout({
 }) {
   const user = await getAdminUserBySlug(params.slug);
   if (!user || user.disabled) notFound();
+  const locale = localeFromCookie(cookies().get("portfolio_locale")?.value);
+  const ui = getUiMessages(locale);
   const json = await getEffectiveSiteJsonForUser(user.id);
+  const posts = await getBlogPostsForUser(user.id);
+  const commandSearch = {
+    homeHref: `/${user.slug}`,
+    blogPosts: posts.map((p) => ({
+      title: p.metadata.title,
+      href: p.href,
+      summary: p.metadata.summary,
+    })),
+    projects: json.projects.map((p) => ({
+      title: p.title,
+      href: p.href,
+      description: p.description,
+    })),
+  };
   const nav = json.navbar.map((item) => ({
     ...item,
     href: withSlugPrefix(user.slug, item.href),
@@ -24,7 +43,7 @@ export default async function UserSlugLayout({
   const { dir, lang } = getPortfolioHtmlAttrs(json.publicControls.ui);
   return (
     <>
-      <SiteTopBar />
+      <SiteTopBar locale={locale} topBar={ui.topBar} />
       <div
         dir={dir}
         lang={lang}
@@ -42,6 +61,7 @@ export default async function UserSlugLayout({
         blogRouteEnabled={json.publicControls.routes.blog.enabled}
         dockMenuEnabled={json.publicControls.ui.dockMenu}
         themeToggleEnabled={json.publicControls.ui.themeToggle}
+        commandSearch={commandSearch}
       />
     </>
   );
