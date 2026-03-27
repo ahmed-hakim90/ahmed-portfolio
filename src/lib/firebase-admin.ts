@@ -3,7 +3,6 @@ import * as path from "path";
 import admin from "firebase-admin";
 import { getAuth, type Auth } from "firebase-admin/auth";
 import type { Firestore } from "firebase-admin/firestore";
-import type { Bucket } from "firebase-admin/storage";
 
 function tryInit(): admin.app.App | null {
   if (admin.apps.length > 0) {
@@ -64,7 +63,9 @@ export function getFirebaseAdminAuth(): Auth | null {
   return getAuth(app);
 }
 
-export function getFirebaseStorageBucket(): Bucket | null {
+export function getFirebaseStorageBucket(): ReturnType<
+  ReturnType<typeof admin.storage>["bucket"]
+> | null {
   const app = getFirebaseAdminApp();
   if (!app) return null;
   try {

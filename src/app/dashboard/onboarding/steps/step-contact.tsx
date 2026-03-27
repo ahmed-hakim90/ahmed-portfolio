@@ -170,7 +170,8 @@ export function StepContact({
       <CardHeader className="space-y-1 px-5 pb-2 pt-6 text-center sm:px-8 sm:pt-8">
         <CardTitle className="text-xl sm:text-2xl">التواصل والشبكات</CardTitle>
         <CardDescription>
-          البريد والهاتف وروابط GitHub و LinkedIn و X وغيرها.
+          للنشر العام يلزم طريقة تواصل واحدة على الأقل: بريد أو هاتف أو رابط شبكة
+          (إن لم تكن مضافة من التسجيل).
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 px-5 pb-6 pt-2 sm:px-8 sm:pb-8">
@@ -182,7 +183,7 @@ export function StepContact({
             dir="ltr"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
+            placeholder="name@example.com"
             disabled={busy}
           />
         </div>

@@ -1,7 +1,9 @@
 import BlurFade from "@/components/magicui/blur-fade";
+import { PortfolioSetupPlaceholder } from "@/components/portfolio/portfolio-setup-placeholder";
 import { getBlogPostsForUser } from "@/data/blog";
 import { blogViewDocIdUser, getBlogViewCounts } from "@/lib/blog-views";
 import { getAdminUserBySlug } from "@/lib/admin-users";
+import { isPortfolioPublishedForViewer } from "@/lib/public-portfolio-access";
 import { formatReadingTimeAr, formatViewCountAr } from "@/lib/utils";
 import { getMergedSiteDataForUser } from "@/lib/site-data";
 import type { Metadata } from "next";
@@ -19,6 +21,13 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const user = await getAdminUserBySlug(params.slug);
   if (!user || user.disabled) return { title: "Blog" };
+  if (!(await isPortfolioPublishedForViewer(user))) {
+    return {
+      title: "المدونة | قيد الإعداد",
+      description: "هذه الصفحة غير متاحة حتى يكمل صاحبها إعداد المحفظة.",
+      robots: { index: false, follow: false },
+    };
+  }
   const site = await getMergedSiteDataForUser(user.id);
   const posts = await getBlogPostsForUser(user.id);
   const base = publicOrigin();
@@ -47,6 +56,9 @@ export default async function UserBlogIndexPage({
 }) {
   const user = await getAdminUserBySlug(params.slug);
   if (!user || user.disabled) notFound();
+  if (!(await isPortfolioPublishedForViewer(user))) {
+    return <PortfolioSetupPlaceholder />;
+  }
   const posts = await getBlogPostsForUser(user.id);
   const viewKeys = posts.map((p) => blogViewDocIdUser(user.id, p.slug));
   const viewCounts = await getBlogViewCounts(viewKeys);

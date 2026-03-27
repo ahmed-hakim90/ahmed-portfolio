@@ -1,4 +1,5 @@
 import { DEFAULT_SITE_JSON, type SiteJson } from "@/data/site-defaults";
+import { applyOnboardingEmptyDisplay } from "@/lib/onboarding-empty-display";
 import {
   deepMergeSite,
   hydrateSiteJson,
@@ -74,7 +75,11 @@ export async function saveUserSiteJson(userId: string, patch: Partial<SiteJson>)
     };
   }
   try {
-    const merged = mergeSiteJsonForSave(patch);
+    const remote = await getUserSiteJsonFromFirestore(userId);
+    const base: SiteJson = remote
+      ? deepMergeSite(DEFAULT_SITE_JSON, remote)
+      : applyOnboardingEmptyDisplay(DEFAULT_SITE_JSON);
+    const merged = deepMergeSite(base, patch);
     const json = stripUndefinedDeep(merged);
     await db.collection("sites").doc(userId).set(
       {
@@ -96,7 +101,9 @@ export async function getEffectiveSiteJsonForUser(userId: string): Promise<SiteJ
   const remote = await getUserSiteJsonFromFirestore(userId, {
     seedFromGlobalIfMissing: true,
   });
-  if (!remote) return DEFAULT_SITE_JSON;
+  if (!remote) {
+    return applyOnboardingEmptyDisplay(DEFAULT_SITE_JSON);
+  }
   return deepMergeSite(DEFAULT_SITE_JSON, remote);
 }
 

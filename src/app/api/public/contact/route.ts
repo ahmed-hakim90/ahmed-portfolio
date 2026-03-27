@@ -1,4 +1,5 @@
-﻿import { getAdminUserBySlug } from "@/lib/admin-users";
+import { getAdminUserBySlug } from "@/lib/admin-users";
+import { isPortfolioPublishedForViewer } from "@/lib/public-portfolio-access";
 import { getFirestoreDb } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
 import { createHash } from "crypto";
@@ -76,6 +77,15 @@ export async function POST(request: Request) {
   const owner = await getAdminUserBySlug(ownerSlug);
   if (!owner || owner.disabled) {
     return NextResponse.json({ error: "Invalid recipient" }, { status: 400 });
+  }
+  if (!(await isPortfolioPublishedForViewer(owner))) {
+    return NextResponse.json(
+      {
+        error:
+          "صفحة التواصل غير متاحة حتى يكمل صاحبها إعداد المحفظة العامة.",
+      },
+      { status: 403 },
+    );
   }
 
   if (name.length < 2) {

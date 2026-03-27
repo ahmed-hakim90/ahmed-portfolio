@@ -143,6 +143,7 @@ export function StepProjects({
                   className={authFieldClass}
                   value={row.title}
                   onChange={(e) => updateRow(i, "title", e.target.value)}
+                  placeholder="اسم المشروع"
                   disabled={busy}
                 />
               </div>
@@ -153,6 +154,7 @@ export function StepProjects({
                   dir="ltr"
                   value={row.href}
                   onChange={(e) => updateRow(i, "href", e.target.value)}
+                  placeholder="https://github.com/… أو رابط الموقع"
                   disabled={busy}
                 />
               </div>
@@ -204,6 +206,7 @@ export function StepProjects({
                   className={`${authFieldClass} min-h-[80px] resize-y py-3`}
                   value={row.description}
                   onChange={(e) => updateRow(i, "description", e.target.value)}
+                  placeholder="وصف مختصر للمشروع ودورك فيه"
                   disabled={busy}
                 />
               </div>

@@ -10,17 +10,18 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { SiteJson } from "@/data/site-defaults";
+import { DEFAULT_SITE_JSON, type SiteJson } from "@/data/site-defaults";
 import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { RegisterOnboardingStepActionsFn } from "../onboarding-step-actions";
+
+const TEMPLATE_AVATAR = DEFAULT_SITE_JSON.avatarUrl.trim();
 
 type Props = {
   siteData: SiteJson;
   onSave: (patch: Partial<SiteJson>) => Promise<void>;
   onSkip: () => void;
   saving: boolean;
-  /** Disables controls without showing save spinner (e.g. wizard navigation). */
   controlsLocked?: boolean;
   registerActions: RegisterOnboardingStepActionsFn;
 };
@@ -42,6 +43,35 @@ export function StepPersonal({
   const [summary, setSummary] = useState(siteData.summary);
   const [avatarUrl, setAvatarUrl] = useState(siteData.avatarUrl);
 
+  const personalPatch = useCallback(
+    (): Partial<SiteJson> => ({
+      name,
+      initials,
+      location,
+      locationLink,
+      description,
+      summary,
+      avatarUrl,
+    }),
+    [
+      name,
+      initials,
+      location,
+      locationLink,
+      description,
+      summary,
+      avatarUrl,
+    ],
+  );
+
+  const runSave = useCallback(() => {
+    void onSave(personalPatch());
+  }, [onSave, personalPatch]);
+
+  const runSkip = useCallback(() => {
+    onSkip();
+  }, [onSkip]);
+
   useEffect(() => {
     setName(siteData.name);
     setInitials(siteData.initials);
@@ -55,38 +85,22 @@ export function StepPersonal({
   useEffect(() => {
     registerActions({
       kind: "form",
-      save: () =>
-        void onSave({
-          name,
-          initials,
-          location,
-          locationLink,
-          description,
-          summary,
-          avatarUrl,
-        }),
-      skip: onSkip,
+      save: runSave,
+      skip: runSkip,
     });
     return () => registerActions(null);
-  }, [
-    registerActions,
-    onSave,
-    onSkip,
-    name,
-    initials,
-    location,
-    locationLink,
-    description,
-    summary,
-    avatarUrl,
-  ]);
+  }, [registerActions, runSave, runSkip]);
+
+  const hasPhoto =
+    avatarUrl.trim() !== "" && avatarUrl.trim() !== TEMPLATE_AVATAR;
 
   return (
     <Card className="w-full border-border/80 shadow-lg">
       <CardHeader className="space-y-1 px-5 pb-2 pt-6 text-center sm:px-8 sm:pt-8">
         <CardTitle className="text-xl sm:text-2xl">المعلومات الشخصية</CardTitle>
         <CardDescription>
-          الاسم، الموقع، العنوان الوظيفي، ونبذة عنك — كل الحقول اختيارية.
+          لنشر المحفظة للزوار لاحقاً يلزم الاسم الظاهر والعنوان الوظيفي (السطر الرئيسي)
+          في هذه الخطوة؛ باقي الحقول اختيارية.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 px-5 pb-6 pt-2 sm:px-8 sm:pb-8">
@@ -142,14 +156,44 @@ export function StepPersonal({
             disabled={busy}
           />
         </div>
-        <DriveUrlField
-          id="onboarding-avatar-url"
-          label="الصورة الشخصية (Avatar URL)"
-          value={avatarUrl}
-          onChange={setAvatarUrl}
-          uploadKind="avatar"
-          disabled={busy}
-        />
+        <div className="space-y-2 rounded-md border border-border/60 bg-muted/20 p-3">
+          <p className="text-sm font-medium">صورة الملف الشخصية (اختياري)</p>
+          {hasPhoto ? (
+            <div className="flex items-center gap-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={avatarUrl}
+                alt=""
+                className="size-14 rounded-full border border-border object-cover"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="text-xs"
+                disabled={busy}
+                onClick={() => setAvatarUrl("")}
+              >
+                إزالة الصورة
+              </Button>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">لا توجد صورة مضافة حالياً.</p>
+          )}
+          <DriveUrlField
+            id="onboarding-avatar-url"
+            label=""
+            value={avatarUrl}
+            onChange={setAvatarUrl}
+            uploadKind="avatar"
+            disabled={busy}
+            maskDefaultValue={DEFAULT_SITE_JSON.avatarUrl}
+            urlInDetails
+            detailsSummary="رابط أو Google Drive (اختياري)"
+            hideDriveHintInLabel
+            className="pt-1"
+          />
+        </div>
         <div className="space-y-2">
           <label className="text-sm font-medium">نبذة أطول (اختياري)</label>
           <textarea
@@ -161,22 +205,12 @@ export function StepPersonal({
           />
         </div>
         <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-between">
-          <Button type="button" variant="ghost" onClick={onSkip} disabled={busy}>
+          <Button type="button" variant="ghost" onClick={runSkip} disabled={busy}>
             تخطّي
           </Button>
           <Button
             type="button"
-            onClick={() =>
-              void onSave({
-                name,
-                initials,
-                location,
-                locationLink,
-                description,
-                summary,
-                avatarUrl,
-              })
-            }
+            onClick={runSave}
             disabled={busy}
             className="gap-2"
           >

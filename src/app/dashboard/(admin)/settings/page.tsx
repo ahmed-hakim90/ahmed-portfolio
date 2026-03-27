@@ -114,6 +114,13 @@ export default function DashboardSettingsPage() {
         </p>
       </div>
       <SiteVisibilityControls data={siteData} onChange={setSiteData} />
+      <p className="text-xs text-muted-foreground">
+        لإعادة معالج إعداد السيرة الموجّه، افتح{" "}
+        <Link href="/dashboard/site" className="font-medium text-primary underline-offset-4 hover:underline">
+          المحرّر
+        </Link>{" "}
+        واضغط «العودة إلى معالج إعداد السيرة».
+      </p>
     </div>
   );
 }

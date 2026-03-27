@@ -121,6 +121,7 @@ export function StepEducation({
                   className={authFieldClass}
                   value={row.school}
                   onChange={(e) => updateRow(i, "school", e.target.value)}
+                  placeholder="اسم الجامعة أو المعهد"
                   disabled={busy}
                 />
               </div>
@@ -130,6 +131,7 @@ export function StepEducation({
                   className={authFieldClass}
                   value={row.degree}
                   onChange={(e) => updateRow(i, "degree", e.target.value)}
+                  placeholder="مثال: بكالوريوس هندسة حاسوب"
                   disabled={busy}
                 />
               </div>
@@ -162,6 +164,7 @@ export function StepEducation({
                   dir="ltr"
                   value={row.href}
                   onChange={(e) => updateRow(i, "href", e.target.value)}
+                  placeholder="https://…"
                   disabled={busy}
                 />
               </div>

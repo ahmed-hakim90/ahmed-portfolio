@@ -3,10 +3,11 @@
 import { LogoutButton } from "@/components/dashboard/logout-button";
 import { Button } from "@/components/ui/button";
 import type { SiteJson } from "@/data/site-defaults";
+import { applyOnboardingEmptyDisplay } from "@/lib/onboarding-empty-display";
 import { deepMergeSite, mergeSiteJsonForSave } from "@/lib/site-hydrate";
 import { ChevronRight, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { RegisteredOnboardingStepActions } from "./onboarding-step-actions";
 import { StepContact } from "./steps/step-contact";
 import { StepDone } from "./steps/step-done";
@@ -36,11 +37,16 @@ const STEP_TITLES = [
 
 export function OnboardingWizard({
   initialStep,
+  prefillOnboardingInputs,
 }: {
   initialStep: number;
+  /** When true (e.g. reopened wizard after completing once), show saved site data in inputs. */
+  prefillOnboardingInputs: boolean;
 }) {
   const router = useRouter();
   const [siteData, setSiteData] = useState<SiteJson | null>(null);
+  const [usedRealSiteData, setUsedRealSiteData] =
+    useState(prefillOnboardingInputs);
   const [step, setStep] = useState(() => clampOnboardingStep(initialStep));
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -74,6 +80,12 @@ export function OnboardingWizard({
       cancelled = true;
     };
   }, []);
+
+  const wizardSiteData = useMemo(() => {
+    if (!siteData) return null;
+    if (prefillOnboardingInputs || usedRealSiteData) return siteData;
+    return applyOnboardingEmptyDisplay(siteData);
+  }, [siteData, prefillOnboardingInputs, usedRealSiteData]);
 
   const persistOnboardingStep = useCallback(async (nextStep: number) => {
     try {
@@ -118,6 +130,7 @@ export function OnboardingWizard({
           return;
         }
         setSiteData(merged);
+        setUsedRealSiteData(true);
         const nextStep = Math.min(step + 1, MAX_STEP_INDEX);
         const persisted = await persistOnboardingStep(nextStep);
         if (!persisted) return;
@@ -171,14 +184,14 @@ export function OnboardingWizard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ onboardingCompleted: true }),
       });
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
         setError(
           typeof data.error === "string" ? data.error : "تعذّر إتمام الإعداد",
         );
         return;
       }
-      router.push("/dashboard/site");
+      router.push("/dashboard/site?fromOnboarding=1");
       router.refresh();
     } catch {
       setError("تعذّر إتمام الإعداد");
@@ -192,7 +205,7 @@ export function OnboardingWizard({
   const toolbarBusy =
     saving || finishing || backPending || skipPending || !registeredActions;
 
-  if (loading || !siteData) {
+  if (loading || !siteData || !wizardSiteData) {
     return (
       <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4">
         <Loader2 className="h-10 w-10 animate-spin text-primary" aria-hidden />
@@ -328,7 +341,7 @@ export function OnboardingWizard({
       <div className="space-y-6">
         {step === 0 ? (
           <StepPersonal
-            siteData={siteData}
+            siteData={wizardSiteData}
             onSave={handleSave}
             onSkip={handleSkip}
             saving={saving}
@@ -338,7 +351,7 @@ export function OnboardingWizard({
         ) : null}
         {step === 1 ? (
           <StepContact
-            siteData={siteData}
+            siteData={wizardSiteData}
             onSave={handleSave}
             onSkip={handleSkip}
             saving={saving}
@@ -348,7 +361,7 @@ export function OnboardingWizard({
         ) : null}
         {step === 2 ? (
           <StepSkills
-            siteData={siteData}
+            siteData={wizardSiteData}
             onSave={handleSave}
             onSkip={handleSkip}
             saving={saving}
@@ -358,7 +371,7 @@ export function OnboardingWizard({
         ) : null}
         {step === 3 ? (
           <StepWork
-            siteData={siteData}
+            siteData={wizardSiteData}
             onSave={handleSave}
             onSkip={handleSkip}
             saving={saving}
@@ -368,7 +381,7 @@ export function OnboardingWizard({
         ) : null}
         {step === 4 ? (
           <StepEducation
-            siteData={siteData}
+            siteData={wizardSiteData}
             onSave={handleSave}
             onSkip={handleSkip}
             saving={saving}
@@ -378,7 +391,7 @@ export function OnboardingWizard({
         ) : null}
         {step === 5 ? (
           <StepProjects
-            siteData={siteData}
+            siteData={wizardSiteData}
             onSave={handleSave}
             onSkip={handleSkip}
             saving={saving}

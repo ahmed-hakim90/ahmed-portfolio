@@ -1,5 +1,7 @@
 import { DEFAULT_SITE_JSON, type SiteJson } from "@/data/site-defaults";
-import { saveUserSiteJson } from "@/lib/site-data";
+import { meetsMinimumPortfolioRemote } from "@/lib/portfolio-minimum-profile";
+import { emptySocialLinksFromBase } from "@/lib/onboarding-empty-display";
+import { getUserSiteJsonFromFirestore, saveUserSiteJson } from "@/lib/site-data";
 import { getFirebaseAdminAuth, getFirestoreDb } from "@/lib/firebase-admin";
 import { timingSafeEqual } from "node:crypto";
 
@@ -20,6 +22,11 @@ export type AdminUserPublic = {
   onboardingCompleted: boolean;
   /** Current step index in the CV onboarding wizard (0–6). */
   onboardingStep: number;
+  /**
+   * True after onboarding completed at least once; not cleared on reopen.
+   * Used to prefill wizard from saved site vs empty first-time display.
+   */
+  onboardingEverCompletedOnce: boolean;
 };
 
 type AdminUserDoc = {
@@ -33,6 +40,8 @@ type AdminUserDoc = {
   onboardingCompleted?: boolean;
   /** CV onboarding wizard step index (0–6). */
   onboardingStep?: number;
+  /** Set on first markOnboardingComplete; persists through reopenOnboarding. */
+  onboardingEverCompletedOnce?: boolean;
 };
 
 /** Inclusive max step index for the 7-step onboarding wizard. */
@@ -116,6 +125,7 @@ function docToPublic(
     createdAt: data.createdAt,
     onboardingCompleted: data.onboardingCompleted !== false,
     onboardingStep: normalizeOnboardingStep(data.onboardingStep),
+    onboardingEverCompletedOnce: data.onboardingEverCompletedOnce === true,
   };
 }
 
@@ -244,16 +254,26 @@ async function seedNewClientSiteJson(
   const patch: Partial<SiteJson> = {
     name: trimmedName,
     initials: initialsFromDisplayName(trimmedName),
+    description: "",
+    summary: "",
+    location: "",
+    locationLink: "",
+    avatarUrl: "",
+    skills: [],
+    work: [],
+    education: [],
+    projects: [],
     ...(portfolioUrl ? { url: portfolioUrl } : {}),
     contact: {
       ...DEFAULT_SITE_JSON.contact,
       email: normalizedEmail,
       tel,
       social: {
-        ...baseSocial,
+        ...emptySocialLinksFromBase(baseSocial),
         email: {
           ...baseSocial.email,
           url: mailto,
+          enabled: true,
         },
       },
     },
@@ -388,19 +408,49 @@ export async function createAdminUserDocument(
     slug,
     disabled: false,
     onboardingCompleted: false,
+    onboardingStep: 0,
     createdAt: new Date().toISOString(),
   } satisfies AdminUserDoc);
   return { ok: true };
 }
 
-/** Marks the user as having finished (or skipped) first-login onboarding. */
-export async function markOnboardingComplete(uid: string): Promise<boolean> {
+export type MarkOnboardingCompleteResult =
+  | { ok: true }
+  | { ok: false; error: "not_found" | "incomplete_profile" | "db_error" };
+
+/** Marks onboarding complete after validating minimum saved portfolio data. */
+export async function markOnboardingComplete(
+  uid: string,
+): Promise<MarkOnboardingCompleteResult> {
+  const db = getFirestoreDb();
+  if (!db) return { ok: false, error: "db_error" };
+  const ref = db.collection(COLLECTION).doc(uid);
+  const doc = await ref.get();
+  if (!doc.exists) return { ok: false, error: "not_found" };
+  const remote = await getUserSiteJsonFromFirestore(uid);
+  if (!meetsMinimumPortfolioRemote(remote)) {
+    return { ok: false, error: "incomplete_profile" };
+  }
+  await ref.update({
+    onboardingCompleted: true,
+    onboardingEverCompletedOnce: true,
+    onboardingStep: ONBOARDING_MAX_STEP_INDEX,
+  });
+  return { ok: true };
+}
+
+/** Re-opens the CV onboarding wizard (e.g. user chose to return from settings). */
+export async function reopenOnboarding(uid: string): Promise<boolean> {
   const db = getFirestoreDb();
   if (!db) return false;
   const ref = db.collection(COLLECTION).doc(uid);
   const doc = await ref.get();
   if (!doc.exists) return false;
-  await ref.update({ onboardingCompleted: true });
+  await ref.update({
+    onboardingCompleted: false,
+    /** Reopen is only used after a completed profile; ensures wizard prefill for legacy docs. */
+    onboardingEverCompletedOnce: true,
+  });
   return true;
 }
 

@@ -120,6 +120,7 @@ export function StepWork({
                   className={authFieldClass}
                   value={row.title}
                   onChange={(e) => updateRow(i, "title", e.target.value)}
+                  placeholder="مثال: مطوّر واجهات أمامية"
                   disabled={busy}
                 />
               </div>
@@ -129,6 +130,7 @@ export function StepWork({
                   className={authFieldClass}
                   value={row.company}
                   onChange={(e) => updateRow(i, "company", e.target.value)}
+                  placeholder="اسم الشركة أو العميل"
                   disabled={busy}
                 />
               </div>
@@ -138,6 +140,7 @@ export function StepWork({
                   className={authFieldClass}
                   value={row.location}
                   onChange={(e) => updateRow(i, "location", e.target.value)}
+                  placeholder="القاهرة، مصر — أو عن بُعد"
                   disabled={busy}
                 />
               </div>
@@ -170,6 +173,7 @@ export function StepWork({
                   dir="ltr"
                   value={row.href}
                   onChange={(e) => updateRow(i, "href", e.target.value)}
+                  placeholder="https://…"
                   disabled={busy}
                 />
               </div>
@@ -188,6 +192,7 @@ export function StepWork({
                   className={`${authFieldClass} min-h-[80px] resize-y py-3`}
                   value={row.description}
                   onChange={(e) => updateRow(i, "description", e.target.value)}
+                  placeholder="ماذا أنجزت في هذه الوظيفة؟"
                   disabled={busy}
                 />
               </div>

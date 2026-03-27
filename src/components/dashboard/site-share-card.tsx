@@ -59,7 +59,7 @@ function resolveDynamicBadge(data: MergedSiteData, blogPostCount: number): {
       tone: "success",
     };
   }
-  if (data.publicControls.blog.enabled && blogPostCount > 0) {
+  if (data.publicControls.routes.blog.enabled && blogPostCount > 0) {
     return { label: `كاتب محتوى · ${arNum(blogPostCount)} مقالات`, tone: "brand" };
   }
   const activeProjects = data.projects.filter((p) => p.active).length;

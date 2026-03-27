@@ -10,13 +10,17 @@ import { captureAndSharePortfolioImage } from "@/lib/site-share-image";
 import { buildPublicPortfolioUrl, getEnvPublicSiteBase, resolvePublicSiteBase } from "@/lib/site-public-base";
 import { hydrateSiteJson, mergeSiteJsonForSave } from "@/lib/site-hydrate";
 import { cn } from "@/lib/utils";
-import { ExternalLink, Printer, Share2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { ExternalLink, Loader2, Printer, Share2 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type SlugAvailabilityDetail = "yours" | "available" | "taken" | "invalid";
 
-export default function DashboardSitePage() {
+function DashboardSitePageInner() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const setHeaderActions = useAdminHeaderActions();
   const [siteData, setSiteData] = useState<SiteJson | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -36,6 +40,10 @@ export default function DashboardSitePage() {
   const [shareBusy, setShareBusy] = useState(false);
   const shareCardRef = useRef<HTMLDivElement>(null);
   const [siteEditorTab, setSiteEditorTab] = useState<"general" | "profile" | "career">("general");
+  const [reopenWizardBusy, setReopenWizardBusy] = useState(false);
+  const [editorEntranceDone, setEditorEntranceDone] = useState(false);
+  const fromOnboardingParam = searchParams.get("fromOnboarding") === "1";
+  const playEditorEntrance = fromOnboardingParam && !editorEntranceDone;
 
   useEffect(() => {
     let cancelled = false;
@@ -277,6 +285,31 @@ export default function DashboardSitePage() {
     }
   }
 
+  const reopenOnboardingWizard = useCallback(async () => {
+    setMessage(null);
+    setReopenWizardBusy(true);
+    try {
+      const res = await fetch("/api/admin/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ onboardingCompleted: false }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMessage(
+          typeof data.error === "string" ? data.error : "تعذّر فتح المعالج",
+        );
+        return;
+      }
+      router.push("/dashboard/onboarding");
+      router.refresh();
+    } catch {
+      setMessage("تعذّر فتح المعالج");
+    } finally {
+      setReopenWizardBusy(false);
+    }
+  }, [router]);
+
   if (loading) {
     return <p className="text-sm text-muted-foreground">جاري التحميل…</p>;
   }
@@ -299,17 +332,49 @@ export default function DashboardSitePage() {
           />
         </div>
       ) : null}
-    <div className="grid gap-8 xl:grid-cols-2 xl:items-start">
+    <motion.div
+      className="grid gap-8 xl:grid-cols-2 xl:items-start"
+      initial={playEditorEntrance ? { opacity: 0, y: 10 } : false}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+      onAnimationComplete={() => {
+        if (!fromOnboardingParam || editorEntranceDone) return;
+        setEditorEntranceDone(true);
+        router.replace("/dashboard/site", { scroll: false });
+      }}
+    >
       <div className="min-w-0 space-y-4">
         <div id="site-public-link" className="scroll-mt-28">
-          <h1 className="text-xl font-semibold tracking-tight">محتوى الموقع</h1>
-          <p className="mt-1 max-w-prose text-sm text-muted-foreground">
-            عدّل الرابط والمحتوى؛ الظهور للزوار والثيم من{" "}
-            <Link href="/dashboard/settings" className="font-medium text-primary underline-offset-4 hover:underline">
-              الإعدادات
-            </Link>
-            . المعاينة تتحدّث مع الحقول.
-          </p>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <h1 className="text-xl font-semibold tracking-tight">محتوى الموقع</h1>
+              <p className="mt-1 max-w-prose text-sm text-muted-foreground">
+                عدّل الرابط والمحتوى؛ المعاينة تتحدّث مع الحقول. الظهور للزوار والثيم من{" "}
+                <Link
+                  href="/dashboard/settings"
+                  className="font-medium text-primary underline-offset-4 hover:underline"
+                >
+                  الإعدادات
+                </Link>
+                .
+              </p>
+            </div>
+            <Button
+              type="button"
+              className="shrink-0 gap-2"
+              onClick={() => void reopenOnboardingWizard()}
+              disabled={reopenWizardBusy}
+            >
+              {reopenWizardBusy ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  جاري الفتح…
+                </>
+              ) : (
+                "العودة إلى معالج إعداد السيرة"
+              )}
+            </Button>
+          </div>
           <div className="mt-4 flex flex-wrap gap-2 border-b border-border pb-3">
             {(
               [
@@ -509,7 +574,17 @@ export default function DashboardSitePage() {
           contactOwnerSlug={slug.trim() || undefined}
         />
       </div>
-    </div>
+    </motion.div>
     </>
+  );
+}
+
+export default function DashboardSitePage() {
+  return (
+    <Suspense
+      fallback={<p className="text-sm text-muted-foreground">جاري التحميل…</p>}
+    >
+      <DashboardSitePageInner />
+    </Suspense>
   );
 }

@@ -41,12 +41,14 @@ export function StepDone({
         </div>
         <CardTitle className="text-xl sm:text-2xl">اكتمل الإعداد</CardTitle>
         <CardDescription>
-          يمكنك الآن فتح لوحة التحكم وتعديل السيرة أو الموقع من المحرر في أي وقت.
+          تُنشر المحفظة للزوار فقط إذا اكتمل الملف: الاسم والسطر الرئيسي، وتواصل، وإضافة
+          مهارة أو خبرة أو تعليم أو مشروع — التخطّي بين الخطوات لا يكفي بدون هذه الأقسام.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 px-5 pb-6 pt-2 sm:px-8 sm:pb-8">
         <ul className="rounded-lg border border-border/60 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
           <li>• تم حفظ بياناتك على الخادم عند الضغط على «حفظ ومتابعة» في كل خطوة.</li>
+          <li>• إن ظهرت رسالة خطأ عند الإنهاء، راجع الخطوة الأولى والثانية وتأكد من الحقول المطلوبة.</li>
           <li>• من لوحة التحكم يمكنك تغيير المظهر، الأقسام، والمدونة.</li>
         </ul>
         <Button

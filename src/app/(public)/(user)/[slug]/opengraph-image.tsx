@@ -1,4 +1,5 @@
 import { getAdminUserBySlug } from "@/lib/admin-users";
+import { isPortfolioPublishedForViewer } from "@/lib/public-portfolio-access";
 import { getEffectiveSiteJsonForUser } from "@/lib/site-data";
 import { ImageResponse } from "next/og";
 
@@ -17,7 +18,7 @@ function truncate(text: string, max: number): string {
 
 export default async function Image({ params }: Props) {
   const user = await getAdminUserBySlug(params.slug);
-  if (!user || user.disabled) {
+  if (!user || user.disabled || !(await isPortfolioPublishedForViewer(user))) {
     return new ImageResponse(
       (
         <div

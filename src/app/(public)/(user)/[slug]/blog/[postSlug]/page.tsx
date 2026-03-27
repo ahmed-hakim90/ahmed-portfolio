@@ -1,3 +1,4 @@
+import { PortfolioSetupPlaceholder } from "@/components/portfolio/portfolio-setup-placeholder";
 import { getPostForUser } from "@/data/blog";
 import {
   blogViewDocIdUser,
@@ -5,6 +6,7 @@ import {
   recordBlogPostView,
 } from "@/lib/blog-views";
 import { getAdminUserBySlug } from "@/lib/admin-users";
+import { isPortfolioPublishedForViewer } from "@/lib/public-portfolio-access";
 import { getMergedSiteDataForUser } from "@/lib/site-data";
 import {
   formatDate,
@@ -24,6 +26,13 @@ export async function generateMetadata({
 }): Promise<Metadata | undefined> {
   const user = await getAdminUserBySlug(params.slug);
   if (!user || user.disabled) return undefined;
+  if (!(await isPortfolioPublishedForViewer(user))) {
+    return {
+      title: "مقال غير متاح",
+      description: "أكمل صاحب المحفظة إعداد الصفحة العامة أولاً.",
+      robots: { index: false, follow: false },
+    };
+  }
   const site = await getMergedSiteDataForUser(user.id);
   const post = await getPostForUser(user.id, params.postSlug);
   if (!post) return undefined;
@@ -71,6 +80,9 @@ export default async function UserBlogPostPage({
 }) {
   const user = await getAdminUserBySlug(params.slug);
   if (!user || user.disabled) notFound();
+  if (!(await isPortfolioPublishedForViewer(user))) {
+    return <PortfolioSetupPlaceholder />;
+  }
   const site = await getMergedSiteDataForUser(user.id);
   const post = await getPostForUser(user.id, params.postSlug);
   if (!post) notFound();

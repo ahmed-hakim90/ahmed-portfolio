@@ -17,5 +17,10 @@ export default async function OnboardingPage() {
   if (user.onboardingCompleted) {
     redirect("/dashboard/site");
   }
-  return <OnboardingWizard initialStep={user.onboardingStep} />;
+  return (
+    <OnboardingWizard
+      initialStep={user.onboardingStep}
+      prefillOnboardingInputs={user.onboardingEverCompletedOnce}
+    />
+  );
 }

@@ -1,6 +1,8 @@
 import { PersonJsonLd } from "@/components/portfolio/person-json-ld";
 import { PortfolioPage } from "@/components/portfolio/portfolio-page";
+import { PortfolioSetupPlaceholder } from "@/components/portfolio/portfolio-setup-placeholder";
 import { getAdminUserBySlug } from "@/lib/admin-users";
+import { isPortfolioPublishedForViewer } from "@/lib/public-portfolio-access";
 import {
   getEffectiveSiteJsonForUser,
   getMergedSiteDataForUser,
@@ -19,6 +21,13 @@ function publicOrigin(): string {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const user = await getAdminUserBySlug(params.slug);
   if (!user || user.disabled) return {};
+  if (!(await isPortfolioPublishedForViewer(user))) {
+    return {
+      title: "صفحة قيد الإعداد",
+      description: "صاحب الرابط لم يكمل إعداد المحفظة بعد.",
+      robots: { index: false, follow: false },
+    };
+  }
   const data = await getMergedSiteDataForUser(user.id);
   const base = publicOrigin();
   const pageUrl = base ? `${base}/${user.slug}` : undefined;
@@ -57,6 +66,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function PublicUserPage({ params }: PageProps) {
   const user = await getAdminUserBySlug(params.slug);
   if (!user || user.disabled) notFound();
+  if (!(await isPortfolioPublishedForViewer(user))) {
+    return <PortfolioSetupPlaceholder />;
+  }
   const [data, siteJson] = await Promise.all([
     getMergedSiteDataForUser(user.id),
     getEffectiveSiteJsonForUser(user.id),

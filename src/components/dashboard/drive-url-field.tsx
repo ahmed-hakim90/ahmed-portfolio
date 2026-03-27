@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -8,7 +8,7 @@ import {
 import { googleDriveShareUrlToViewUrl } from "@/lib/google-drive-url";
 import { cn } from "@/lib/utils";
 import { Loader2, Upload } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type Props = {
   id: string;
@@ -18,6 +18,10 @@ type Props = {
   className?: string;
   uploadKind?: AdminUploadKind;
   disabled?: boolean;
+  maskDefaultValue?: string;
+  urlInDetails?: boolean;
+  detailsSummary?: string;
+  hideDriveHintInLabel?: boolean;
 };
 
 function formatBytes(bytes: number): string {
@@ -40,10 +44,23 @@ export function DriveUrlField({
   className,
   uploadKind,
   disabled = false,
+  maskDefaultValue,
+  urlInDetails = false,
+  detailsSummary = "رابط الصورة أو Google Drive (اختياري)",
+  hideDriveHintInLabel = false,
 }: Props) {
   const [uploading, setUploading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [statusError, setStatusError] = useState(false);
+
+  const maskTrim = maskDefaultValue?.trim();
+  const displayUrl =
+    maskTrim !== undefined && value.trim() === maskTrim ? "" : value;
+
+  useEffect(() => {
+    setStatus(null);
+    setStatusError(false);
+  }, [value]);
 
   async function handleUpload(file: File | null) {
     if (!file || !uploadKind) return;
@@ -72,64 +89,89 @@ export function DriveUrlField({
     setUploading(false);
   }
 
+  const urlRow = (
+    <div className="flex flex-wrap gap-2">
+      <input
+        id={id}
+        type="url"
+        value={displayUrl}
+        onChange={(e) => onChange(e.target.value)}
+        className="min-w-0 flex-1 rounded-md border border-input bg-background px-2 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+        placeholder="https://drive.google.com/file/d/…"
+        disabled={disabled || uploading}
+      />
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
+        className="shrink-0 text-xs"
+        disabled={disabled || uploading}
+        onClick={() => {
+          const next = googleDriveShareUrlToViewUrl(displayUrl || value);
+          if (next) onChange(next);
+        }}
+      >
+        Convert Drive link
+      </Button>
+    </div>
+  );
+
+  const uploadControl =
+    uploadKind ? (
+      <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-xs hover:bg-muted/50">
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+          className="hidden"
+          disabled={disabled || uploading}
+          onChange={(e) => {
+            const file = e.target.files?.[0] ?? null;
+            void handleUpload(file);
+            e.currentTarget.value = "";
+          }}
+        />
+        {uploading ? (
+          <>
+            <Loader2 className="size-3.5 animate-spin" aria-hidden />
+            Uploading…
+          </>
+        ) : (
+          <>
+            <Upload className="size-3.5" aria-hidden />
+            Upload image
+          </>
+        )}
+      </label>
+    ) : null;
+
   return (
     <div className={cn("space-y-1", className)}>
-      <label htmlFor={id} className="text-xs font-medium text-muted-foreground">
-        {label}{" "}
-        <span className="font-normal text-muted-foreground/80">
-          (Google Drive: paste share link, then convert — file must be shared)
-        </span>
-      </label>
-      <div className="flex flex-wrap gap-2">
-        <input
-          id={id}
-          type="url"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="min-w-0 flex-1 rounded-md border border-input bg-background px-2 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-50"
-          placeholder="https://drive.google.com/file/d/…"
-          disabled={disabled || uploading}
-        />
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          className="shrink-0 text-xs"
-          disabled={disabled || uploading}
-          onClick={() => {
-            const next = googleDriveShareUrlToViewUrl(value);
-            if (next) onChange(next);
-          }}
-        >
-          Convert Drive link
-        </Button>
-        {uploadKind ? (
-          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-xs hover:bg-muted/50">
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
-              className="hidden"
-              disabled={disabled || uploading}
-              onChange={(e) => {
-                const file = e.target.files?.[0] ?? null;
-                void handleUpload(file);
-                e.currentTarget.value = "";
-              }}
-            />
-            {uploading ? (
-              <>
-                <Loader2 className="size-3.5 animate-spin" aria-hidden />
-                Uploading…
-              </>
-            ) : (
-              <>
-                <Upload className="size-3.5" aria-hidden />
-                Upload image
-              </>
-            )}
-          </label>
-        ) : null}
-      </div>
+      {label ? (
+        <label htmlFor={id} className="text-xs font-medium text-muted-foreground">
+          {label}{" "}
+          {!hideDriveHintInLabel ? (
+            <span className="font-normal text-muted-foreground/80">
+              (Google Drive: paste share link, then convert — file must be shared)
+            </span>
+          ) : null}
+        </label>
+      ) : null}
+      {urlInDetails ? (
+        <div className="flex flex-wrap items-center gap-2">
+          {uploadControl}
+          <details className="min-w-0 flex-1 basis-full sm:basis-auto">
+            <summary className="cursor-pointer text-[11px] text-muted-foreground underline-offset-2 hover:underline">
+              {detailsSummary}
+            </summary>
+            <div className="mt-2 space-y-2">{urlRow}</div>
+          </details>
+        </div>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          {urlRow}
+          {uploadControl}
+        </div>
+      )}
       {uploadKind ? (
         status ? (
           <p
