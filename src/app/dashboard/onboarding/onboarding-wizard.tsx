@@ -4,6 +4,11 @@ import { LogoutButton } from "@/components/dashboard/logout-button";
 import { Button } from "@/components/ui/button";
 import type { SiteJson } from "@/data/site-defaults";
 import { applyOnboardingEmptyDisplay } from "@/lib/onboarding-empty-display";
+import {
+  getMinimumPortfolioGaps,
+  meetsMinimumPortfolioRemote,
+  type MinimumPortfolioGaps,
+} from "@/lib/portfolio-minimum-profile";
 import { deepMergeSite, mergeSiteJsonForSave } from "@/lib/site-hydrate";
 import { ChevronRight, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -23,6 +28,35 @@ const MAX_STEP_INDEX = TOTAL_STEPS - 1;
 function clampOnboardingStep(n: number): number {
   const x = Number.isFinite(n) ? Math.floor(n) : 0;
   return Math.min(MAX_STEP_INDEX, Math.max(0, x));
+}
+
+type CompletionHints =
+  | null
+  | { type: "personal"; name: boolean; description: boolean }
+  | { type: "contact" }
+  | { type: "substantive" };
+
+function navigationFromGaps(gaps: MinimumPortfolioGaps): {
+  step: number;
+  hints: CompletionHints;
+} {
+  if (gaps.missingName || gaps.missingDescription) {
+    return {
+      step: 0,
+      hints: {
+        type: "personal",
+        name: gaps.missingName,
+        description: gaps.missingDescription,
+      },
+    };
+  }
+  if (gaps.missingContact) {
+    return { step: 1, hints: { type: "contact" } };
+  }
+  if (gaps.missingSubstantive) {
+    return { step: 2, hints: { type: "substantive" } };
+  }
+  return { step: 0, hints: null };
 }
 
 const STEP_TITLES = [
@@ -54,8 +88,29 @@ export function OnboardingWizard({
   const [backPending, setBackPending] = useState(false);
   const [skipPending, setSkipPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [completionHints, setCompletionHints] =
+    useState<CompletionHints>(null);
   const [registeredActions, setRegisteredActions] =
     useState<RegisteredOnboardingStepActions | null>(null);
+
+  const clearPersonalFieldHint = useCallback(
+    (field: "name" | "description") => {
+      setCompletionHints((h) => {
+        if (!h || h.type !== "personal") return h;
+        const next = {
+          ...h,
+          [field]: false,
+        };
+        if (!next.name && !next.description) return null;
+        return next;
+      });
+    },
+    [],
+  );
+
+  const clearCompletionHints = useCallback(() => {
+    setCompletionHints(null);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -131,6 +186,7 @@ export function OnboardingWizard({
         }
         setSiteData(merged);
         setUsedRealSiteData(true);
+        setCompletionHints(null);
         const nextStep = Math.min(step + 1, MAX_STEP_INDEX);
         const persisted = await persistOnboardingStep(nextStep);
         if (!persisted) return;
@@ -176,7 +232,15 @@ export function OnboardingWizard({
   }, [step, persistOnboardingStep]);
 
   const handleFinish = useCallback(async () => {
+    if (!siteData) return;
     setError(null);
+    if (!meetsMinimumPortfolioRemote(siteData)) {
+      const gaps = getMinimumPortfolioGaps(siteData);
+      const { step: targetStep, hints } = navigationFromGaps(gaps);
+      setCompletionHints(hints);
+      setStep(targetStep);
+      return;
+    }
     setFinishing(true);
     try {
       const res = await fetch("/api/admin/profile", {
@@ -184,8 +248,18 @@ export function OnboardingWizard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ onboardingCompleted: true }),
       });
-      const data = await res.json().catch(() => ({}));
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        code?: string;
+      };
       if (!res.ok) {
+        if (data.code === "incomplete_profile") {
+          const gaps = getMinimumPortfolioGaps(siteData);
+          const { step: targetStep, hints } = navigationFromGaps(gaps);
+          setCompletionHints(hints);
+          setStep(targetStep);
+          return;
+        }
         setError(
           typeof data.error === "string" ? data.error : "تعذّر إتمام الإعداد",
         );
@@ -198,7 +272,7 @@ export function OnboardingWizard({
     } finally {
       setFinishing(false);
     }
-  }, [router]);
+  }, [router, siteData]);
 
   const controlsLocked = backPending || skipPending;
 
@@ -347,6 +421,14 @@ export function OnboardingWizard({
             saving={saving}
             controlsLocked={controlsLocked}
             registerActions={setRegisteredActions}
+            invalidName={
+              completionHints?.type === "personal" && completionHints.name
+            }
+            invalidDescription={
+              completionHints?.type === "personal" &&
+              completionHints.description
+            }
+            onClearPersonalFieldHint={clearPersonalFieldHint}
           />
         ) : null}
         {step === 1 ? (
@@ -357,6 +439,8 @@ export function OnboardingWizard({
             saving={saving}
             controlsLocked={controlsLocked}
             registerActions={setRegisteredActions}
+            highlightContactInvalid={completionHints?.type === "contact"}
+            onClearCompletionHints={clearCompletionHints}
           />
         ) : null}
         {step === 2 ? (
@@ -367,6 +451,10 @@ export function OnboardingWizard({
             saving={saving}
             controlsLocked={controlsLocked}
             registerActions={setRegisteredActions}
+            highlightSubstantiveInvalid={
+              completionHints?.type === "substantive"
+            }
+            onClearCompletionHints={clearCompletionHints}
           />
         ) : null}
         {step === 3 ? (

@@ -3,6 +3,7 @@ import {
   deleteAdminUser,
   getAdminUserById,
   setAdminUserDisabled,
+  setPublicPortfolioAccess,
   updateAdminUserPassword,
 } from "@/lib/admin-users";
 import { NextResponse } from "next/server";
@@ -86,6 +87,36 @@ export async function PATCH(request: Request, { params }: Ctx) {
         },
         { status: 400 },
       );
+    }
+  }
+
+  const access = body.publicPortfolioAccess;
+  if (access === "disable" || access === "extend") {
+    if (access === "disable") {
+      const r = await setPublicPortfolioAccess(id, { mode: "disable" });
+      if (!r.ok) {
+        return NextResponse.json(
+          { error: r.error },
+          { status: r.error === "User not found" ? 404 : 400 },
+        );
+      }
+    } else {
+      const months = body.publicPortfolioMonths;
+      const m =
+        months === 1 || months === 6 || months === 12 ? months : null;
+      if (m === null) {
+        return NextResponse.json(
+          { error: "publicPortfolioMonths must be 1, 6, or 12" },
+          { status: 400 },
+        );
+      }
+      const r = await setPublicPortfolioAccess(id, { mode: "extend", months: m });
+      if (!r.ok) {
+        return NextResponse.json(
+          { error: r.error },
+          { status: r.error === "User not found" ? 404 : 400 },
+        );
+      }
     }
   }
 

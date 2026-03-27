@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { SiteJson } from "@/data/site-defaults";
+import { cn } from "@/lib/utils";
 import { Loader2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { RegisterOnboardingStepActionsFn } from "../onboarding-step-actions";
@@ -21,6 +22,8 @@ type Props = {
   saving: boolean;
   controlsLocked?: boolean;
   registerActions: RegisterOnboardingStepActionsFn;
+  highlightSubstantiveInvalid?: boolean;
+  onClearCompletionHints?: () => void;
 };
 
 export function StepSkills({
@@ -30,6 +33,8 @@ export function StepSkills({
   saving,
   controlsLocked = false,
   registerActions,
+  highlightSubstantiveInvalid = false,
+  onClearCompletionHints,
 }: Props) {
   const busy = saving || controlsLocked;
   const [skills, setSkills] = useState<string[]>(siteData.skills ?? []);
@@ -53,6 +58,7 @@ export function StepSkills({
     if (!t) return;
     const parts = t.split(/[,،]/).map((s) => s.trim()).filter(Boolean);
     if (parts.length === 0) return;
+    onClearCompletionHints?.();
     setSkills((prev) => {
       const next = [...prev];
       for (const p of parts) {
@@ -70,17 +76,33 @@ export function StepSkills({
   }
 
   return (
-    <Card className="w-full border-border/80 shadow-lg">
+    <Card
+      className={cn(
+        "w-full border-border/80 shadow-lg",
+        highlightSubstantiveInvalid &&
+          "border-destructive ring-2 ring-destructive",
+      )}
+    >
       <CardHeader className="space-y-1 px-5 pb-2 pt-6 text-center sm:px-8 sm:pt-8">
         <CardTitle className="text-xl sm:text-2xl">المهارات</CardTitle>
         <CardDescription>
           أضف مهارة واحدة أو عدة مهارات مفصولة بفاصلة، ثم اضغط «إضافة».
         </CardDescription>
+        {highlightSubstantiveInvalid ? (
+          <p className="text-sm text-destructive" role="status">
+            أضف مهارة هنا أو أكمل خطوة خبرة عمل / تعليم / مشاريع — يلزم قسم واحد على
+            الأقل لإنهاء الإعداد.
+          </p>
+        ) : null}
       </CardHeader>
       <CardContent className="space-y-4 px-5 pb-6 pt-2 sm:px-8 sm:pb-8">
         <div className="flex flex-col gap-2 sm:flex-row">
           <input
-            className={authFieldClass}
+            className={cn(
+              authFieldClass,
+              highlightSubstantiveInvalid &&
+                "border-destructive ring-1 ring-destructive",
+            )}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
@@ -91,6 +113,7 @@ export function StepSkills({
             }}
             placeholder="React، TypeScript، Node…"
             disabled={busy}
+            aria-invalid={highlightSubstantiveInvalid ? true : undefined}
           />
           <Button type="button" variant="secondary" onClick={addSkill} disabled={busy}>
             إضافة

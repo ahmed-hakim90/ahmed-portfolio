@@ -1,5 +1,8 @@
 import { getAdminUserBySlug } from "@/lib/admin-users";
-import { isPortfolioPublishedForViewer } from "@/lib/public-portfolio-access";
+import {
+  isPortfolioPublishedForViewer,
+  isPublicPortfolioUrlAccessible,
+} from "@/lib/public-portfolio-access";
 import { getEffectiveSiteJsonForUser } from "@/lib/site-data";
 import { redirect } from "next/navigation";
 
@@ -11,6 +14,9 @@ type Props = {
 export default async function UserBlogLayout({ children, params }: Props) {
   const user = await getAdminUserBySlug(params.slug);
   if (!user || user.disabled) {
+    redirect("/");
+  }
+  if (!isPublicPortfolioUrlAccessible(user)) {
     redirect("/");
   }
   if (!(await isPortfolioPublishedForViewer(user))) {

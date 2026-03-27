@@ -4,7 +4,10 @@ import { getBlogPostsForUser } from "@/data/blog";
 import { DEFAULT_SITE_JSON } from "@/data/site-defaults";
 import { getAdminUserBySlug } from "@/lib/admin-users";
 import { getPortfolioHtmlAttrs } from "@/lib/portfolio-display";
-import { isPortfolioPublishedForViewer } from "@/lib/public-portfolio-access";
+import {
+  isPortfolioPublishedForViewer,
+  isPublicPortfolioUrlAccessible,
+} from "@/lib/public-portfolio-access";
 import { getEffectiveSiteJsonForUser } from "@/lib/site-data";
 import { withSlugPrefix } from "@/lib/slug-nav";
 import { getUiMessages, localeFromCookie } from "@/lib/i18n-messages";
@@ -21,6 +24,7 @@ export default async function UserSlugLayout({
 }) {
   const user = await getAdminUserBySlug(params.slug);
   if (!user || user.disabled) notFound();
+  if (!isPublicPortfolioUrlAccessible(user)) notFound();
   const locale = localeFromCookie(cookies().get("portfolio_locale")?.value);
   const ui = getUiMessages(locale);
 

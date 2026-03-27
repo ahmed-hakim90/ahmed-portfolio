@@ -1,5 +1,8 @@
 import { getAdminUserBySlug } from "@/lib/admin-users";
-import { isPortfolioPublishedForViewer } from "@/lib/public-portfolio-access";
+import {
+  isPortfolioPublishedForViewer,
+  isPublicPortfolioUrlAccessible,
+} from "@/lib/public-portfolio-access";
 import { sanitizeCvPdfFilename } from "@/lib/cv-pdf-asset-url";
 import { getRequestOrigin } from "@/lib/request-origin";
 import { renderCvPdfBuffer } from "@/lib/render-cv-pdf";
@@ -22,6 +25,9 @@ export async function GET(request: Request) {
   if (slug) {
     const user = await getAdminUserBySlug(slug);
     if (!user || user.disabled) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    if (!isPublicPortfolioUrlAccessible(user)) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
     if (!(await isPortfolioPublishedForViewer(user))) {

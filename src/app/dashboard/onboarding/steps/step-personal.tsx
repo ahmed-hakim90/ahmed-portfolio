@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { DEFAULT_SITE_JSON, type SiteJson } from "@/data/site-defaults";
+import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import type { RegisterOnboardingStepActionsFn } from "../onboarding-step-actions";
@@ -24,6 +25,9 @@ type Props = {
   saving: boolean;
   controlsLocked?: boolean;
   registerActions: RegisterOnboardingStepActionsFn;
+  invalidName?: boolean;
+  invalidDescription?: boolean;
+  onClearPersonalFieldHint?: (field: "name" | "description") => void;
 };
 
 export function StepPersonal({
@@ -33,6 +37,9 @@ export function StepPersonal({
   saving,
   controlsLocked = false,
   registerActions,
+  invalidName = false,
+  invalidDescription = false,
+  onClearPersonalFieldHint,
 }: Props) {
   const busy = saving || controlsLocked;
   const [name, setName] = useState(siteData.name);
@@ -107,11 +114,18 @@ export function StepPersonal({
         <div className="space-y-2">
           <label className="text-sm font-medium">الاسم الظاهر</label>
           <input
-            className={authFieldClass}
+            className={cn(
+              authFieldClass,
+              invalidName && "border-destructive ring-1 ring-destructive",
+            )}
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => {
+              setName(e.target.value);
+              onClearPersonalFieldHint?.("name");
+            }}
             placeholder="اسمك الكامل"
             disabled={busy}
+            aria-invalid={invalidName || undefined}
           />
         </div>
         <div className="space-y-2">
@@ -149,11 +163,18 @@ export function StepPersonal({
         <div className="space-y-2">
           <label className="text-sm font-medium">العنوان الوظيفي / السطر الرئيسي</label>
           <input
-            className={authFieldClass}
+            className={cn(
+              authFieldClass,
+              invalidDescription && "border-destructive ring-1 ring-destructive",
+            )}
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(e) => {
+              setDescription(e.target.value);
+              onClearPersonalFieldHint?.("description");
+            }}
             placeholder="مطوّر واجهات، مهندس برمجيات…"
             disabled={busy}
+            aria-invalid={invalidDescription || undefined}
           />
         </div>
         <div className="space-y-2 rounded-md border border-border/60 bg-muted/20 p-3">

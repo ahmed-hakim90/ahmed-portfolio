@@ -69,7 +69,12 @@ export async function PATCH(request: Request) {
         result.error === "incomplete_profile"
           ? "أكمل الملف أولاً: الاسم والسطر الرئيسي، وطريقة تواصل، وأضف مهارة أو خبرة عمل أو تعليماً أو مشروعاً واحداً على الأقل (التخطّي لا يُكمل الملف للنشر)."
           : "تعذّر تحديث حالة الإعداد";
-      return NextResponse.json({ error: message }, { status: 400 });
+      return NextResponse.json(
+        result.error === "incomplete_profile"
+          ? { error: message, code: "incomplete_profile" as const }
+          : { error: message },
+        { status: 400 },
+      );
     }
   }
 

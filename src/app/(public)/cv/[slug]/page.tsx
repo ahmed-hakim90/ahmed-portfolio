@@ -1,6 +1,9 @@
 import { CvPrintDocument } from "@/components/cv/cv-print-document";
 import { getAdminUserBySlug } from "@/lib/admin-users";
-import { isPortfolioPublishedForViewer } from "@/lib/public-portfolio-access";
+import {
+  isPortfolioPublishedForViewer,
+  isPublicPortfolioUrlAccessible,
+} from "@/lib/public-portfolio-access";
 import { getMergedSiteDataForUser } from "@/lib/site-data";
 import { DM_Sans, Playfair_Display } from "next/font/google";
 import type { Metadata } from "next";
@@ -13,6 +16,7 @@ export async function generateMetadata({
 }: PageProps): Promise<Metadata> {
   const user = await getAdminUserBySlug(params.slug);
   if (!user || user.disabled) return {};
+  if (!isPublicPortfolioUrlAccessible(user)) return {};
   if (!(await isPortfolioPublishedForViewer(user))) return { title: "CV" };
   const data = await getMergedSiteDataForUser(user.id);
   const name = data.name.trim() || "CV";
@@ -35,6 +39,7 @@ const headingFont = Playfair_Display({
 export default async function PublicCvPage({ params }: PageProps) {
   const user = await getAdminUserBySlug(params.slug);
   if (!user || user.disabled) notFound();
+  if (!isPublicPortfolioUrlAccessible(user)) notFound();
   if (!(await isPortfolioPublishedForViewer(user))) notFound();
   const DATA = await getMergedSiteDataForUser(user.id);
 

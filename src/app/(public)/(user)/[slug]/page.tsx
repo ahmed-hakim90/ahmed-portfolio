@@ -2,7 +2,10 @@ import { PersonJsonLd } from "@/components/portfolio/person-json-ld";
 import { PortfolioPage } from "@/components/portfolio/portfolio-page";
 import { PortfolioSetupPlaceholder } from "@/components/portfolio/portfolio-setup-placeholder";
 import { getAdminUserBySlug } from "@/lib/admin-users";
-import { isPortfolioPublishedForViewer } from "@/lib/public-portfolio-access";
+import {
+  isPortfolioPublishedForViewer,
+  isPublicPortfolioUrlAccessible,
+} from "@/lib/public-portfolio-access";
 import {
   getEffectiveSiteJsonForUser,
   getMergedSiteDataForUser,
@@ -21,6 +24,12 @@ function publicOrigin(): string {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const user = await getAdminUserBySlug(params.slug);
   if (!user || user.disabled) return {};
+  if (!isPublicPortfolioUrlAccessible(user)) {
+    return {
+      title: "غير متاح",
+      robots: { index: false, follow: false },
+    };
+  }
   if (!(await isPortfolioPublishedForViewer(user))) {
     return {
       title: "صفحة قيد الإعداد",
@@ -66,6 +75,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function PublicUserPage({ params }: PageProps) {
   const user = await getAdminUserBySlug(params.slug);
   if (!user || user.disabled) notFound();
+  if (!isPublicPortfolioUrlAccessible(user)) notFound();
   if (!(await isPortfolioPublishedForViewer(user))) {
     return <PortfolioSetupPlaceholder />;
   }

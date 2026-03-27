@@ -33,37 +33,65 @@ export function hasSubstantivePortfolioSections(remote: SiteJson): boolean {
   return false;
 }
 
+/** Email, phone, or any social link with a non-empty URL. */
+export function hasContactMethod(remote: SiteJson): boolean {
+  const email = remote.contact?.email?.trim() ?? "";
+  const tel = remote.contact?.tel?.trim() ?? "";
+  if (email || tel) return true;
+  const social = remote.contact?.social ?? {};
+  for (const entry of Object.values(social)) {
+    if (
+      entry &&
+      typeof entry === "object" &&
+      typeof entry.url === "string" &&
+      entry.url.trim() !== ""
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+export type MinimumPortfolioGaps = {
+  missingName: boolean;
+  missingDescription: boolean;
+  missingContact: boolean;
+  missingSubstantive: boolean;
+};
+
+export function getMinimumPortfolioGaps(
+  remote: SiteJson | null,
+): MinimumPortfolioGaps {
+  if (!remote) {
+    return {
+      missingName: true,
+      missingDescription: true,
+      missingContact: true,
+      missingSubstantive: true,
+    };
+  }
+  const name = typeof remote.name === "string" ? remote.name.trim() : "";
+  const description =
+    typeof remote.description === "string" ? remote.description.trim() : "";
+  return {
+    missingName: !name,
+    missingDescription: !description,
+    missingContact: !hasContactMethod(remote),
+    missingSubstantive: !hasSubstantivePortfolioSections(remote),
+  };
+}
+
 /**
  * Minimum saved site data required before marking onboarding complete or showing
  * a public portfolio (for users who completed the wizard at least once).
  */
 export function meetsMinimumPortfolioRemote(remote: SiteJson | null): boolean {
   if (!remote) return false;
-  const name = typeof remote.name === "string" ? remote.name.trim() : "";
-  const description =
-    typeof remote.description === "string" ? remote.description.trim() : "";
-  if (!name || !description) return false;
-
-  const email = remote.contact?.email?.trim() ?? "";
-  const tel = remote.contact?.tel?.trim() ?? "";
-  let hasContact = !!(email || tel);
-  if (!hasContact) {
-    const social = remote.contact?.social ?? {};
-    for (const entry of Object.values(social)) {
-      if (
-        entry &&
-        typeof entry === "object" &&
-        typeof entry.url === "string" &&
-        entry.url.trim() !== ""
-      ) {
-        hasContact = true;
-        break;
-      }
-    }
-  }
-  if (!hasContact) return false;
-
-  if (!hasSubstantivePortfolioSections(remote)) return false;
-
-  return true;
+  const g = getMinimumPortfolioGaps(remote);
+  return (
+    !g.missingName &&
+    !g.missingDescription &&
+    !g.missingContact &&
+    !g.missingSubstantive
+  );
 }

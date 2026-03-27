@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { SiteJson } from "@/data/site-defaults";
+import { cn } from "@/lib/utils";
 import {
   buildWaMeUrl,
   parseWaMeDigitsFromUrl,
@@ -25,6 +26,8 @@ type Props = {
   saving: boolean;
   controlsLocked?: boolean;
   registerActions: RegisterOnboardingStepActionsFn;
+  highlightContactInvalid?: boolean;
+  onClearCompletionHints?: () => void;
 };
 
 function mailtoFromEmail(email: string) {
@@ -40,6 +43,8 @@ export function StepContact({
   saving,
   controlsLocked = false,
   registerActions,
+  highlightContactInvalid = false,
+  onClearCompletionHints,
 }: Props) {
   const busy = saving || controlsLocked;
   const social = siteData.contact.social;
@@ -165,6 +170,11 @@ export function StepContact({
     return () => registerActions(null);
   }, [registerActions, onSave, onSkip, patch]);
 
+  const contactFieldClass = cn(
+    authFieldClass,
+    highlightContactInvalid && "border-destructive ring-1 ring-destructive",
+  );
+
   return (
     <Card className="w-full border-border/80 shadow-lg">
       <CardHeader className="space-y-1 px-5 pb-2 pt-6 text-center sm:px-8 sm:pt-8">
@@ -179,80 +189,108 @@ export function StepContact({
           <label className="text-sm font-medium">البريد الإلكتروني</label>
           <input
             type="email"
-            className={authFieldClass}
+            className={contactFieldClass}
             dir="ltr"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              onClearCompletionHints?.();
+            }}
             placeholder="name@example.com"
             disabled={busy}
+            aria-invalid={highlightContactInvalid ? true : undefined}
           />
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium">الهاتف / واتساب</label>
           <input
-            className={authFieldClass}
+            className={contactFieldClass}
             dir="ltr"
             value={tel}
-            onChange={(e) => setTel(e.target.value)}
+            onChange={(e) => {
+              setTel(e.target.value);
+              onClearCompletionHints?.();
+            }}
             placeholder="+20..."
             disabled={busy}
+            aria-invalid={highlightContactInvalid ? true : undefined}
           />
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium">GitHub</label>
           <input
-            className={authFieldClass}
+            className={contactFieldClass}
             dir="ltr"
             value={github}
-            onChange={(e) => setGithub(e.target.value)}
+            onChange={(e) => {
+              setGithub(e.target.value);
+              onClearCompletionHints?.();
+            }}
             placeholder="https://github.com/..."
             disabled={busy}
+            aria-invalid={highlightContactInvalid ? true : undefined}
           />
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium">LinkedIn</label>
           <input
-            className={authFieldClass}
+            className={contactFieldClass}
             dir="ltr"
             value={linkedin}
-            onChange={(e) => setLinkedin(e.target.value)}
+            onChange={(e) => {
+              setLinkedin(e.target.value);
+              onClearCompletionHints?.();
+            }}
             placeholder="https://linkedin.com/in/..."
             disabled={busy}
+            aria-invalid={highlightContactInvalid ? true : undefined}
           />
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium">X (Twitter)</label>
           <input
-            className={authFieldClass}
+            className={contactFieldClass}
             dir="ltr"
             value={x}
-            onChange={(e) => setX(e.target.value)}
+            onChange={(e) => {
+              setX(e.target.value);
+              onClearCompletionHints?.();
+            }}
             placeholder="https://x.com/..."
             disabled={busy}
+            aria-invalid={highlightContactInvalid ? true : undefined}
           />
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium">YouTube</label>
           <input
-            className={authFieldClass}
+            className={contactFieldClass}
             dir="ltr"
             value={youtube}
-            onChange={(e) => setYoutube(e.target.value)}
+            onChange={(e) => {
+              setYoutube(e.target.value);
+              onClearCompletionHints?.();
+            }}
             placeholder="https://youtube.com/..."
             disabled={busy}
+            aria-invalid={highlightContactInvalid ? true : undefined}
           />
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium">رقم واتساب</label>
           <input
-            className={authFieldClass}
+            className={contactFieldClass}
             dir="ltr"
             inputMode="tel"
             autoComplete="tel"
             value={whatsapp}
-            onChange={(e) => setWhatsapp(e.target.value)}
+            onChange={(e) => {
+              setWhatsapp(e.target.value);
+              onClearCompletionHints?.();
+            }}
             placeholder="2010…"
             disabled={busy}
+            aria-invalid={highlightContactInvalid ? true : undefined}
           />
           <p className="text-xs text-muted-foreground">
             يُحفظ تلقائياً كرابط wa.me

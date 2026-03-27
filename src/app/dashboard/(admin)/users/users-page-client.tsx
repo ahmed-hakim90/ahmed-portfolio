@@ -16,11 +16,32 @@ export type UserRow = {
   /** معالج إعداد السيرة بعد تسجيل الدخول (فهرس 0–6). */
   onboardingStep?: number;
   onboardingCompleted?: boolean;
+  /** زيارة `/slug` للعميل؛ الافتراضي true للمستندات القديمة. */
+  publicPortfolioAccessEnabled?: boolean;
+  publicPortfolioExpiresAt?: string | null;
 };
 
 type SlugAvailDetail = "invalid" | "available" | "taken" | null;
 
 const ONBOARDING_TOTAL_STEPS = 7;
+
+function slugAccessLabel(u: UserRow): string {
+  const enabled = u.publicPortfolioAccessEnabled !== false;
+  if (!enabled) return "معطّل";
+  const raw = u.publicPortfolioExpiresAt;
+  if (typeof raw === "string" && raw.length > 0) {
+    const t = Date.parse(raw);
+    if (Number.isFinite(t)) {
+      if (t < Date.now()) return "انتهت المدة";
+      return `حتى ${new Date(t).toLocaleDateString("ar-EG", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })}`;
+    }
+  }
+  return "بدون انتهاء";
+}
 
 function onboardingLabel(u: UserRow): string {
   const completed = u.onboardingCompleted !== false;
@@ -217,6 +238,43 @@ export function UsersPageClient({ viewerId }: { viewerId: string }) {
     }
   }
 
+  async function setSlugAccess(
+    id: string,
+    mode: "disable" | "extend",
+    months?: 1 | 6 | 12,
+  ) {
+    setMessage(null);
+    setBusy(true);
+    try {
+      const body: Record<string, unknown> = {
+        publicPortfolioAccess: mode,
+      };
+      if (mode === "extend" && months != null) {
+        body.publicPortfolioMonths = months;
+      }
+      const res = await fetch(`/api/admin/users/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMessage(
+          typeof data.error === "string" ? data.error : "فشل تحديث الرابط العام",
+        );
+        return;
+      }
+      await load();
+      setMessage(
+        mode === "disable"
+          ? "تم تعطيل الرابط العام."
+          : "تم تفعيل الرابط العام للمدة المحددة.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function changePassword(id: string, password: string) {
     if (password.length < 8) {
       setMessage("كلمة المرور يجب أن تكون 8 أحرف على الأقل");
@@ -252,8 +310,9 @@ export function UsersPageClient({ viewerId }: { viewerId: string }) {
       <div>
         <h1 className="text-xl font-semibold tracking-tight">المستخدمون</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          صاحب المنصة فقط يدير الحسابات. إنشاء حساب عميل بالاسم والهاتف ومسار الموقع
-          العام — يدخل عبر{" "}
+          صاحب المنصة فقط يدير الحسابات. يمكن تفعيل أو تعطيل الرابط العام{" "}
+          <span className="font-mono text-xs">/slug</span> للعميل لمدة شهر أو 6 أو
+          12 شهراً. إنشاء حساب عميل بالاسم والهاتف ومسار الموقع العام — يدخل عبر{" "}
           <span className="font-mono text-xs">/dashboard/login</span> بنفس جلسة
           JWT بعد التحقق من الهوية. صاحب المنصة يُنشأ مرة واحدة من{" "}
           <span className="font-medium">إعداد المنصة</span> وليس من هنا.
@@ -385,7 +444,7 @@ export function UsersPageClient({ viewerId }: { viewerId: string }) {
       </form>
 
       <div className="overflow-x-auto rounded-lg border border-border">
-        <table className="w-full min-w-[960px] text-right text-sm">
+        <table className="w-full min-w-[1080px] text-right text-sm">
           <thead className="border-b border-border bg-muted/40">
             <tr>
               <th className="px-3 py-2 font-medium">البريد</th>
@@ -393,6 +452,7 @@ export function UsersPageClient({ viewerId }: { viewerId: string }) {
               <th className="px-3 py-2 font-medium">المعرّف في الرابط</th>
               <th className="px-3 py-2 font-medium">الهاتف</th>
               <th className="px-3 py-2 font-medium">الحالة</th>
+              <th className="px-3 py-2 font-medium">الرابط العام</th>
               <th className="px-3 py-2 font-medium">مرحلة الإعداد</th>
               <th className="px-3 py-2 font-medium">الدور</th>
               <th className="px-3 py-2 font-medium">تاريخ الإنشاء</th>
@@ -409,6 +469,9 @@ export function UsersPageClient({ viewerId }: { viewerId: string }) {
                 onToggleDisabled={() => setDisabled(u.id, !u.disabled)}
                 onSetPassword={(pw) => changePassword(u.id, pw)}
                 onDelete={() => deleteUser(u.id)}
+                onSlugAccess={(mode, months) =>
+                  setSlugAccess(u.id, mode, months)
+                }
               />
             ))}
           </tbody>
@@ -425,6 +488,7 @@ function UserActionsRow({
   onToggleDisabled,
   onSetPassword,
   onDelete,
+  onSlugAccess,
 }: {
   user: UserRow;
   busy: boolean;
@@ -432,6 +496,10 @@ function UserActionsRow({
   onToggleDisabled: () => void;
   onSetPassword: (pw: string) => void;
   onDelete: () => void;
+  onSlugAccess: (
+    mode: "disable" | "extend",
+    months?: 1 | 6 | 12,
+  ) => void;
 }) {
   const [pw, setPw] = useState("");
   const publicPath = `/${encodeURIComponent(user.slug)}`;
@@ -440,6 +508,7 @@ function UserActionsRow({
   const canDelete = !isSelf && !isOwner;
   const canToggle = !isOwner;
   const canSetPassword = !isOwner || isSelf;
+  const canManageSlugAccess = !isOwner;
   const subject = encodeURIComponent("رسالة من إدارة المنصة");
   const mailtoHref = `mailto:${encodeURIComponent(user.email)}?subject=${subject}`;
   const whatsappHref = user.phone
@@ -467,6 +536,13 @@ function UserActionsRow({
           <span className="text-muted-foreground">نشط</span>
         )}
       </td>
+      <td className="max-w-[160px] px-3 py-2 text-xs text-muted-foreground">
+        {isOwner ? (
+          "—"
+        ) : (
+          <span title={slugAccessLabel(user)}>{slugAccessLabel(user)}</span>
+        )}
+      </td>
       <td className="whitespace-nowrap px-3 py-2 text-xs text-muted-foreground">
         {onboardingLabel(user)}
       </td>
@@ -489,6 +565,61 @@ function UserActionsRow({
           >
             عرض الموقع
           </Button>
+          {canManageSlugAccess ? (
+            <div className="flex flex-wrap items-center gap-1 border-r border-border pr-2 sm:border-r-0 sm:pr-0">
+              <span className="text-[10px] text-muted-foreground sm:sr-only">
+                slug
+              </span>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="h-7 px-2 text-[11px]"
+                disabled={busy}
+                onClick={() => onSlugAccess("extend", 1)}
+              >
+                1 شهر
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="h-7 px-2 text-[11px]"
+                disabled={busy}
+                onClick={() => onSlugAccess("extend", 6)}
+              >
+                6 شهور
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="h-7 px-2 text-[11px]"
+                disabled={busy}
+                onClick={() => onSlugAccess("extend", 12)}
+              >
+                12 شهراً
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 px-2 text-[11px] text-destructive hover:text-destructive"
+                disabled={busy}
+                onClick={() => {
+                  if (
+                    window.confirm(
+                      "تعطيل الرابط العام؟ لن يظهر موقع العميل للزوار.",
+                    )
+                  ) {
+                    onSlugAccess("disable");
+                  }
+                }}
+              >
+                تعطيل الرابط
+              </Button>
+            </div>
+          ) : null}
           <Button
             type="button"
             variant="outline"

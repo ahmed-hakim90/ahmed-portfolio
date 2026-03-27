@@ -6,7 +6,10 @@ import {
   recordBlogPostView,
 } from "@/lib/blog-views";
 import { getAdminUserBySlug } from "@/lib/admin-users";
-import { isPortfolioPublishedForViewer } from "@/lib/public-portfolio-access";
+import {
+  isPortfolioPublishedForViewer,
+  isPublicPortfolioUrlAccessible,
+} from "@/lib/public-portfolio-access";
 import { getMergedSiteDataForUser } from "@/lib/site-data";
 import {
   formatDate,
@@ -26,6 +29,12 @@ export async function generateMetadata({
 }): Promise<Metadata | undefined> {
   const user = await getAdminUserBySlug(params.slug);
   if (!user || user.disabled) return undefined;
+  if (!isPublicPortfolioUrlAccessible(user)) {
+    return {
+      title: "غير متاح",
+      robots: { index: false, follow: false },
+    };
+  }
   if (!(await isPortfolioPublishedForViewer(user))) {
     return {
       title: "مقال غير متاح",
@@ -80,6 +89,7 @@ export default async function UserBlogPostPage({
 }) {
   const user = await getAdminUserBySlug(params.slug);
   if (!user || user.disabled) notFound();
+  if (!isPublicPortfolioUrlAccessible(user)) notFound();
   if (!(await isPortfolioPublishedForViewer(user))) {
     return <PortfolioSetupPlaceholder />;
   }

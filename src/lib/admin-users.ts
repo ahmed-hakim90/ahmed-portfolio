@@ -27,6 +27,13 @@ export type AdminUserPublic = {
    * Used to prefill wizard from saved site vs empty first-time display.
    */
   onboardingEverCompletedOnce: boolean;
+  /**
+   * Public `/slug` visibility (owner-managed). When false, portfolio URL is hidden.
+   * Missing on legacy docs = treated as true.
+   */
+  publicPortfolioAccessEnabled: boolean;
+  /** ISO end time for time-limited access; null = no expiry while enabled. */
+  publicPortfolioExpiresAt: string | null;
 };
 
 type AdminUserDoc = {
@@ -42,6 +49,9 @@ type AdminUserDoc = {
   onboardingStep?: number;
   /** Set on first markOnboardingComplete; persists through reopenOnboarding. */
   onboardingEverCompletedOnce?: boolean;
+  /** When false, `/slug` is not served publicly. */
+  publicPortfolioAccessEnabled?: boolean;
+  publicPortfolioExpiresAt?: string | null;
 };
 
 /** Inclusive max step index for the 7-step onboarding wizard. */
@@ -115,6 +125,9 @@ function docToPublic(
 ): AdminUserPublic {
   const role = data.role === "client" ? "client" : "owner";
   const slug = normalizeSlug(data.slug ?? data.username ?? "");
+  const expiresRaw = data.publicPortfolioExpiresAt;
+  const publicPortfolioExpiresAt =
+    typeof expiresRaw === "string" && expiresRaw.length > 0 ? expiresRaw : null;
   return {
     id,
     email: normalizeEmail(data.email),
@@ -126,6 +139,8 @@ function docToPublic(
     onboardingCompleted: data.onboardingCompleted !== false,
     onboardingStep: normalizeOnboardingStep(data.onboardingStep),
     onboardingEverCompletedOnce: data.onboardingEverCompletedOnce === true,
+    publicPortfolioAccessEnabled: data.publicPortfolioAccessEnabled !== false,
+    publicPortfolioExpiresAt,
   };
 }
 
@@ -547,6 +562,39 @@ export async function createAdminUserWithFirebaseAuth(
     }
     return { ok: false, error: "Could not create user" };
   }
+}
+
+/**
+ * Owner-only: enable public `/slug` for N months from now, or disable entirely.
+ * Does not apply to the platform owner account.
+ */
+export async function setPublicPortfolioAccess(
+  id: string,
+  options: { mode: "disable" } | { mode: "extend"; months: 1 | 6 | 12 },
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const db = getFirestoreDb();
+  if (!db) return { ok: false, error: "Firestore is not configured" };
+  const ref = db.collection(COLLECTION).doc(id);
+  const doc = await ref.get();
+  if (!doc.exists) return { ok: false, error: "User not found" };
+  const data = doc.data() as AdminUserDoc;
+  if (data.role === "owner") {
+    return { ok: false, error: "Cannot change owner public link access" };
+  }
+  if (options.mode === "disable") {
+    await ref.update({
+      publicPortfolioAccessEnabled: false,
+      publicPortfolioExpiresAt: null,
+    });
+    return { ok: true };
+  }
+  const d = new Date();
+  d.setMonth(d.getMonth() + options.months);
+  await ref.update({
+    publicPortfolioAccessEnabled: true,
+    publicPortfolioExpiresAt: d.toISOString(),
+  });
+  return { ok: true };
 }
 
 export async function setAdminUserDisabled(

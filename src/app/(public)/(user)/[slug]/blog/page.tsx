@@ -3,7 +3,10 @@ import { PortfolioSetupPlaceholder } from "@/components/portfolio/portfolio-setu
 import { getBlogPostsForUser } from "@/data/blog";
 import { blogViewDocIdUser, getBlogViewCounts } from "@/lib/blog-views";
 import { getAdminUserBySlug } from "@/lib/admin-users";
-import { isPortfolioPublishedForViewer } from "@/lib/public-portfolio-access";
+import {
+  isPortfolioPublishedForViewer,
+  isPublicPortfolioUrlAccessible,
+} from "@/lib/public-portfolio-access";
 import { formatReadingTimeAr, formatViewCountAr } from "@/lib/utils";
 import { getMergedSiteDataForUser } from "@/lib/site-data";
 import type { Metadata } from "next";
@@ -21,6 +24,12 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const user = await getAdminUserBySlug(params.slug);
   if (!user || user.disabled) return { title: "Blog" };
+  if (!isPublicPortfolioUrlAccessible(user)) {
+    return {
+      title: "غير متاح",
+      robots: { index: false, follow: false },
+    };
+  }
   if (!(await isPortfolioPublishedForViewer(user))) {
     return {
       title: "المدونة | قيد الإعداد",
@@ -56,6 +65,7 @@ export default async function UserBlogIndexPage({
 }) {
   const user = await getAdminUserBySlug(params.slug);
   if (!user || user.disabled) notFound();
+  if (!isPublicPortfolioUrlAccessible(user)) notFound();
   if (!(await isPortfolioPublishedForViewer(user))) {
     return <PortfolioSetupPlaceholder />;
   }

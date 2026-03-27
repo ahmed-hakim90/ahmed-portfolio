@@ -1,5 +1,8 @@
 import { getAdminUserBySlug } from "@/lib/admin-users";
-import { isPortfolioPublishedForViewer } from "@/lib/public-portfolio-access";
+import {
+  isPortfolioPublishedForViewer,
+  isPublicPortfolioUrlAccessible,
+} from "@/lib/public-portfolio-access";
 import { getFirestoreDb } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
 import { createHash } from "crypto";
@@ -76,6 +79,9 @@ export async function POST(request: Request) {
   }
   const owner = await getAdminUserBySlug(ownerSlug);
   if (!owner || owner.disabled) {
+    return NextResponse.json({ error: "Invalid recipient" }, { status: 400 });
+  }
+  if (!isPublicPortfolioUrlAccessible(owner)) {
     return NextResponse.json({ error: "Invalid recipient" }, { status: 400 });
   }
   if (!(await isPortfolioPublishedForViewer(owner))) {
