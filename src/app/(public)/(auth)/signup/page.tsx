@@ -2,7 +2,7 @@ import { AuthShell } from "@/components/auth/auth-shell";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { SignupForm } from "./signup-form";
+import { SignupForm } from "@/app/(public)/(site)/signup/signup-form";
 
 export const metadata: Metadata = {
   title: "إنشاء حساب",
