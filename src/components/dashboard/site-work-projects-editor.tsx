@@ -11,6 +11,7 @@ import {
   type SiteTestimonial,
   type SocialIconKey,
 } from "@/data/site-defaults";
+import { buildWaMeUrl, parseWaMeDigitsFromUrl } from "@/lib/whatsapp-wa-me";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 
@@ -379,17 +380,35 @@ export function SiteWorkProjectsEditor({
                 />
               </div>
               <div className="space-y-1 sm:col-span-2">
-                <label className="text-xs text-muted-foreground">URL</label>
-                <input
-                  className={fieldClass()}
-                  value={entry.url}
-                  onChange={(e) =>
-                    apply((j) => {
-                      const s = j.contact.social[key];
-                      if (s) s.url = e.target.value;
-                    })
-                  }
-                />
+                <label className="text-xs text-muted-foreground">
+                  {key === "WhatsApp" ? "رقم واتساب" : "URL"}
+                </label>
+                {key === "WhatsApp" ? (
+                  <input
+                    className={fieldClass()}
+                    dir="ltr"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    value={parseWaMeDigitsFromUrl(entry.url)}
+                    onChange={(e) =>
+                      apply((j) => {
+                        const s = j.contact.social[key];
+                        if (s) s.url = buildWaMeUrl(e.target.value);
+                      })
+                    }
+                  />
+                ) : (
+                  <input
+                    className={fieldClass()}
+                    value={entry.url}
+                    onChange={(e) =>
+                      apply((j) => {
+                        const s = j.contact.social[key];
+                        if (s) s.url = e.target.value;
+                      })
+                    }
+                  />
+                )}
               </div>
               <div className="space-y-1">
                 <label className="text-xs text-muted-foreground">Icon</label>

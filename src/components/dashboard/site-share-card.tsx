@@ -47,6 +47,31 @@ function arNum(n: number): string {
   return n.toLocaleString("ar-EG");
 }
 
+type BadgeTone = "success" | "brand" | "neutral";
+
+function resolveDynamicBadge(data: MergedSiteData, blogPostCount: number): {
+  label: string;
+  tone: BadgeTone;
+} {
+  if (data.availableForWork) {
+    return {
+      label: data.availableForWorkBadgeText?.trim() || "متاح للعمل",
+      tone: "success",
+    };
+  }
+  if (data.publicControls.blog.enabled && blogPostCount > 0) {
+    return { label: `كاتب محتوى · ${arNum(blogPostCount)} مقالات`, tone: "brand" };
+  }
+  const activeProjects = data.projects.filter((p) => p.active).length;
+  if (activeProjects >= 4) {
+    return { label: `منجز ${arNum(activeProjects)} مشاريع`, tone: "brand" };
+  }
+  if (data.skills.length >= 3) {
+    return { label: `متخصص ${data.skills[0]}`, tone: "neutral" };
+  }
+  return { label: "الملف جاهز للمشاركة", tone: "neutral" };
+}
+
 export const SiteShareCard = forwardRef<HTMLDivElement, SiteShareCardProps>(
   function SiteShareCard({ data, publicUrl, blogPostCount }, ref) {
     const { host, path } = hostPathLabel(publicUrl);
@@ -60,37 +85,44 @@ export const SiteShareCard = forwardRef<HTMLDivElement, SiteShareCardProps>(
     const headline =
       [data.description.trim(), data.location.trim()].filter(Boolean).join(" · ") ||
       data.name;
+    const badge = resolveDynamicBadge(data, blogPostCount);
 
-    const cardBg = "#ffffff";
-    const muted = "#f5f5f5";
-    const text = "#111111";
-    const sub = "#666666";
-    const border = "#e8e8e8";
+    const cardBg = "#f8f7f4";
+    const panelBg = "#ffffff";
+    const muted = "#f1efe9";
+    const text = "#171717";
+    const sub = "#66605a";
+    const border = "#e5dfd3";
+    const accent = "#111111";
+    const toneStyles: Record<BadgeTone, { bg: string; fg: string; ring: string }> = {
+      success: { bg: "#e9f8ef", fg: "#15623f", ring: "#b6e4c6" },
+      brand: { bg: "#efeefe", fg: "#4338ca", ring: "#cbc7ff" },
+      neutral: { bg: "#f3f4f6", fg: "#374151", ring: "#e5e7eb" },
+    };
 
     return (
       <div
         ref={ref}
         dir="rtl"
         style={{
-          width: 390,
+          width: 420,
           boxSizing: "border-box",
           background: cardBg,
-          borderRadius: 20,
+          borderRadius: 28,
           border: `1px solid ${border}`,
-          boxShadow: "0 12px 40px rgba(0,0,0,0.08)",
+          boxShadow: "0 18px 56px rgba(10,10,10,0.16)",
           overflow: "hidden",
           fontFamily:
             '"Segoe UI", "Tahoma", "Arial", "Noto Sans Arabic", "Helvetica Neue", sans-serif',
         }}
       >
-        {/* Browser chrome */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
             gap: 8,
-            padding: "10px 14px",
-            background: muted,
+            padding: "12px 16px",
+            background: panelBg,
             borderBottom: `1px solid ${border}`,
           }}
         >
@@ -121,165 +153,214 @@ export const SiteShareCard = forwardRef<HTMLDivElement, SiteShareCardProps>(
           <div style={{ width: 52 }} aria-hidden />
         </div>
 
-        <div style={{ padding: "18px 18px 22px" }}>
-          {/* Top bar: decorative toggles + brand */}
+        <div style={{ padding: 16 }}>
           <div
             style={{
+              background: panelBg,
+              border: `1px solid ${border}`,
+              borderRadius: 22,
+              padding: 18,
+              marginBottom: 12,
+            }}
+          >
+            <div
+              style={{
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              marginBottom: 16,
-            }}
-          >
-            <div style={{ display: "flex", gap: 8 }}>
-              <div
+                marginBottom: 14,
+              }}
+            >
+              <span
                 style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 10,
-                  background: muted,
-                  border: `1px solid ${border}`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 16,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  borderRadius: 999,
+                  padding: "6px 10px",
+                  background: "#111111",
+                  color: "#ffffff",
+                  letterSpacing: "0.02em",
                 }}
               >
-                ☾
-              </div>
-              <div
+                SHARE CARD
+              </span>
+              <span
                 style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 10,
-                  background: "#111",
-                  color: "#fff",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 14,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  borderRadius: 999,
+                  padding: "6px 10px",
+                  background: toneStyles[badge.tone].bg,
+                  color: toneStyles[badge.tone].fg,
+                  border: `1px solid ${toneStyles[badge.tone].ring}`,
                 }}
               >
-                ✦
-              </div>
+                {badge.label}
+              </span>
             </div>
+
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 8,
-                fontSize: 18,
-                fontWeight: 700,
-                color: text,
+                gap: 14,
+                marginBottom: 14,
               }}
             >
-              <span>✦</span>
-              <span>{data.name}</span>
+              <div
+                style={{
+                  width: 82,
+                  height: 82,
+                  borderRadius: "50%",
+                  overflow: "hidden",
+                  flexShrink: 0,
+                  border: `2px solid ${cardBg}`,
+                  background: "#e0e0e0",
+                }}
+              >
+                {data.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={data.avatarUrl}
+                    alt=""
+                    crossOrigin="anonymous"
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 26,
+                      fontWeight: 800,
+                      color: sub,
+                    }}
+                  >
+                    {data.initials}
+                  </div>
+                )}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    fontSize: 24,
+                    fontWeight: 900,
+                    color: text,
+                    lineHeight: 1.2,
+                    marginBottom: 6,
+                  }}
+                >
+                  {data.name}
+                </div>
+                <div
+                  style={{
+                    fontSize: 13,
+                    color: sub,
+                    lineHeight: 1.45,
+                    marginBottom: 10,
+                  }}
+                >
+                  {headline}
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {skills.map((s) => (
+                    <span
+                      key={s}
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        padding: "4px 10px",
+                        borderRadius: 999,
+                        background: muted,
+                        border: `1px solid ${border}`,
+                        color: accent,
+                      }}
+                    >
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div
+              style={{
+                borderRadius: 14,
+                border: `1px solid ${border}`,
+                background: muted,
+                padding: "10px 12px",
+                marginBottom: 12,
+              }}
+            >
+              <div style={{ fontSize: 11, color: sub, marginBottom: 4 }}>رابط البورتفليو</div>
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: accent,
+                  direction: "ltr",
+                  unicodeBidi: "embed",
+                  textAlign: "right",
+                }}
+              >
+                {host}
+                {path ? `/${path}` : ""}
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: 8 }}>
+              {[
+                { value: arNum(projectCount), label: "مشروع" },
+                { value: arNum(blogPostCount), label: "مقالات" },
+                { value: arNum(data.skills.length), label: "مهارة" },
+              ].map((s) => (
+                <div
+                  key={s.label}
+                  style={{
+                    flex: 1,
+                    background: panelBg,
+                    borderRadius: 12,
+                    padding: "10px 8px",
+                    textAlign: "center",
+                    border: `1px solid ${border}`,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 20,
+                      fontWeight: 900,
+                      color: text,
+                      marginBottom: 3,
+                    }}
+                  >
+                    {s.value}
+                  </div>
+                  <div style={{ fontSize: 11, color: sub, fontWeight: 600 }}>{s.label}</div>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Profile card */}
           <div
             style={{
-              background: muted,
-              borderRadius: 16,
-              padding: 16,
-              display: "flex",
-              gap: 14,
-              alignItems: "flex-start",
-              marginBottom: 18,
+              background: panelBg,
+              border: `1px solid ${border}`,
+              borderRadius: 20,
+              padding: 14,
             }}
           >
             <div
               style={{
-                width: 88,
-                height: 88,
-                borderRadius: "50%",
-                overflow: "hidden",
-                flexShrink: 0,
-                border: `2px solid ${cardBg}`,
-                background: "#e0e0e0",
-              }}
-            >
-              {data.avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={data.avatarUrl}
-                  alt=""
-                  crossOrigin="anonymous"
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                />
-              ) : (
-                <div
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 28,
-                    fontWeight: 700,
-                    color: sub,
-                  }}
-                >
-                  {data.initials}
-                </div>
-              )}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div
-                style={{
-                  fontSize: 22,
-                  fontWeight: 800,
-                  color: text,
-                  lineHeight: 1.25,
-                  marginBottom: 6,
-                }}
-              >
-                {data.name}
-              </div>
-              <div
-                style={{
-                  fontSize: 13,
-                  color: sub,
-                  lineHeight: 1.45,
-                  marginBottom: 10,
-                }}
-              >
-                {headline}
-              </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                {skills.map((s) => (
-                  <span
-                    key={s}
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 600,
-                      padding: "4px 10px",
-                      borderRadius: 999,
-                      background: cardBg,
-                      border: `1px solid ${border}`,
-                      color: text,
-                    }}
-                  >
-                    {s}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Projects */}
-          <div style={{ marginBottom: 14 }}>
-            <div
-              style={{
-                fontSize: 16,
-                fontWeight: 700,
+                fontSize: 15,
+                fontWeight: 800,
                 color: text,
-                marginBottom: 12,
+                marginBottom: 10,
               }}
             >
-              المشاريع
+              مشاريع مختارة
             </div>
             <div style={{ display: "flex", gap: 10 }}>
               {slots.map((p, i) => (
@@ -296,8 +377,8 @@ export const SiteShareCard = forwardRef<HTMLDivElement, SiteShareCardProps>(
                 >
                   <div
                     style={{
-                      height: 92,
-                      background: "#ebebeb",
+                      height: 90,
+                      background: "#e9e6df",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -316,20 +397,20 @@ export const SiteShareCard = forwardRef<HTMLDivElement, SiteShareCardProps>(
                         }}
                       />
                     ) : (
-                      <span style={{ fontSize: 28, opacity: 0.25 }}>◧</span>
+                      <span style={{ fontSize: 26, opacity: 0.25 }}>◧</span>
                     )}
                   </div>
-                  <div style={{ padding: "10px 10px 12px" }}>
+                  <div style={{ padding: "10px 10px 11px" }}>
                     <div
                       style={{
                         fontSize: 13,
-                        fontWeight: 700,
+                        fontWeight: 800,
                         color: text,
                         lineHeight: 1.3,
                         marginBottom: 4,
                       }}
                     >
-                      {p?.title ?? "—"}
+                      {p?.title ?? "مشروع جديد"}
                     </div>
                     <div
                       style={{
@@ -342,7 +423,7 @@ export const SiteShareCard = forwardRef<HTMLDivElement, SiteShareCardProps>(
                     >
                       {p?.technologies?.length
                         ? p.technologies.slice(0, 3).join(" · ")
-                        : "\u00a0"}
+                        : "No stack yet"}
                     </div>
                   </div>
                 </div>
@@ -350,37 +431,19 @@ export const SiteShareCard = forwardRef<HTMLDivElement, SiteShareCardProps>(
             </div>
           </div>
 
-          {/* Stats */}
-          <div style={{ display: "flex", gap: 8 }}>
-            {[
-              { value: arNum(projectCount), label: "مشروع" },
-              { value: arNum(blogPostCount), label: "مقالات" },
-              { value: "٥★", label: "تقييم" },
-            ].map((s) => (
-              <div
-                key={s.label}
-                style={{
-                  flex: 1,
-                  background: muted,
-                  borderRadius: 12,
-                  padding: "12px 8px",
-                  textAlign: "center",
-                  border: `1px solid ${border}`,
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 20,
-                    fontWeight: 800,
-                    color: text,
-                    marginBottom: 4,
-                  }}
-                >
-                  {s.value}
-                </div>
-                <div style={{ fontSize: 11, color: sub, fontWeight: 600 }}>{s.label}</div>
-              </div>
-            ))}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 8,
+              marginTop: 12,
+              fontSize: 11,
+              fontWeight: 600,
+              color: sub,
+            }}
+          >
+            <span>Generated from your live portfolio</span>
+            <span style={{ color: accent, fontWeight: 800 }}>✦ {data.name}</span>
           </div>
         </div>
       </div>

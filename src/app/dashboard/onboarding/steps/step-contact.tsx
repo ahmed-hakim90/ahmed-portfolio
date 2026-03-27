@@ -10,6 +10,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { SiteJson } from "@/data/site-defaults";
+import {
+  buildWaMeUrl,
+  parseWaMeDigitsFromUrl,
+} from "@/lib/whatsapp-wa-me";
 import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { RegisterOnboardingStepActionsFn } from "../onboarding-step-actions";
@@ -45,7 +49,9 @@ export function StepContact({
   const [linkedin, setLinkedin] = useState(social.LinkedIn?.url ?? "");
   const [x, setX] = useState(social.X?.url ?? "");
   const [youtube, setYoutube] = useState(social.Youtube?.url ?? "");
-  const [whatsapp, setWhatsapp] = useState(social.WhatsApp?.url ?? "");
+  const [whatsapp, setWhatsapp] = useState(() =>
+    parseWaMeDigitsFromUrl(social.WhatsApp?.url ?? ""),
+  );
 
   useEffect(() => {
     setEmail(siteData.contact.email);
@@ -55,18 +61,21 @@ export function StepContact({
     setLinkedin(s.LinkedIn?.url ?? "");
     setX(s.X?.url ?? "");
     setYoutube(s.Youtube?.url ?? "");
-    setWhatsapp(s.WhatsApp?.url ?? "");
+    setWhatsapp(parseWaMeDigitsFromUrl(s.WhatsApp?.url ?? ""));
   }, [siteData]);
 
   const patch = useMemo((): Partial<SiteJson> => {
     const mail = mailtoFromEmail(email);
+    const socialWithoutWhatsApp = { ...siteData.contact.social };
+    delete socialWithoutWhatsApp.WhatsApp;
+    const waUrl = buildWaMeUrl(whatsapp);
     return {
       contact: {
         ...siteData.contact,
         email: email.trim(),
         tel: tel.trim(),
         social: {
-          ...siteData.contact.social,
+          ...socialWithoutWhatsApp,
           ...(github.trim()
             ? {
                 GitHub: {
@@ -111,11 +120,11 @@ export function StepContact({
                 },
               }
             : {}),
-          ...(whatsapp.trim()
+          ...(waUrl
             ? {
                 WhatsApp: {
                   name: "WhatsApp",
-                  url: whatsapp.trim(),
+                  url: waUrl,
                   icon: "whatsapp" as const,
                   navbar: false,
                   enabled: true,
@@ -233,15 +242,20 @@ export function StepContact({
           />
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium">رابط WhatsApp (wa.me)</label>
+          <label className="text-sm font-medium">رقم واتساب</label>
           <input
             className={authFieldClass}
             dir="ltr"
+            inputMode="tel"
+            autoComplete="tel"
             value={whatsapp}
             onChange={(e) => setWhatsapp(e.target.value)}
-            placeholder="https://wa.me/..."
+            placeholder="2010…"
             disabled={busy}
           />
+          <p className="text-xs text-muted-foreground">
+            يُحفظ تلقائياً كرابط wa.me
+          </p>
         </div>
         <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-between">
           <Button type="button" variant="ghost" onClick={onSkip} disabled={busy}>

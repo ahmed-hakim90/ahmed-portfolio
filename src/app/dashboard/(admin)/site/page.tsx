@@ -148,7 +148,7 @@ export default function DashboardSitePage() {
     if (!result.ok) {
       setMessage(`${result.error} — تم نسخ الرابط.`);
     } else {
-      setMessage("تم نسخ الرابط. إن ظهرت نافذة المشاركة فاختر «حفظ الصورة» أو شاركها؛ وإلا تُحمَّل الصورة تلقائياً.");
+      setMessage("تم نسخ الرابط وتجهيز بطاقة المشاركة. إن ظهرت نافذة المشاركة فاختر «حفظ الصورة» أو شاركها؛ وإلا تُحمَّل الصورة تلقائياً.");
     }
     setShareBusy(false);
   }, [publicUrl, siteData, slug]);
