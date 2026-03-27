@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export type UserRow = {
   id: string;
@@ -21,26 +21,86 @@ export type UserRow = {
   publicPortfolioExpiresAt?: string | null;
 };
 
-type SlugAvailDetail = "invalid" | "available" | "taken" | null;
-
 const ONBOARDING_TOTAL_STEPS = 7;
+const DAY_MS = 24 * 60 * 60 * 1000;
+const EXPIRING_SOON_DAYS = 30;
 
-function slugAccessLabel(u: UserRow): string {
-  const enabled = u.publicPortfolioAccessEnabled !== false;
-  if (!enabled) return "معطّل";
-  const raw = u.publicPortfolioExpiresAt;
+type PublicAccessState = {
+  kind: "disabled" | "expired" | "expiringSoon" | "active" | "noExpiry";
+  label: string;
+  detail: string;
+};
+
+function formatArabicDate(ts: number): string {
+  return new Date(ts).toLocaleDateString("ar-EG", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function getPublicAccessState(
+  user: UserRow,
+  nowTs: number = Date.now(),
+): PublicAccessState {
+  const enabled = user.publicPortfolioAccessEnabled !== false;
+  if (!enabled) {
+    return {
+      kind: "disabled",
+      label: "معطّل",
+      detail: "الرابط العام متوقف",
+    };
+  }
+
+  const raw = user.publicPortfolioExpiresAt;
   if (typeof raw === "string" && raw.length > 0) {
-    const t = Date.parse(raw);
-    if (Number.isFinite(t)) {
-      if (t < Date.now()) return "انتهت المدة";
-      return `حتى ${new Date(t).toLocaleDateString("ar-EG", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      })}`;
+    const expiresTs = Date.parse(raw);
+    if (Number.isFinite(expiresTs)) {
+      if (expiresTs <= nowTs) {
+        return {
+          kind: "expired",
+          label: "انتهت الصلاحية",
+          detail: `انتهى في ${formatArabicDate(expiresTs)}`,
+        };
+      }
+
+      const daysLeft = Math.max(1, Math.ceil((expiresTs - nowTs) / DAY_MS));
+      if (daysLeft <= EXPIRING_SOON_DAYS) {
+        return {
+          kind: "expiringSoon",
+          label: "قرب الانتهاء",
+          detail: `متبقي ${daysLeft} يوم - ينتهي ${formatArabicDate(expiresTs)}`,
+        };
+      }
+
+      return {
+        kind: "active",
+        label: "لسه ساري",
+        detail: `متبقي ${daysLeft} يوم - ينتهي ${formatArabicDate(expiresTs)}`,
+      };
     }
   }
-  return "بدون انتهاء";
+
+  return {
+    kind: "noExpiry",
+    label: "لسه ساري",
+    detail: "بدون تاريخ انتهاء",
+  };
+}
+
+function publicAccessBadgeClass(kind: PublicAccessState["kind"]): string {
+  switch (kind) {
+    case "expired":
+      return "border-destructive/30 bg-destructive/10 text-destructive";
+    case "expiringSoon":
+      return "border-amber-300/60 bg-amber-100/60 text-amber-900 dark:border-amber-700/60 dark:bg-amber-900/30 dark:text-amber-200";
+    case "active":
+    case "noExpiry":
+      return "border-emerald-300/60 bg-emerald-100/60 text-emerald-900 dark:border-emerald-700/60 dark:bg-emerald-900/30 dark:text-emerald-200";
+    case "disabled":
+    default:
+      return "border-border bg-muted text-muted-foreground";
+  }
 }
 
 function onboardingLabel(u: UserRow): string {
@@ -58,17 +118,6 @@ export function UsersPageClient({ viewerId }: { viewerId: string }) {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
-  const [newEmail, setNewEmail] = useState("");
-  const [newPass, setNewPass] = useState("");
-  const [newDisplayName, setNewDisplayName] = useState("");
-  const [newPhone, setNewPhone] = useState("");
-  const [newSlug, setNewSlug] = useState("");
-  const [slugCheck, setSlugCheck] = useState<{
-    checking: boolean;
-    normalized: string;
-    detail: SlugAvailDetail;
-  }>({ checking: false, normalized: "", detail: null });
-  const slugCheckSeq = useRef(0);
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
@@ -93,100 +142,6 @@ export function UsersPageClient({ viewerId }: { viewerId: string }) {
   useEffect(() => {
     void load();
   }, [load]);
-
-  useEffect(() => {
-    const raw = newSlug.trim();
-    if (raw.length === 0) {
-      slugCheckSeq.current += 1;
-      setSlugCheck({ checking: false, normalized: "", detail: null });
-      return;
-    }
-    const seq = ++slugCheckSeq.current;
-    setSlugCheck((s) => ({ ...s, checking: true }));
-    const t = window.setTimeout(() => {
-      void (async () => {
-        try {
-          const res = await fetch(
-            `/api/admin/users/slug-availability?slug=${encodeURIComponent(raw)}`,
-            { cache: "no-store" },
-          );
-          const data = (await res.json().catch(() => ({}))) as {
-            normalized?: string;
-            detail?: string;
-          };
-          if (seq !== slugCheckSeq.current) return;
-          const detail = data.detail;
-          const normalized =
-            typeof data.normalized === "string" ? data.normalized : "";
-          if (
-            detail === "invalid" ||
-            detail === "available" ||
-            detail === "taken"
-          ) {
-            setSlugCheck({
-              checking: false,
-              normalized,
-              detail,
-            });
-          } else {
-            setSlugCheck({ checking: false, normalized: "", detail: null });
-          }
-        } catch {
-          if (seq !== slugCheckSeq.current) return;
-          setSlugCheck({ checking: false, normalized: "", detail: null });
-        }
-      })();
-    }, 400);
-    return () => window.clearTimeout(t);
-  }, [newSlug]);
-
-  async function createUser(e: React.FormEvent) {
-    e.preventDefault();
-    setMessage(null);
-    if (newDisplayName.trim().length < 2) {
-      setMessage("أدخل الاسم الظاهر (حرفان على الأقل)");
-      return;
-    }
-    if (newPhone.trim().length < 5) {
-      setMessage("أدخل رقم هاتف صالح");
-      return;
-    }
-    if (slugCheck.detail !== "available") {
-      setMessage("تأكد أن مسار الموقع (slug) متاح قبل الإنشاء");
-      return;
-    }
-    setBusy(true);
-    try {
-      const res = await fetch("/api/admin/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: newEmail.trim(),
-          password: newPass,
-          displayName: newDisplayName.trim(),
-          phone: newPhone.trim(),
-          slug: newSlug.trim(),
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setMessage(
-          typeof data.error === "string" ? data.error : "فشل إنشاء الحساب",
-        );
-        return;
-      }
-      setNewEmail("");
-      setNewPass("");
-      setNewDisplayName("");
-      setNewPhone("");
-      setNewSlug("");
-      setSlugCheck({ checking: false, normalized: "", detail: null });
-      await load();
-      setMessage("تم إنشاء المستخدم (عميل). يمكنه تسجيل الدخول من لوحة التحكم.");
-    } finally {
-      setBusy(false);
-    }
-  }
 
   async function setDisabled(id: string, disabled: boolean) {
     setMessage(null);
@@ -305,6 +260,25 @@ export function UsersPageClient({ viewerId }: { viewerId: string }) {
     return <p className="text-sm text-muted-foreground">جاري التحميل…</p>;
   }
 
+  const nowTs = Date.now();
+  const clientRows = users.filter((u) => u.role === "client");
+  const accessSummary = clientRows.reduce(
+    (acc, u) => {
+      const state = getPublicAccessState(u, nowTs);
+      if (state.kind === "expiringSoon") {
+        acc.expiringSoon += 1;
+      } else if (state.kind === "expired") {
+        acc.expired += 1;
+      } else if (state.kind === "disabled") {
+        acc.disabled += 1;
+      } else {
+        acc.active += 1;
+      }
+      return acc;
+    },
+    { active: 0, expiringSoon: 0, expired: 0, disabled: 0 },
+  );
+
   return (
     <div className="space-y-8" dir="rtl">
       <div>
@@ -312,9 +286,7 @@ export function UsersPageClient({ viewerId }: { viewerId: string }) {
         <p className="mt-1 text-sm text-muted-foreground">
           صاحب المنصة فقط يدير الحسابات. يمكن تفعيل أو تعطيل الرابط العام{" "}
           <span className="font-mono text-xs">/slug</span> للعميل لمدة شهر أو 6 أو
-          12 شهراً. إنشاء حساب عميل بالاسم والهاتف ومسار الموقع العام — يدخل عبر{" "}
-          <span className="font-mono text-xs">/dashboard/login</span> بنفس جلسة
-          JWT بعد التحقق من الهوية. صاحب المنصة يُنشأ مرة واحدة من{" "}
+          12 شهراً. صاحب المنصة يُنشأ مرة واحدة من{" "}
           <span className="font-medium">إعداد المنصة</span> وليس من هنا.
         </p>
       </div>
@@ -325,123 +297,24 @@ export function UsersPageClient({ viewerId }: { viewerId: string }) {
         </p>
       ) : null}
 
-      <form
-        onSubmit={createUser}
-        className="space-y-3 rounded-lg border border-border bg-muted/20 p-4"
-      >
-        <h2 className="text-sm font-medium">عميل جديد</h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="space-y-1">
-            <label htmlFor="ndn" className="text-xs text-muted-foreground">
-              الاسم الظاهر
-            </label>
-            <input
-              id="ndn"
-              type="text"
-              value={newDisplayName}
-              onChange={(e) => setNewDisplayName(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm"
-              required
-              minLength={2}
-              autoComplete="name"
-            />
-          </div>
-          <div className="space-y-1">
-            <label htmlFor="nph" className="text-xs text-muted-foreground">
-              الهاتف
-            </label>
-            <input
-              id="nph"
-              type="tel"
-              value={newPhone}
-              onChange={(e) => setNewPhone(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm"
-              required
-              minLength={5}
-              autoComplete="tel"
-            />
-          </div>
-          <div className="space-y-1 sm:col-span-2 lg:col-span-1">
-            <label htmlFor="nslug" className="text-xs text-muted-foreground">
-              مسار الموقع (slug)
-            </label>
-            <input
-              id="nslug"
-              type="text"
-              value={newSlug}
-              onChange={(e) => setNewSlug(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-2 py-1.5 font-mono text-sm"
-              required
-              placeholder="مثال: ahmed-dev"
-              dir="ltr"
-              spellCheck={false}
-            />
-            <p className="text-xs text-muted-foreground" aria-live="polite">
-              {slugCheck.checking ? (
-                <>جاري التحقق…</>
-              ) : newSlug.trim().length === 0 ? (
-                <>أدخل مساراً فريداً (أحرف صغيرة وأرقام وشرطة).</>
-              ) : slugCheck.detail === "invalid" ? (
-                <>غير صالح — 3–48 حرفاً، بصيغة مثل{" "}
-                <span className="font-mono">my-name</span></>
-              ) : slugCheck.detail === "taken" ? (
-                <>المسار محجوز.</>
-              ) : slugCheck.detail === "available" ? (
-                <>
-                  متاح:{" "}
-                  <span className="font-mono" dir="ltr">
-                    /{slugCheck.normalized}
-                  </span>
-                </>
-              ) : (
-                <>تعذر التحقق.</>
-              )}
-            </p>
-          </div>
-          <div className="space-y-1">
-            <label htmlFor="nu" className="text-xs text-muted-foreground">
-              البريد
-            </label>
-            <input
-              id="nu"
-              type="email"
-              value={newEmail}
-              onChange={(e) => setNewEmail(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm"
-              required
-              autoComplete="email"
-            />
-          </div>
-          <div className="space-y-1">
-            <label htmlFor="np" className="text-xs text-muted-foreground">
-              كلمة المرور (8 أحرف على الأقل)
-            </label>
-            <input
-              id="np"
-              type="password"
-              value={newPass}
-              onChange={(e) => setNewPass(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm"
-              required
-              minLength={8}
-              autoComplete="new-password"
-            />
-          </div>
-          <div className="flex items-end">
-            <Button
-              type="submit"
-              size="sm"
-              disabled={
-                busy ||
-                slugCheck.checking ||
-                slugCheck.detail !== "available"
-              }
-            >
-              إضافة عميل
-            </Button>
-          </div>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-lg border border-amber-300/60 bg-amber-100/40 p-3 dark:border-amber-700/60 dark:bg-amber-900/20">
+          <p className="text-xs text-muted-foreground">قرب الانتهاء (30 يوم)</p>
+          <p className="mt-1 text-lg font-semibold">{accessSummary.expiringSoon}</p>
         </div>
-      </form>
+        <div className="rounded-lg border border-emerald-300/60 bg-emerald-100/40 p-3 dark:border-emerald-700/60 dark:bg-emerald-900/20">
+          <p className="text-xs text-muted-foreground">لسه ساري</p>
+          <p className="mt-1 text-lg font-semibold">{accessSummary.active}</p>
+        </div>
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3">
+          <p className="text-xs text-muted-foreground">انتهت الصلاحية</p>
+          <p className="mt-1 text-lg font-semibold">{accessSummary.expired}</p>
+        </div>
+        <div className="rounded-lg border border-border bg-muted/30 p-3">
+          <p className="text-xs text-muted-foreground">معطّل</p>
+          <p className="mt-1 text-lg font-semibold">{accessSummary.disabled}</p>
+        </div>
+      </div>
 
       <div className="overflow-x-auto rounded-lg border border-border">
         <table className="w-full min-w-[1080px] text-right text-sm">
@@ -452,7 +325,7 @@ export function UsersPageClient({ viewerId }: { viewerId: string }) {
               <th className="px-3 py-2 font-medium">المعرّف في الرابط</th>
               <th className="px-3 py-2 font-medium">الهاتف</th>
               <th className="px-3 py-2 font-medium">الحالة</th>
-              <th className="px-3 py-2 font-medium">الرابط العام</th>
+              <th className="px-3 py-2 font-medium">حالة الصلاحية</th>
               <th className="px-3 py-2 font-medium">مرحلة الإعداد</th>
               <th className="px-3 py-2 font-medium">الدور</th>
               <th className="px-3 py-2 font-medium">تاريخ الإنشاء</th>
@@ -464,6 +337,7 @@ export function UsersPageClient({ viewerId }: { viewerId: string }) {
               <UserActionsRow
                 key={u.id}
                 user={u}
+                accessState={getPublicAccessState(u, nowTs)}
                 busy={busy}
                 viewerId={viewerId}
                 onToggleDisabled={() => setDisabled(u.id, !u.disabled)}
@@ -483,6 +357,7 @@ export function UsersPageClient({ viewerId }: { viewerId: string }) {
 
 function UserActionsRow({
   user,
+  accessState,
   busy,
   viewerId,
   onToggleDisabled,
@@ -491,6 +366,7 @@ function UserActionsRow({
   onSlugAccess,
 }: {
   user: UserRow;
+  accessState: PublicAccessState;
   busy: boolean;
   viewerId: string;
   onToggleDisabled: () => void;
@@ -540,7 +416,17 @@ function UserActionsRow({
         {isOwner ? (
           "—"
         ) : (
-          <span title={slugAccessLabel(user)}>{slugAccessLabel(user)}</span>
+          <div className="flex flex-col gap-1">
+            <span
+              className={`inline-flex w-fit items-center rounded-md border px-1.5 py-0.5 text-[11px] ${publicAccessBadgeClass(accessState.kind)}`}
+              title={accessState.detail}
+            >
+              {accessState.label}
+            </span>
+            <span className="text-[11px] text-muted-foreground">
+              {accessState.detail}
+            </span>
+          </div>
         )}
       </td>
       <td className="whitespace-nowrap px-3 py-2 text-xs text-muted-foreground">
