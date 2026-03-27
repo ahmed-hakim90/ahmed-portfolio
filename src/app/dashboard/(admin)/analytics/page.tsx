@@ -13,7 +13,9 @@ import {
   BarChart3,
   FileDown,
   Globe,
+  Hourglass,
   LayoutDashboard,
+  ListChecks,
   MousePointerClick,
   Printer,
   Users,
@@ -50,9 +52,9 @@ export default async function PlatformAnalyticsPage() {
           تحليلات المنصة
         </h1>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          أجهزة زارت الموقع العام مقابل دخلت لوحة التحكم، أعداد الحسابات، المواقع
-          التي حُفظت من المحرر، ونقرات طباعة السيرة. البيانات اليومية بالتوقيت
-          UTC.
+          أجهزة زارت الموقع العام مقابل دخلت لوحة التحكم، أعداد الحسابات، إكمال
+          معالج إعداد السيرة بعد تسجيل الدخول، المواقع التي حُفظت من المحرر،
+          ونقرات طباعة السيرة. البيانات اليومية بالتوقيت UTC.
         </p>
         {!data.firestoreConfigured ? (
           <p className="mt-3 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-950 dark:text-amber-100">
@@ -186,6 +188,45 @@ export default async function PlatformAnalyticsPage() {
                 </dd>
               </div>
             </dl>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm">
+          <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+            <div className="space-y-1">
+              <CardDescription>عملاء أكملوا إعداد السيرة</CardDescription>
+              <CardTitle className="text-3xl font-semibold tabular-nums">
+                {fmt(data.clientsOnboardingCompleted)}
+              </CardTitle>
+            </div>
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+              <ListChecks className="size-5" aria-hidden />
+            </span>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground">
+              عملاء أنهوا معالج إعداد السيرة (الخطوات السبع) بعد أول تسجيل دخول،
+              أو حسابات قديمة تُعامل كمكتملة تلقائياً.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm">
+          <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+            <div className="space-y-1">
+              <CardDescription>عملاء لم يكملوا المرحلة الأولى</CardDescription>
+              <CardTitle className="text-3xl font-semibold tabular-nums">
+                {fmt(data.clientsStuckOnFirstOnboardingStep)}
+              </CardTitle>
+            </div>
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+              <Hourglass className="size-5" aria-hidden />
+            </span>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground">
+              عملاء دخلوا المعالج ولم ينتقلوا من الخطوة الأولى (الخطوة 1 من 7).
+            </p>
           </CardContent>
         </Card>
 

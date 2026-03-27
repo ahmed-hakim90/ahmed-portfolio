@@ -5,6 +5,7 @@ import {
 } from "@/components/dashboard/admin-dashboard-shell";
 import { userBlogPostsCollection } from "@/data/blog";
 import { getAdminSession } from "@/lib/admin-request";
+import { getAdminUserById } from "@/lib/admin-users";
 import { getFirestoreDb } from "@/lib/firebase-admin";
 import { redirect } from "next/navigation";
 
@@ -36,6 +37,10 @@ export default async function AdminDashboardLayout({
   const session = await getAdminSession();
   if (!session) {
     redirect("/dashboard/login");
+  }
+  const adminUser = await getAdminUserById(session.sub);
+  if (adminUser && !adminUser.onboardingCompleted) {
+    redirect("/dashboard/onboarding");
   }
   const isOwner = session.role === "owner";
   const publicBlogUrl = `/${session.username}/blog`;

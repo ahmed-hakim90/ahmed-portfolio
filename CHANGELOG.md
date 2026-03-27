@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **دوال مساعدة** — [`validateNewClientProfileInput`](./src/lib/admin-users.ts)، [`registerClientProfileAfterAuth`](./src/lib/admin-users.ts)، وتراجع Firestore-only عند فشل بذرة الموقع.
 - **قائمة المستخدمين** — عمود الاسم الظاهر من `sites`؛ أزرار إرسال بريد وواتساب عند توفر رقم.
 - **AuthShell** — خاصية [`contentMaxWidthClass`](./src/components/auth/auth-shell.tsx) لعرض أوسع (مثل نموذج التسجيل).
-- **سجل دفعات تلقائي** — [`CHANGELOG_PUSHES.md`](./CHANGELOG_PUSHES.md) يُحدَّث بكل push عبر [`.github/workflows/changelog-log.yml`](./.github/workflows/changelog-log.yml) وسكربت [`scripts/append-push-changelog.mjs`](./scripts/append-push-changelog.mjs).
+- **سجل دفعات** — [`CHANGELOG_PUSHES.md`](./CHANGELOG_PUSHES.md) يُحدَّث محلياً عبر `npm run changelog:log` ([`scripts/append-push-changelog.mjs`](./scripts/append-push-changelog.mjs)).
 
 ### Changed
 

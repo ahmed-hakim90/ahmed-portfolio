@@ -6,7 +6,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 export type UserRow = {
   id: string;
   email: string;
-  username: string;
   slug: string;
   role: "owner" | "client";
   disabled: boolean;
@@ -14,9 +13,25 @@ export type UserRow = {
   phone: string | null;
   /** From `sites/{id}.json` name when present */
   displayName?: string | null;
+  /** معالج إعداد السيرة بعد تسجيل الدخول (فهرس 0–6). */
+  onboardingStep?: number;
+  onboardingCompleted?: boolean;
 };
 
 type SlugAvailDetail = "invalid" | "available" | "taken" | null;
+
+const ONBOARDING_TOTAL_STEPS = 7;
+
+function onboardingLabel(u: UserRow): string {
+  const completed = u.onboardingCompleted !== false;
+  if (completed) return "مكتمل";
+  const raw = u.onboardingStep;
+  const stepIdx =
+    typeof raw === "number" && Number.isFinite(raw)
+      ? Math.min(6, Math.max(0, Math.floor(raw)))
+      : 0;
+  return `الخطوة ${stepIdx + 1} من ${ONBOARDING_TOTAL_STEPS}`;
+}
 
 export function UsersPageClient({ viewerId }: { viewerId: string }) {
   const [users, setUsers] = useState<UserRow[]>([]);
@@ -375,10 +390,10 @@ export function UsersPageClient({ viewerId }: { viewerId: string }) {
             <tr>
               <th className="px-3 py-2 font-medium">البريد</th>
               <th className="px-3 py-2 font-medium">الاسم الظاهر</th>
-              <th className="px-3 py-2 font-medium">اسم المستخدم</th>
-              <th className="px-3 py-2 font-medium">المسار</th>
+              <th className="px-3 py-2 font-medium">المعرّف في الرابط</th>
               <th className="px-3 py-2 font-medium">الهاتف</th>
               <th className="px-3 py-2 font-medium">الحالة</th>
+              <th className="px-3 py-2 font-medium">مرحلة الإعداد</th>
               <th className="px-3 py-2 font-medium">الدور</th>
               <th className="px-3 py-2 font-medium">تاريخ الإنشاء</th>
               <th className="px-3 py-2 font-medium">إجراءات</th>
@@ -439,7 +454,6 @@ function UserActionsRow({
       <td className="max-w-[140px] truncate px-3 py-2 text-xs">
         {user.displayName ?? "—"}
       </td>
-      <td className="px-3 py-2 font-mono text-xs">{user.username}</td>
       <td className="px-3 py-2 font-mono text-xs text-muted-foreground">
         {user.slug}
       </td>
@@ -452,6 +466,9 @@ function UserActionsRow({
         ) : (
           <span className="text-muted-foreground">نشط</span>
         )}
+      </td>
+      <td className="whitespace-nowrap px-3 py-2 text-xs text-muted-foreground">
+        {onboardingLabel(user)}
       </td>
       <td className="px-3 py-2 text-xs text-muted-foreground">
         {isOwner ? "صاحب المنصة" : "عميل"}

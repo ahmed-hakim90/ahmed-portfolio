@@ -1,6 +1,7 @@
 "use client";
 
 import { LogoutButton } from "@/components/dashboard/logout-button";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
@@ -27,9 +28,11 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
+import { toast } from "sonner";
 
 export type DashboardSidebarPost = {
   slug: string;
@@ -92,12 +95,14 @@ function SidebarContent({
   blogPosts,
   pathname,
   onNavigate,
+  unreadCount,
 }: {
   isOwner: boolean;
   publicBlogUrl: string;
   blogPosts: DashboardSidebarPost[];
   pathname: string;
   onNavigate?: () => void;
+  unreadCount: number | null;
 }) {
   const [routeHash, setRouteHash] = useState("");
   const [blogListOpen, setBlogListOpen] = useState(false);
@@ -185,11 +190,22 @@ function SidebarContent({
           </Link>
           <Link
             href="/dashboard/messages"
-            className={linkClass("/dashboard/messages")}
+            className={cn(linkClass("/dashboard/messages"), "justify-between gap-2")}
             onClick={onNavigate}
           >
-            <Mail className="size-4 shrink-0 opacity-70" aria-hidden />
-            الرسائل
+            <span className="flex min-w-0 items-center gap-2">
+              <Mail className="size-4 shrink-0 opacity-70" aria-hidden />
+              الرسائل
+            </span>
+            {unreadCount != null && unreadCount > 0 ? (
+              <Badge
+                variant="default"
+                className="shrink-0 px-1.5 py-0 text-[10px] tabular-nums"
+                aria-label={`${unreadCount} غير مقروءة`}
+              >
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </Badge>
+            ) : null}
           </Link>
           <Link href="/dashboard/settings" className={linkClass("/dashboard/settings")} onClick={onNavigate}>
             <Settings className="size-4 shrink-0 opacity-70" aria-hidden />
@@ -341,7 +357,11 @@ export function AdminDashboardShell({
 }) {
   const [headerActions, setHeaderActions] = useState<ReactNode>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState<number | null>(null);
   const pathname = usePathname();
+  const router = useRouter();
+  const latestIdBaselineRef = useRef<string | null>(null);
+  const inboxBaselineReadyRef = useRef(false);
 
   const setHeaderActionsStable = useCallback<SetHeaderActions>((node) => {
     setHeaderActions(node);
@@ -374,6 +394,79 @@ export function AdminDashboardShell({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [mobileOpen]);
 
+  useEffect(() => {
+    let cancelled = false;
+    const POLL_MS = 50_000;
+
+    async function pollInboxSummary() {
+      if (typeof document !== "undefined" && document.visibilityState !== "visible") {
+        return;
+      }
+      try {
+        const res = await fetch("/api/admin/contacts/unread-summary", {
+          cache: "no-store",
+        });
+        const data = (await res.json().catch(() => ({}))) as {
+          unreadCount?: number;
+          latestId?: string | null;
+        };
+        if (!res.ok || cancelled) return;
+        const u =
+          typeof data.unreadCount === "number" ? data.unreadCount : 0;
+        const latestId =
+          data.latestId === undefined || data.latestId === null
+            ? null
+            : String(data.latestId);
+        setUnreadCount(u);
+
+        if (!inboxBaselineReadyRef.current) {
+          inboxBaselineReadyRef.current = true;
+          latestIdBaselineRef.current = latestId;
+          return;
+        }
+        const prev = latestIdBaselineRef.current;
+        if (latestId !== null && latestId !== prev) {
+          latestIdBaselineRef.current = latestId;
+          toast.success("رسالة تواصل جديدة", {
+            description: "افتح صفحة الرسائل للاطلاع.",
+            action: {
+              label: "فتح",
+              onClick: () => router.push("/dashboard/messages"),
+            },
+          });
+          if (
+            typeof Notification !== "undefined" &&
+            Notification.permission === "granted"
+          ) {
+            try {
+              new Notification("رسالة تواصل جديدة", {
+                body: "لديك رسالة جديدة من نموذج التواصل.",
+                tag: "contact-inbox",
+              });
+            } catch {
+              /* ignore */
+            }
+          }
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+
+    void pollInboxSummary();
+    const interval = window.setInterval(pollInboxSummary, POLL_MS);
+    const onVisibility = () => {
+      void pollInboxSummary();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [router]);
+
   const closeMobile = useCallback(() => setMobileOpen(false), []);
   const toggleMobile = useCallback(() => setMobileOpen((o) => !o), []);
 
@@ -402,6 +495,7 @@ export function AdminDashboardShell({
                 publicBlogUrl={publicBlogUrl}
                 blogPosts={blogPosts}
                 pathname={pathname}
+                unreadCount={unreadCount}
               />
             </div>
             <div className="shrink-0 border-t border-border/60 p-4">
@@ -444,6 +538,7 @@ export function AdminDashboardShell({
                 blogPosts={blogPosts}
                 pathname={pathname}
                 onNavigate={closeMobile}
+                unreadCount={unreadCount}
               />
             </div>
             <div className="shrink-0 border-t border-border/60 p-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))]">

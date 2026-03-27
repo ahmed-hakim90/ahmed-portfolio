@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Appends a push entry to CHANGELOG_PUSHES.md (for CI) or prints when DRY_RUN=1.
- * Intended to run on every push via .github/workflows/changelog-log.yml
+ * Appends a push entry to CHANGELOG_PUSHES.md, or prints when --dry / DRY_RUN=1.
+ * Run locally: npm run changelog:log (after commit, before or with push).
  */
 import { execSync } from "node:child_process";
 import fs from "node:fs";
@@ -29,6 +29,14 @@ function git(args) {
   }
 }
 
+/** user/repo for github.com commit links when GITHUB_REPOSITORY is unset */
+function githubRepoFromRemote() {
+  const url = git("git remote get-url origin");
+  if (!url) return "";
+  const m = url.match(/github\.com[:/]([^/]+)\/([^/.]+?)(?:\.git)?$/i);
+  return m ? `${m[1]}/${m[2]}` : "";
+}
+
 const shaFull = process.env.GITHUB_SHA || git("git rev-parse HEAD");
 const sha = (shaFull || "local").slice(0, 7);
 const ref =
@@ -53,7 +61,10 @@ try {
 
 const iso = new Date().toISOString();
 
-let block = `### ${iso} · \`${ref}\` · [\`${sha}\`](https://github.com/${process.env.GITHUB_REPOSITORY || "repo"}/commit/${shaFull || sha})\n`;
+const ghRepo =
+  process.env.GITHUB_REPOSITORY || githubRepoFromRemote() || "repo";
+
+let block = `### ${iso} · \`${ref}\` · [\`${sha}\`](https://github.com/${ghRepo}/commit/${shaFull || sha})\n`;
 block += `- **${subject.replace(/\n/g, " ")}**\n`;
 if (author) {
   block += `- ${author}\n`;
@@ -77,9 +88,9 @@ if (dry) {
   process.exit(0);
 }
 
-const header = `# سجل الدفعات (تلقائي)
+const header = `# سجل الدفعات
 
-يُحدَّث هذا الملف تلقائياً عند كل push إلى الفرع المفعّل في GitHub Actions.
+يُحدَّث محلياً عبر \`npm run changelog:log\` بعد كل commit (أو قبل الـ push).
 للملخص البشري والإصدارات راجع [CHANGELOG.md](./CHANGELOG.md).
 
 `;

@@ -1,6 +1,6 @@
-# سجل الدفعات (تلقائي)
+# سجل الدفعات
 
-يُحدَّث هذا الملف تلقائياً عند كل push إلى `main` / `master` عبر [GitHub Actions](.github/workflows/changelog-log.yml).
+يُحدَّث محلياً عبر `npm run changelog:log` بعد كل commit (أو قبل الـ push).
 للملخص حسب الإصدارات والميزات راجع [CHANGELOG.md](./CHANGELOG.md).
 
 ---

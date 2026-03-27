@@ -78,7 +78,21 @@ export default function DashboardLoginPage() {
       setLoading(false);
       return;
     }
-    router.replace(next);
+    let destination = next;
+    try {
+      const profileRes = await fetch("/api/admin/profile", { cache: "no-store" });
+      if (profileRes.ok) {
+        const profile = (await profileRes.json()) as {
+          onboardingCompleted?: boolean;
+        };
+        if (profile.onboardingCompleted === false) {
+          destination = "/dashboard/onboarding";
+        }
+      }
+    } catch {
+      /* keep next */
+    }
+    router.replace(destination);
     router.refresh();
     setLoading(false);
   }
@@ -115,7 +129,21 @@ export default function DashboardLoginPage() {
       setLoading(false);
       return;
     }
-    router.replace(next);
+    let destination = next;
+    try {
+      const profileRes = await fetch("/api/admin/profile", { cache: "no-store" });
+      if (profileRes.ok) {
+        const profile = (await profileRes.json()) as {
+          onboardingCompleted?: boolean;
+        };
+        if (profile.onboardingCompleted === false) {
+          destination = "/dashboard/onboarding";
+        }
+      }
+    } catch {
+      /* keep next */
+    }
+    router.replace(destination);
     router.refresh();
     setLoading(false);
   }

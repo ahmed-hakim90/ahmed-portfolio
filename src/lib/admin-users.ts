@@ -13,6 +13,13 @@ export type AdminUserPublic = {
   slug: string;
   disabled: boolean;
   createdAt: string;
+  /**
+   * `false` = show first-login CV onboarding wizard.
+   * Legacy docs without this field are treated as completed.
+   */
+  onboardingCompleted: boolean;
+  /** Current step index in the CV onboarding wizard (0–6). */
+  onboardingStep: number;
 };
 
 type AdminUserDoc = {
@@ -22,7 +29,20 @@ type AdminUserDoc = {
   slug?: string;
   disabled: boolean;
   createdAt: string;
+  /** When missing, treated as completed (existing users before onboarding). */
+  onboardingCompleted?: boolean;
+  /** CV onboarding wizard step index (0–6). */
+  onboardingStep?: number;
 };
+
+/** Inclusive max step index for the 7-step onboarding wizard. */
+export const ONBOARDING_MAX_STEP_INDEX = 6;
+
+export function normalizeOnboardingStep(raw: unknown): number {
+  const n =
+    typeof raw === "number" && Number.isFinite(raw) ? Math.floor(raw) : 0;
+  return Math.min(ONBOARDING_MAX_STEP_INDEX, Math.max(0, n));
+}
 
 function safeCompareStrings(a: string, b: string): boolean {
   try {
@@ -94,6 +114,8 @@ function docToPublic(
     slug: isSlugAllowed(slug) ? slug : defaultSlugFromUsername(data.username),
     disabled: !!data.disabled,
     createdAt: data.createdAt,
+    onboardingCompleted: data.onboardingCompleted !== false,
+    onboardingStep: normalizeOnboardingStep(data.onboardingStep),
   };
 }
 
@@ -365,8 +387,47 @@ export async function createAdminUserDocument(
     role,
     slug,
     disabled: false,
+    onboardingCompleted: false,
     createdAt: new Date().toISOString(),
   } satisfies AdminUserDoc);
+  return { ok: true };
+}
+
+/** Marks the user as having finished (or skipped) first-login onboarding. */
+export async function markOnboardingComplete(uid: string): Promise<boolean> {
+  const db = getFirestoreDb();
+  if (!db) return false;
+  const ref = db.collection(COLLECTION).doc(uid);
+  const doc = await ref.get();
+  if (!doc.exists) return false;
+  await ref.update({ onboardingCompleted: true });
+  return true;
+}
+
+/**
+ * Persists CV onboarding wizard step (0–6). Only while onboarding is incomplete.
+ */
+export async function updateAdminUserOnboardingStep(
+  userId: string,
+  step: number,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (
+    !Number.isInteger(step) ||
+    step < 0 ||
+    step > ONBOARDING_MAX_STEP_INDEX
+  ) {
+    return { ok: false, error: "Invalid onboarding step" };
+  }
+  const db = getFirestoreDb();
+  if (!db) return { ok: false, error: "Firestore is not configured" };
+  const ref = db.collection(COLLECTION).doc(userId);
+  const doc = await ref.get();
+  if (!doc.exists) return { ok: false, error: "User not found" };
+  const data = doc.data() as AdminUserDoc;
+  if (data.onboardingCompleted !== false) {
+    return { ok: false, error: "Onboarding already completed" };
+  }
+  await ref.update({ onboardingStep: step });
   return { ok: true };
 }
 

@@ -10,7 +10,7 @@ import { captureAndSharePortfolioImage } from "@/lib/site-share-image";
 import { buildPublicPortfolioUrl, getEnvPublicSiteBase, resolvePublicSiteBase } from "@/lib/site-public-base";
 import { hydrateSiteJson, mergeSiteJsonForSave } from "@/lib/site-hydrate";
 import { cn } from "@/lib/utils";
-import { Printer, Share2 } from "lucide-react";
+import { ExternalLink, Printer, Share2 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -186,6 +186,19 @@ export default function DashboardSitePage() {
         <Button type="button" size="sm" onClick={save} disabled={saving}>
           {saving ? "جاري الحفظ…" : "حفظ"}
         </Button>
+        {publicUrl.trim() ? (
+          <Button variant="outline" size="sm" asChild>
+            <a href={publicUrl} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="me-1 size-4 opacity-80" aria-hidden />
+              زيارة موقعك
+            </a>
+          </Button>
+        ) : (
+          <Button variant="outline" size="sm" disabled>
+            <ExternalLink className="me-1 size-4 opacity-80" aria-hidden />
+            زيارة موقعك
+          </Button>
+        )}
         <Button variant="outline" size="sm" asChild>
           <Link href="/dashboard/cv-print">
             <Printer className="me-1 size-4 opacity-80" aria-hidden />

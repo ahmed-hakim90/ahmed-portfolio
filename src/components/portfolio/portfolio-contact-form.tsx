@@ -67,6 +67,7 @@ export function PortfolioContactForm({
     try {
       const res = await fetch("/api/public/contact", {
         method: "POST",
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ownerSlug: slug, name, email, message }),
       });

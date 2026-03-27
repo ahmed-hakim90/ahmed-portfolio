@@ -1,4 +1,5 @@
 import { FieldValue, type Firestore } from "firebase-admin/firestore";
+import { normalizeOnboardingStep } from "@/lib/admin-users";
 import { getFirestoreDb } from "@/lib/firebase-admin";
 
 const SUMMARY_DOC = "summary";
@@ -29,6 +30,10 @@ export type PlatformAnalyticsSnapshot = {
   totalAccounts: number;
   clientAccounts: number;
   activeClientAccounts: number;
+  /** عملاء أنهوا معالج إعداد السيرة (أو حساب قديم بدون الحقل). */
+  clientsOnboardingCompleted: number;
+  /** عملاء لم يكملوا المرحلة الأولى بعد (معالج الإعداد، الخطوة 1 من 7). */
+  clientsStuckOnFirstOnboardingStep: number;
   sitesSavedFromEditor: number;
   dailyActivity: DailyActivityRow[];
 };
@@ -211,27 +216,60 @@ async function getAdminUserCounts(): Promise<{
   total: number;
   clients: number;
   activeClients: number;
+  clientsOnboardingCompleted: number;
+  clientsStuckOnFirstOnboardingStep: number;
 }> {
   const db = getFirestoreDb();
   if (!db) {
-    return { total: -1, clients: -1, activeClients: -1 };
+    return {
+      total: -1,
+      clients: -1,
+      activeClients: -1,
+      clientsOnboardingCompleted: -1,
+      clientsStuckOnFirstOnboardingStep: -1,
+    };
   }
   try {
     const snap = await db.collection(ADMIN_USERS).get();
     let clients = 0;
     let activeClients = 0;
+    let clientsOnboardingCompleted = 0;
+    let clientsStuckOnFirstOnboardingStep = 0;
     for (const doc of snap.docs) {
-      const d = doc.data() as { role?: string; disabled?: boolean };
+      const d = doc.data() as {
+        role?: string;
+        disabled?: boolean;
+        onboardingCompleted?: boolean;
+        onboardingStep?: number;
+      };
       const isClient = d.role === "client";
       if (isClient) {
         clients++;
         if (!d.disabled) activeClients++;
+        const completed = d.onboardingCompleted !== false;
+        if (completed) {
+          clientsOnboardingCompleted++;
+        } else if (normalizeOnboardingStep(d.onboardingStep) === 0) {
+          clientsStuckOnFirstOnboardingStep++;
+        }
       }
     }
-    return { total: snap.size, clients, activeClients };
+    return {
+      total: snap.size,
+      clients,
+      activeClients,
+      clientsOnboardingCompleted,
+      clientsStuckOnFirstOnboardingStep,
+    };
   } catch (e) {
     console.error("getAdminUserCounts:", e);
-    return { total: -1, clients: -1, activeClients: -1 };
+    return {
+      total: -1,
+      clients: -1,
+      activeClients: -1,
+      clientsOnboardingCompleted: -1,
+      clientsStuckOnFirstOnboardingStep: -1,
+    };
   }
 }
 
@@ -290,6 +328,8 @@ export async function getPlatformAnalyticsSnapshot(): Promise<PlatformAnalyticsS
       totalAccounts: 0,
       clientAccounts: 0,
       activeClientAccounts: 0,
+      clientsOnboardingCompleted: 0,
+      clientsStuckOnFirstOnboardingStep: 0,
       sitesSavedFromEditor: 0,
       dailyActivity: lastNDaysUtcKeys(14).map((date) => ({
         date,
@@ -324,6 +364,9 @@ export async function getPlatformAnalyticsSnapshot(): Promise<PlatformAnalyticsS
       totalAccounts: userCounts.total,
       clientAccounts: userCounts.clients,
       activeClientAccounts: userCounts.activeClients,
+      clientsOnboardingCompleted: userCounts.clientsOnboardingCompleted,
+      clientsStuckOnFirstOnboardingStep:
+        userCounts.clientsStuckOnFirstOnboardingStep,
       sitesSavedFromEditor: sitesCount,
       dailyActivity,
     };
@@ -338,6 +381,8 @@ export async function getPlatformAnalyticsSnapshot(): Promise<PlatformAnalyticsS
       totalAccounts: -1,
       clientAccounts: -1,
       activeClientAccounts: -1,
+      clientsOnboardingCompleted: -1,
+      clientsStuckOnFirstOnboardingStep: -1,
       sitesSavedFromEditor: -1,
       dailyActivity: lastNDaysUtcKeys(14).map((date) => ({
         date,

@@ -8,7 +8,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 export type ContactMessageRow = {
   id: string;
@@ -19,11 +20,59 @@ export type ContactMessageRow = {
   createdAt: string | null;
 };
 
+type ReadFilter = "all" | "unread" | "read";
+
+function matchReadFilter(m: ContactMessageRow, f: ReadFilter): boolean {
+  if (f === "all") return true;
+  if (f === "unread") return !m.read;
+  return m.read;
+}
+
+function matchDateRange(
+  m: ContactMessageRow,
+  dateFrom: string,
+  dateTo: string,
+): boolean {
+  if (!dateFrom && !dateTo) return true;
+  if (!m.createdAt) return false;
+  const t = new Date(m.createdAt).getTime();
+  if (dateFrom) {
+    const start = new Date(`${dateFrom}T00:00:00`).getTime();
+    if (t < start) return false;
+  }
+  if (dateTo) {
+    const end = new Date(`${dateTo}T23:59:59.999`).getTime();
+    if (t > end) return false;
+  }
+  return true;
+}
+
 export function ContactMessagesClient() {
   const [items, setItems] = useState<ContactMessageRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [readFilter, setReadFilter] = useState<ReadFilter>("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [notifySupported, setNotifySupported] = useState(false);
+  const [notifyPermission, setNotifyPermission] = useState<
+    "default" | "granted" | "denied"
+  >("default");
+
+  const filteredItems = useMemo(() => {
+    return items.filter(
+      (m) =>
+        matchReadFilter(m, readFilter) &&
+        matchDateRange(m, dateFrom, dateTo),
+    );
+  }, [items, readFilter, dateFrom, dateTo]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    setNotifySupported(true);
+    setNotifyPermission(Notification.permission);
+  }, []);
 
   const load = useCallback(async () => {
     setError(null);
@@ -95,7 +144,109 @@ export function ContactMessagesClient() {
 
   return (
     <div className="space-y-4" dir="rtl">
-      {items.map((m) => (
+      <div className="flex flex-col gap-4 rounded-lg border border-border/60 bg-muted/20 p-4">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground" htmlFor="msg-read-filter">
+              الحالة
+            </label>
+            <select
+              id="msg-read-filter"
+              className="flex h-9 min-w-[10rem] rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              value={readFilter}
+              onChange={(e) =>
+                setReadFilter(e.target.value as ReadFilter)
+              }
+            >
+              <option value="all">الكل</option>
+              <option value="unread">غير مقروءة</option>
+              <option value="read">مقروءة</option>
+            </select>
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground" htmlFor="msg-date-from">
+              من تاريخ
+            </label>
+            <input
+              id="msg-date-from"
+              type="date"
+              className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground" htmlFor="msg-date-to">
+              إلى تاريخ
+            </label>
+            <input
+              id="msg-date-to"
+              type="date"
+              className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+            />
+          </div>
+          {(dateFrom || dateTo) ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-9"
+              onClick={() => {
+                setDateFrom("");
+                setDateTo("");
+              }}
+            >
+              مسح التاريخ
+            </Button>
+          ) : null}
+        </div>
+        {notifySupported ? (
+          <div className="flex flex-wrap items-center gap-2 border-t border-border/60 pt-3">
+            {notifyPermission === "default" ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    const p = await Notification.requestPermission();
+                    setNotifyPermission(p);
+                    if (p === "granted") {
+                      toast.success("تم تفعيل إشعارات المتصفح");
+                    } else if (p === "denied") {
+                      toast.message("لم يُمنح الإذن للإشعارات");
+                    }
+                  } catch {
+                    toast.error("تعذّر طلب الإذن");
+                  }
+                }}
+              >
+                تفعيل إشعارات المتصفح
+              </Button>
+            ) : notifyPermission === "granted" ? (
+              <p className="text-xs text-muted-foreground">
+                إشعارات المتصفح مفعّلة — سيصلك تنبيه عند وصول رسالة جديدة أثناء استخدام
+                لوحة التحكم.
+              </p>
+            ) : (
+              <p className="text-xs text-destructive">
+                تم رفض إشعارات المتصفح. يمكنك تغيير ذلك من إعدادات الموقع في
+                المتصفح.
+              </p>
+            )}
+          </div>
+        ) : null}
+      </div>
+
+      {filteredItems.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          لا توجد رسائل تطابق الفلتر. جرّب تغيير الحالة أو نطاق التاريخ.
+        </p>
+      ) : null}
+
+      {filteredItems.map((m) => (
         <Card
           key={m.id}
           className={
