@@ -34,7 +34,7 @@ import { useEffect, useState } from "react";
 export default function DashboardLoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/dashboard/site";
+  const next = searchParams.get("next") ?? "/dashboard";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -84,9 +84,15 @@ export default function DashboardLoginPage() {
       if (profileRes.ok) {
         const profile = (await profileRes.json()) as {
           onboardingCompleted?: boolean;
+          role?: "owner" | "client";
         };
         if (profile.onboardingCompleted === false) {
           destination = "/dashboard/onboarding";
+        } else if (
+          profile.role === "owner" &&
+          (destination === "/dashboard/site" || destination === "/dashboard/site/")
+        ) {
+          destination = "/dashboard";
         }
       }
     } catch {
@@ -135,9 +141,15 @@ export default function DashboardLoginPage() {
       if (profileRes.ok) {
         const profile = (await profileRes.json()) as {
           onboardingCompleted?: boolean;
+          role?: "owner" | "client";
         };
         if (profile.onboardingCompleted === false) {
           destination = "/dashboard/onboarding";
+        } else if (
+          profile.role === "owner" &&
+          (destination === "/dashboard/site" || destination === "/dashboard/site/")
+        ) {
+          destination = "/dashboard";
         }
       }
     } catch {

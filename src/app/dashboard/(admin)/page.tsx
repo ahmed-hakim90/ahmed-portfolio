@@ -173,13 +173,13 @@ export default async function DashboardIndexPage() {
           </div>
           <div className="grid w-full max-w-md grid-cols-2 gap-3 sm:w-auto">
             <Card className="border border-border/60 bg-background/80 shadow-sm">
-              <CardHeader className="space-y-1 p-3">
+              <CardHeader className="space-y-1 p-4">
                 <CardDescription className="text-xs">العملاء النشطون</CardDescription>
                 <CardTitle className="text-2xl tabular-nums">{fmt(activeClients.length)}</CardTitle>
               </CardHeader>
             </Card>
             <Card className="border border-border/60 bg-background/80 shadow-sm">
-              <CardHeader className="space-y-1 p-3">
+              <CardHeader className="space-y-1 p-4">
                 <CardDescription className="text-xs">رسائل غير مقروءة</CardDescription>
                 <CardTitle className="text-2xl tabular-nums">{fmt(inbox.unreadCount)}</CardTitle>
               </CardHeader>
@@ -190,7 +190,7 @@ export default async function DashboardIndexPage() {
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card className="border border-border/70 shadow-sm">
-          <CardHeader className="space-y-1 pb-2">
+          <CardHeader className="space-y-1 p-4 pb-2">
             <div className="flex items-start justify-between gap-2">
               <div>
                 <CardDescription>إجمالي العملاء</CardDescription>
@@ -199,11 +199,11 @@ export default async function DashboardIndexPage() {
               <Users className="size-5 text-muted-foreground" aria-hidden />
             </div>
           </CardHeader>
-          <CardContent className="text-xs">النشطون: {fmt(activeClients.length)}</CardContent>
+          <CardContent className="px-4 pb-4 text-xs">النشطون: {fmt(activeClients.length)}</CardContent>
         </Card>
 
         <Card className="border border-border/70 shadow-sm">
-          <CardHeader className="space-y-1 pb-2">
+          <CardHeader className="space-y-1 p-4 pb-2">
             <div className="flex items-start justify-between gap-2">
               <div>
                 <CardDescription>اكتمال الإعداد</CardDescription>
@@ -214,13 +214,13 @@ export default async function DashboardIndexPage() {
               <UserCheck2 className="size-5 text-muted-foreground" aria-hidden />
             </div>
           </CardHeader>
-          <CardContent className="text-xs">
+          <CardContent className="px-4 pb-4 text-xs">
             غير مكتمل: {fmt(onboardingPending.length)}
           </CardContent>
         </Card>
 
         <Card className="border border-border/70 shadow-sm">
-          <CardHeader className="space-y-1 pb-2">
+          <CardHeader className="space-y-1 p-4 pb-2">
             <div className="flex items-start justify-between gap-2">
               <div>
                 <CardDescription>إجمالي المقالات</CardDescription>
@@ -229,11 +229,11 @@ export default async function DashboardIndexPage() {
               <FileText className="size-5 text-muted-foreground" aria-hidden />
             </div>
           </CardHeader>
-          <CardContent className="text-xs">جميع المدونات داخل المنصة</CardContent>
+          <CardContent className="px-4 pb-4 text-xs">جميع المدونات داخل المنصة</CardContent>
         </Card>
 
         <Card className="border border-border/70 shadow-sm">
-          <CardHeader className="space-y-1 pb-2">
+          <CardHeader className="space-y-1 p-4 pb-2">
             <div className="flex items-start justify-between gap-2">
               <div>
                 <CardDescription>اتجاه الزيارات اليومي</CardDescription>
@@ -244,19 +244,19 @@ export default async function DashboardIndexPage() {
               <TrendingUp className="size-5 text-muted-foreground" aria-hidden />
             </div>
           </CardHeader>
-          <CardContent className="text-xs">مقارنة بآخر يوم مسجل</CardContent>
+          <CardContent className="px-4 pb-4 text-xs">مقارنة بآخر يوم مسجل</CardContent>
         </Card>
       </section>
 
       <section className="grid gap-4 xl:grid-cols-3">
         <Card className="border border-border/70 shadow-sm xl:col-span-2">
-          <CardHeader className="pb-2">
+          <CardHeader className="p-5 pb-2">
             <CardTitle className="text-lg">اتجاهات الاستخدام</CardTitle>
             <CardDescription>
               زيارات عامة، دخول لوحة التحكم، الطباعة، وتحميل PDF.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-5">
+          <CardContent className="space-y-5 px-5 pb-5">
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
                 <p className="text-xs text-muted-foreground">زيارات الموقع العام</p>
@@ -286,13 +286,13 @@ export default async function DashboardIndexPage() {
         </Card>
 
         <Card className="border border-border/70 shadow-sm">
-          <CardHeader className="pb-2">
+          <CardHeader className="p-5 pb-2">
             <CardTitle className="text-lg">مركز الإجراءات</CardTitle>
             <CardDescription>
               اختصارات للقرارات اليومية الأكثر تكرارًا.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-2 px-5 pb-5 pt-0">
             <Button className="w-full justify-between" asChild>
               <Link href="/dashboard/users">
                 متابعة العملاء
@@ -323,7 +323,7 @@ export default async function DashboardIndexPage() {
 
       <section className="grid gap-4 lg:grid-cols-2">
         <Card className="border border-border/70 shadow-sm">
-          <CardHeader className="pb-2">
+          <CardHeader className="p-5 pb-2">
             <div className="flex items-center justify-between gap-2">
               <CardTitle className="text-lg">عملاء يحتاجون متابعة</CardTitle>
               <AlertTriangle className="size-4 text-amber-600" aria-hidden />
@@ -332,7 +332,7 @@ export default async function DashboardIndexPage() {
               العملاء المتوقفون في أول خطوة من الإعداد.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-5 pb-5 pt-0">
             {stalledClients.length === 0 ? (
               <p className="text-sm text-muted-foreground">لا يوجد تعثر حاليًا.</p>
             ) : (
@@ -359,14 +359,14 @@ export default async function DashboardIndexPage() {
         </Card>
 
         <Card className="border border-border/70 shadow-sm">
-          <CardHeader className="pb-2">
+          <CardHeader className="p-5 pb-2">
             <div className="flex items-center justify-between gap-2">
               <CardTitle className="text-lg">النشاط الحديث</CardTitle>
               <BellRing className="size-4 text-muted-foreground" aria-hidden />
             </div>
             <CardDescription>أحدث الرسائل وأحدث العملاء المسجلين.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-3 px-5 pb-5 pt-0">
             {inbox.latestMessages[0] ? (
               <div className="rounded-md border border-border/60 bg-muted/20 p-3">
                 <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
@@ -408,7 +408,7 @@ export default async function DashboardIndexPage() {
 
       <section className="grid gap-4 md:grid-cols-3">
         <Card className="border border-border/70 shadow-sm">
-          <CardHeader className="pb-1">
+          <CardHeader className="p-5 pb-1">
             <CardDescription>حفظ المواقع من المحرر</CardDescription>
             <CardTitle className="text-2xl tabular-nums">
               {fmt(analytics.sitesSavedFromEditor)}
@@ -416,7 +416,7 @@ export default async function DashboardIndexPage() {
           </CardHeader>
         </Card>
         <Card className="border border-border/70 shadow-sm">
-          <CardHeader className="pb-1">
+          <CardHeader className="p-5 pb-1">
             <CardDescription>نقرات طباعة السيرة</CardDescription>
             <CardTitle className="text-2xl tabular-nums">
               {fmt(analytics.totalPrintClicks)}
@@ -424,7 +424,7 @@ export default async function DashboardIndexPage() {
           </CardHeader>
         </Card>
         <Card className="border border-border/70 shadow-sm">
-          <CardHeader className="pb-1">
+          <CardHeader className="p-5 pb-1">
             <CardDescription>تحميلات PDF</CardDescription>
             <CardTitle className="text-2xl tabular-nums">
               {fmt(analytics.totalPdfDownloads)}
@@ -435,7 +435,7 @@ export default async function DashboardIndexPage() {
 
       {!analytics.firestoreConfigured ? (
         <Card className="border border-amber-500/40 bg-amber-500/10 shadow-sm">
-          <CardHeader className="pb-2">
+          <CardHeader className="p-5 pb-2">
             <div className="flex items-center gap-2">
               <BarChart3 className="size-4 text-amber-700 dark:text-amber-300" aria-hidden />
               <CardTitle className="text-base text-amber-900 dark:text-amber-100">
