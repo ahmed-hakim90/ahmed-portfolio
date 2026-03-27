@@ -46,7 +46,7 @@ export function DriveUrlField({
       return;
     }
     onChange(result.url);
-    setStatus("تم رفع الصورة وتحديث الرابط.");
+    setStatus("تم ضغط الصورة ورفعها وتحديث الرابط.");
     setStatusError(false);
     setUploading(false);
   }
