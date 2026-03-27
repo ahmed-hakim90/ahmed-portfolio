@@ -1,6 +1,7 @@
 "use client";
 
 import { authFieldClass } from "@/components/auth/auth-shell";
+import { DriveUrlField } from "@/components/dashboard/drive-url-field";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -164,6 +165,15 @@ export function StepEducation({
                   disabled={busy}
                 />
               </div>
+              <DriveUrlField
+                id={`onb-education-logo-${i}`}
+                label="شعار الجهة / المؤسسة (Logo URL)"
+                value={row.logoUrl}
+                onChange={(v) => updateRow(i, "logoUrl", v)}
+                uploadKind="education-logo"
+                className="space-y-2 sm:col-span-2"
+                disabled={busy}
+              />
             </div>
           </div>
         ))}

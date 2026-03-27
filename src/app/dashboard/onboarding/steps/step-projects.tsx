@@ -1,6 +1,7 @@
 "use client";
 
 import { authFieldClass } from "@/components/auth/auth-shell";
+import { DriveUrlField } from "@/components/dashboard/drive-url-field";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -188,6 +189,15 @@ export function StepProjects({
                   disabled={busy}
                 />
               </div>
+              <DriveUrlField
+                id={`onboarding-project-image-${i}`}
+                label="صورة المشروع"
+                value={row.image}
+                onChange={(v) => updateRow(i, "image", v)}
+                uploadKind="project"
+                className="sm:col-span-2"
+                disabled={busy}
+              />
               <div className="space-y-2 sm:col-span-2">
                 <label className="text-xs font-medium">وصف</label>
                 <textarea

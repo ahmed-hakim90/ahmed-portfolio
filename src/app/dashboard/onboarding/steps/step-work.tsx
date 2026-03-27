@@ -1,6 +1,7 @@
 "use client";
 
 import { authFieldClass } from "@/components/auth/auth-shell";
+import { DriveUrlField } from "@/components/dashboard/drive-url-field";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -172,6 +173,15 @@ export function StepWork({
                   disabled={busy}
                 />
               </div>
+              <DriveUrlField
+                id={`onb-work-logo-${i}`}
+                label="شعار الشركة (URL أو Upload)"
+                value={row.logoUrl}
+                onChange={(v) => updateRow(i, "logoUrl", v)}
+                uploadKind="work-logo"
+                disabled={busy}
+                className="sm:col-span-2"
+              />
               <div className="space-y-2 sm:col-span-2">
                 <label className="text-xs font-medium">وصف مختصر</label>
                 <textarea
