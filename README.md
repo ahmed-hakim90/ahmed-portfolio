@@ -61,18 +61,36 @@
 
 ## Environment variables
 
-Create `.env.local` in the project root (never commit secrets). Typical variables:
+Create `.env.local` in the project root (never commit secrets).  
+For production on **Vercel**, set the same keys in:
+**Project → Settings → Environment Variables**.
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `ADMIN_DASHBOARD_SECRET` | Yes (prod) | Secret for signing admin session cookies; **≥ 16 characters** recommended. |
-| `FIREBASE_SERVICE_ACCOUNT_JSON` | For Firebase | JSON string of the Firebase service account. |
-| `FIREBASE_SERVICE_ACCOUNT_PATH` | Alternative | Filesystem path to the service account JSON file. |
-| `ADMIN_BOOTSTRAP_USERNAME` | Bootstrap | Username for the one-time `/api/admin/bootstrap` flow. |
-| `ADMIN_BOOTSTRAP_PASSWORD` | Bootstrap | Password for bootstrap (use strong values). |
-| `SIGNUP_INVITE_SECRET` | For public signup | Secret used to validate invite-based sign-up requests. |
+> Use [`.env.example`](./.env.example) as the source of truth.
 
-Adjust values to match your Firebase console and security requirements.
+| Variable | Required | Where | Description |
+|----------|----------|-------|-------------|
+| `ADMIN_DASHBOARD_SECRET` | Yes (prod) | Server | Secret for signing admin session cookies; **>= 16 chars**. |
+| `FIREBASE_SERVICE_ACCOUNT_JSON` | Yes (if using Firebase APIs on Vercel) | Server | Full Firebase service account JSON (single-line string with escaped `\n`). |
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | Yes | Client | Firebase Web App config. |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Yes | Client | Firebase Web App config. |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Yes | Client | Firebase Web App config. |
+| `NEXT_PUBLIC_FIREBASE_APP_ID` | Yes | Client | Firebase Web App config. |
+| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Recommended | Client | Firebase Web App config (optional in some setups). |
+| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Recommended | Client | Firebase Web App config (optional in some setups). |
+| `FIREBASE_STORAGE_BUCKET` | Recommended | Server | Bucket used by server-side upload APIs. |
+| `SIGNUP_INVITE_SECRET` | Optional | Server | Secret used to validate invite-based signup requests. |
+| `ADMIN_BOOTSTRAP_SECRET` | Recommended | Server | Preferred bootstrap auth for first owner setup. |
+| `ADMIN_BOOTSTRAP_USERNAME` | Optional | Server | Legacy bootstrap auth (if secret is not used). |
+| `ADMIN_BOOTSTRAP_PASSWORD` | Optional | Server | Legacy bootstrap auth (if secret is not used). |
+| `KAPSO_API_KEY` | Yes for WhatsApp flow | Server | Kapso API key for outbound WhatsApp messages. |
+| `KAPSO_PHONE_NUMBER_ID` | Yes for WhatsApp flow | Server | WhatsApp phone number ID used in sends. |
+| `KAPSO_WEBHOOK_VERIFY_TOKEN` | Yes for WhatsApp flow | Server | Verification token for `GET /api/kapso/webhook`. |
+| `ADMIN_WHATSAPP_NUMBER` | Yes for WhatsApp flow | Server | Admin WhatsApp in international digits format (e.g. `2015XXXXXXXX`). |
+| `KAPSO_BASE_URL` | Optional | Server | Defaults to `https://api.kapso.ai/meta/whatsapp`. |
+| `NEXT_PUBLIC_SITE_URL` | Recommended | Client+Server | Public base URL (metadata/share URLs). |
+| `CONTACT_SITE_OWNER_SLUG` | Optional | Server | Needed only for default `/portfolio` contact routing. |
+
+Adjust values to match Firebase/Kapso dashboards and your security policy.
 
 ---
 
@@ -130,6 +148,29 @@ Adjust values to match your Firebase console and security requirements.
 1. Push the repository to GitHub.  
 2. Import the project in [Vercel](https://vercel.com/) and set the same environment variables as in `.env.local`.  
 3. Use the **Deploy with Vercel** button at the top of this README for a quick fork-and-deploy flow.  
+
+### Vercel + Kapso (WhatsApp Pro flow) quick checklist
+
+1. Add all Kapso variables in Vercel:
+   - `KAPSO_API_KEY`
+   - `KAPSO_PHONE_NUMBER_ID`
+   - `KAPSO_WEBHOOK_VERIFY_TOKEN`
+   - `ADMIN_WHATSAPP_NUMBER`
+   - `KAPSO_BASE_URL` (optional)
+2. In Kapso/Meta webhook settings, set callback URL to:
+   - `https://<your-domain>/api/kapso/webhook`
+3. Use exactly the same verify token value in both places:
+   - Kapso webhook config == `KAPSO_WEBHOOK_VERIFY_TOKEN`
+4. Subscribe webhook events that include inbound messages (image receipts).
+5. Ensure Firestore has an `orders` collection write/read permissions for server runtime.
+6. Test end-to-end once on production domain:
+   - Subscribe -> pending order created
+   - Welcome message delivered
+   - Screenshot received -> status becomes `screenshot_received`
+   - Admin confirm/reject action sends customer notification
+
+For a go-live checklist and "what is still missing", see:
+- [`docs/vercel-kapso-setup.md`](./docs/vercel-kapso-setup.md)
 
 ---
 
