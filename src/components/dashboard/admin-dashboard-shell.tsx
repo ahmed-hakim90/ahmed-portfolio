@@ -10,6 +10,7 @@ import {
   ChevronDown,
   ExternalLink,
   FileText,
+  Home,
   LayoutDashboard,
   Mail,
   Menu,
@@ -115,10 +116,11 @@ function SidebarContent({
     return () => window.removeEventListener("hashchange", sync);
   }, [pathname]);
 
-  const linkClass = (href: string) =>
+  const linkClass = (href: string, options?: { exact?: boolean }) =>
     cn(
       "flex min-h-11 touch-manipulation items-center gap-2 rounded-md px-3 py-2.5 text-sm transition-colors hover:bg-muted md:min-h-0 md:px-2 md:py-1.5",
-      navActive(pathname, href) && "bg-muted font-medium text-foreground",
+      (options?.exact ? pathname === href : navActive(pathname, href)) &&
+        "bg-muted font-medium text-foreground",
     );
 
   const onSite = navActive(pathname, "/dashboard/site");
@@ -130,6 +132,16 @@ function SidebarContent({
           اللوحة
         </p>
         <nav className="flex flex-col gap-0.5">
+          {isOwner ? (
+            <Link
+              href="/dashboard"
+              className={linkClass("/dashboard", { exact: true })}
+              onClick={onNavigate}
+            >
+              <Home className="size-4 shrink-0 opacity-70" aria-hidden />
+              الرئيسية
+            </Link>
+          ) : null}
           <div>
             <Link href="/dashboard/site" className={linkClass("/dashboard/site")} onClick={onNavigate}>
               <LayoutDashboard className="size-4 shrink-0 opacity-70" aria-hidden />

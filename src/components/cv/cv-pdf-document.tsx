@@ -1,12 +1,45 @@
 import type { MergedSiteData } from "@/lib/site-data";
+import path from "node:path";
 import {
   Document,
+  Font,
   Image,
   Page,
   StyleSheet,
   Text,
   View,
 } from "@react-pdf/renderer";
+
+const CV_FONT_FAMILY = "CvArabicSans";
+const ARABIC_RE = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/;
+
+const fontRegistryState = globalThis as typeof globalThis & {
+  __cvPdfFontsRegistered?: boolean;
+};
+
+if (!fontRegistryState.__cvPdfFontsRegistered) {
+  Font.register({
+    family: CV_FONT_FAMILY,
+    fonts: [
+      {
+        src: path.join(process.cwd(), "public/fonts/NotoSansArabic-Regular.ttf"),
+        fontWeight: "normal",
+      },
+      {
+        src: path.join(process.cwd(), "public/fonts/NotoSansArabic-Bold.ttf"),
+        fontWeight: "bold",
+      },
+    ],
+  });
+  fontRegistryState.__cvPdfFontsRegistered = true;
+}
+
+function textDirectionStyle(value: string) {
+  if (ARABIC_RE.test(value)) {
+    return { direction: "rtl" as const, textAlign: "right" as const };
+  }
+  return { direction: "ltr" as const, textAlign: "left" as const };
+}
 
 function getSocialUrl(
   social: Record<string, { url: string }>,
@@ -23,9 +56,9 @@ const styles = StyleSheet.create({
   page: {
     padding: 36,
     fontSize: 10,
-    fontFamily: "Helvetica",
+    fontFamily: CV_FONT_FAMILY,
     color: "#111",
-    lineHeight: 1.35,
+    lineHeight: 1.45,
   },
   headerRow: {
     flexDirection: "row",
@@ -37,13 +70,14 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   name: {
-    fontSize: 24,
-    fontFamily: "Times-Bold",
+    fontSize: 23,
+    fontFamily: CV_FONT_FAMILY,
+    fontWeight: "bold",
   },
   headline: {
     fontSize: 10,
     marginTop: 4,
-    fontFamily: "Helvetica",
+    fontFamily: CV_FONT_FAMILY,
     color: "#333",
   },
   avatarFrame: {
@@ -77,45 +111,42 @@ const styles = StyleSheet.create({
   },
   h2: {
     fontSize: 12,
-    fontFamily: "Times-Bold",
+    fontFamily: CV_FONT_FAMILY,
+    fontWeight: "bold",
     textAlign: "left",
   },
   summaryBody: {
     fontSize: 9,
-    fontFamily: "Helvetica",
+    fontFamily: CV_FONT_FAMILY,
     color: "#222",
-    textAlign: "left",
   },
   contactLine: {
     fontSize: 8,
     marginBottom: 3,
-    fontFamily: "Helvetica",
+    fontFamily: CV_FONT_FAMILY,
     color: "#222",
-    textAlign: "left",
   },
   jobTitle: {
     fontSize: 9,
-    fontFamily: "Helvetica",
+    fontFamily: CV_FONT_FAMILY,
     fontWeight: "bold",
   },
   jobSub: {
     fontSize: 8,
-    fontStyle: "italic",
-    fontFamily: "Helvetica",
+    fontFamily: CV_FONT_FAMILY,
     color: "#333",
   },
   jobMeta: {
     fontSize: 8,
-    fontFamily: "Helvetica",
+    fontFamily: CV_FONT_FAMILY,
     color: "#555",
     textAlign: "right",
   },
   jobDesc: {
     fontSize: 8,
     marginTop: 4,
-    fontFamily: "Helvetica",
+    fontFamily: CV_FONT_FAMILY,
     color: "#222",
-    textAlign: "left",
   },
   block: {
     marginBottom: 10,
@@ -124,7 +155,7 @@ const styles = StyleSheet.create({
     fontSize: 7,
     backgroundColor: "#111",
     color: "#fff",
-    fontFamily: "Helvetica",
+    fontFamily: CV_FONT_FAMILY,
     paddingHorizontal: 6,
     paddingVertical: 3,
     marginRight: 6,
@@ -143,7 +174,7 @@ const styles = StyleSheet.create({
     fontSize: 7,
     borderWidth: 1,
     borderColor: "#ccc",
-    fontFamily: "Helvetica",
+    fontFamily: CV_FONT_FAMILY,
     paddingHorizontal: 4,
     paddingVertical: 2,
     marginRight: 5,
@@ -194,8 +225,10 @@ export function CvPdfDocument({
       <Page size="A4" wrap style={styles.page}>
         <View style={styles.headerRow}>
           <View style={{ flex: 1, paddingRight: 12 }}>
-            <Text style={styles.name}>{DATA.name}</Text>
-            <Text style={styles.headline}>{DATA.description}</Text>
+            <Text style={[styles.name, textDirectionStyle(DATA.name)]}>{DATA.name}</Text>
+            <Text style={[styles.headline, textDirectionStyle(DATA.description)]}>
+              {DATA.description}
+            </Text>
           </View>
           {avatarAbsoluteUrl ? (
             <View style={styles.avatarFrame}>
@@ -207,21 +240,33 @@ export function CvPdfDocument({
 
         <View style={styles.sectionBlock} wrap>
           <SectionTitle>Summary</SectionTitle>
-          <Text style={styles.summaryBody}>{DATA.summary}</Text>
+          <Text style={[styles.summaryBody, textDirectionStyle(DATA.summary)]}>
+            {DATA.summary}
+          </Text>
         </View>
 
         <View style={styles.sectionBlock} wrap>
           <SectionTitle>Contact</SectionTitle>
-          <Text style={styles.contactLine}>{DATA.contact.email}</Text>
-          <Text style={styles.contactLine}>{DATA.contact.tel}</Text>
+          <Text style={[styles.contactLine, textDirectionStyle(DATA.contact.email)]}>
+            {DATA.contact.email}
+          </Text>
+          <Text style={[styles.contactLine, textDirectionStyle(DATA.contact.tel)]}>
+            {DATA.contact.tel}
+          </Text>
           {githubUrl ? (
-            <Text style={styles.contactLine}>{githubUrl}</Text>
+            <Text style={[styles.contactLine, textDirectionStyle(githubUrl)]}>
+              {githubUrl}
+            </Text>
           ) : null}
           {linkedinUrl ? (
-            <Text style={styles.contactLine}>{linkedinUrl}</Text>
+            <Text style={[styles.contactLine, textDirectionStyle(linkedinUrl)]}>
+              {linkedinUrl}
+            </Text>
           ) : null}
           {portfolioUrl ? (
-            <Text style={styles.contactLine}>{portfolioUrl}</Text>
+            <Text style={[styles.contactLine, textDirectionStyle(portfolioUrl)]}>
+              {portfolioUrl}
+            </Text>
           ) : null}
         </View>
 
@@ -240,14 +285,20 @@ export function CvPdfDocument({
                 }}
               >
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.jobTitle}>{item.company}</Text>
-                  <Text style={styles.jobSub}>{item.title}</Text>
+                  <Text style={[styles.jobTitle, textDirectionStyle(item.company)]}>
+                    {item.company}
+                  </Text>
+                  <Text style={[styles.jobSub, textDirectionStyle(item.title)]}>
+                    {item.title}
+                  </Text>
                 </View>
                 <Text style={styles.jobMeta}>
                   {item.start} - {item.end || "Present"}
                 </Text>
               </View>
-              <Text style={styles.jobDesc}>{item.description}</Text>
+              <Text style={[styles.jobDesc, textDirectionStyle(item.description)]}>
+                {item.description}
+              </Text>
             </View>
           ))}
         </View>
@@ -267,8 +318,12 @@ export function CvPdfDocument({
                 }}
               >
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.jobTitle}>{item.school}</Text>
-                  <Text style={styles.jobSub}>{item.degree}</Text>
+                  <Text style={[styles.jobTitle, textDirectionStyle(item.school)]}>
+                    {item.school}
+                  </Text>
+                  <Text style={[styles.jobSub, textDirectionStyle(item.degree)]}>
+                    {item.degree}
+                  </Text>
                 </View>
                 <Text style={styles.jobMeta}>
                   {item.start} - {item.end}
@@ -299,19 +354,25 @@ export function CvPdfDocument({
                   justifyContent: "space-between",
                 }}
               >
-                <Text style={[styles.jobTitle, { flex: 1 }]}>
+                <Text
+                  style={[styles.jobTitle, { flex: 1 }, textDirectionStyle(project.title)]}
+                >
                   {project.title}
                 </Text>
                 <Text style={[styles.jobMeta, { marginLeft: 6 }]}>
                   {"dates" in project ? (project.dates ?? "") : ""}
                 </Text>
               </View>
-              <Text style={styles.jobDesc}>{project.description}</Text>
+              <Text
+                style={[styles.jobDesc, textDirectionStyle(project.description)]}
+              >
+                {project.description}
+              </Text>
               <View style={styles.techRow}>
                 {project.technologies.map((tech) => (
                   <Text
                     key={`${project.title}-${tech}`}
-                    style={styles.projTech}
+                    style={[styles.projTech, textDirectionStyle(tech)]}
                   >
                     {tech}
                   </Text>
