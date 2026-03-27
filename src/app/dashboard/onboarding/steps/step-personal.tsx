@@ -1,6 +1,7 @@
 "use client";
 
 import { authFieldClass } from "@/components/auth/auth-shell";
+import { DriveUrlField } from "@/components/dashboard/drive-url-field";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -39,6 +40,7 @@ export function StepPersonal({
   const [locationLink, setLocationLink] = useState(siteData.locationLink);
   const [description, setDescription] = useState(siteData.description);
   const [summary, setSummary] = useState(siteData.summary);
+  const [avatarUrl, setAvatarUrl] = useState(siteData.avatarUrl);
 
   useEffect(() => {
     setName(siteData.name);
@@ -47,6 +49,7 @@ export function StepPersonal({
     setLocationLink(siteData.locationLink);
     setDescription(siteData.description);
     setSummary(siteData.summary);
+    setAvatarUrl(siteData.avatarUrl);
   }, [siteData]);
 
   useEffect(() => {
@@ -60,6 +63,7 @@ export function StepPersonal({
           locationLink,
           description,
           summary,
+          avatarUrl,
         }),
       skip: onSkip,
     });
@@ -74,6 +78,7 @@ export function StepPersonal({
     locationLink,
     description,
     summary,
+    avatarUrl,
   ]);
 
   return (
@@ -137,6 +142,14 @@ export function StepPersonal({
             disabled={busy}
           />
         </div>
+        <DriveUrlField
+          id="onboarding-avatar-url"
+          label="الصورة الشخصية (Avatar URL)"
+          value={avatarUrl}
+          onChange={setAvatarUrl}
+          uploadKind="avatar"
+          disabled={busy}
+        />
         <div className="space-y-2">
           <label className="text-sm font-medium">نبذة أطول (اختياري)</label>
           <textarea
@@ -161,6 +174,7 @@ export function StepPersonal({
                 locationLink,
                 description,
                 summary,
+                avatarUrl,
               })
             }
             disabled={busy}
