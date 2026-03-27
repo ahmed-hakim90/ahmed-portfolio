@@ -1,6 +1,13 @@
 /* Dashboard-only: aligned with marketing Folio tokens without touching `/` landing */
 @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap");
 
+/* MD editor uses a transparent textarea over a pre layer; RTL on the shell breaks that overlay. */
+.blog-mdx-editor-root,
+.blog-mdx-editor-root .w-md-editor {
+  direction: ltr !important;
+  text-align: left !important;
+}
+
 .dashboard-shell-root {
   direction: rtl;
   font-family: "IBM Plex Sans Arabic", var(--font-sans), ui-sans-serif, system-ui, sans-serif;

@@ -21,12 +21,18 @@ type Props = {
 
 export function BlogMdxEditor({ value, onChange, height = 360 }: Props) {
   return (
-    <div data-color-mode="auto" className="w-full overflow-hidden rounded-md border border-input">
+    <div
+      data-color-mode="auto"
+      dir="ltr"
+      className="blog-mdx-editor-root w-full overflow-hidden rounded-md border border-input"
+      style={{ direction: "ltr" }}
+    >
       <MDEditor
         value={value}
         onChange={(v) => onChange(typeof v === "string" ? v : "")}
         height={height}
         visibleDragbar={false}
+        direction="ltr"
       />
     </div>
   );

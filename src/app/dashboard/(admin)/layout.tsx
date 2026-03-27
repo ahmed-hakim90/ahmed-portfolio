@@ -43,7 +43,7 @@ export default async function AdminDashboardLayout({
     redirect("/dashboard/onboarding");
   }
   const isOwner = session.role === "owner";
-  const publicBlogUrl = `/${session.username}/blog`;
+  const publicBlogUrl = `/${adminUser?.slug ?? session.username}/blog`;
   const blogPosts = await getSidebarPosts(session.sub);
 
   return (

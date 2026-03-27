@@ -1,4 +1,5 @@
 import { getAdminSession, isAdminAuthenticated } from "@/lib/admin-request";
+import { getAdminUserById } from "@/lib/admin-users";
 import { userBlogPostsCollection } from "@/data/blog";
 import { getFirestoreDb } from "@/lib/firebase-admin";
 import { revalidatePath } from "next/cache";
@@ -99,7 +100,8 @@ export async function PUT(request: Request, { params }: Ctx) {
 
   await ref.set(payload);
 
-  const userPath = `/${session.username}`;
+  const owner = await getAdminUserById(session.sub);
+  const userPath = `/${owner?.slug ?? session.username}`;
   revalidatePath("/", "layout");
   revalidatePath("/blog", "layout");
   revalidatePath(`${userPath}/blog`, "layout");
@@ -120,7 +122,8 @@ export async function DELETE(_request: Request, { params }: Ctx) {
     );
   }
   await userBlogPostsCollection(db, session.sub).doc(params.slug).delete();
-  const userPath = `/${session.username}`;
+  const owner = await getAdminUserById(session.sub);
+  const userPath = `/${owner?.slug ?? session.username}`;
   revalidatePath("/", "layout");
   revalidatePath("/blog", "layout");
   revalidatePath(`${userPath}/blog`, "layout");

@@ -86,7 +86,11 @@ export async function PATCH(request: Request) {
     ...(hasSlugUpdate && user
       ? { slug: user.slug }
       : {}),
-    onboardingCompleted: user?.onboardingCompleted ?? true,
-    ...(user ? { onboardingStep: user.onboardingStep } : {}),
+    ...(user
+      ? {
+          onboardingCompleted: user.onboardingCompleted,
+          onboardingStep: user.onboardingStep,
+        }
+      : {}),
   });
 }

@@ -1,3 +1,4 @@
+import { CvPrintLayout } from "@/components/dashboard/cv-print-layout";
 import { CvPrintShell } from "@/components/dashboard/cv-print-shell";
 import { getPortfolioHtmlAttrs } from "@/lib/portfolio-display";
 import type { MergedSiteData } from "@/lib/site-data";
@@ -29,11 +30,12 @@ export function CvPrintDocument({ data: DATA }: { data: MergedSiteData }) {
 
   return (
     <CvPrintShell>
-      <article
-        dir={dir}
-        lang={lang}
-        className="mx-auto mb-8 w-full max-w-[210mm] bg-background p-6 text-[10pt] leading-relaxed shadow-sm sm:p-10 print:mb-0 print:max-w-none print:p-0 print:shadow-none"
-      >
+      <CvPrintLayout>
+        <article
+          dir={dir}
+          lang={lang}
+          className="cv-article mx-auto mb-8 w-full max-w-[210mm] bg-background p-6 text-[10pt] leading-relaxed shadow-sm sm:p-10 print:mb-0 print:max-w-none print:p-0 print:shadow-none"
+        >
         <header className="mb-6 flex items-start justify-between gap-6 border-b border-black/20 pb-4">
           <div className="min-w-0">
             <h1 className="cv-heading text-4xl font-semibold tracking-tight">
@@ -55,7 +57,7 @@ export function CvPrintDocument({ data: DATA }: { data: MergedSiteData }) {
           </div>
         </header>
 
-        <section className={sectionClass}>
+        <section className={`cv-section ${sectionClass}`}>
           <h2 className="cv-heading cv-section-heading mb-2 text-left text-lg font-semibold">
             Summary
           </h2>
@@ -64,7 +66,7 @@ export function CvPrintDocument({ data: DATA }: { data: MergedSiteData }) {
           </p>
         </section>
 
-        <section className={sectionClass}>
+        <section className={`cv-section ${sectionClass}`}>
           <h2 className="cv-heading cv-section-heading mb-2 text-left text-lg font-semibold">
             Contact
           </h2>
@@ -77,7 +79,7 @@ export function CvPrintDocument({ data: DATA }: { data: MergedSiteData }) {
           </div>
         </section>
 
-        <section className={sectionClass}>
+        <section className={`cv-section ${sectionClass}`}>
           <h2 className="cv-heading cv-section-heading mb-3 text-left text-lg font-semibold">
             Work Experience
           </h2>
@@ -85,7 +87,7 @@ export function CvPrintDocument({ data: DATA }: { data: MergedSiteData }) {
             {DATA.work.map((item) => (
               <div
                 key={`${item.company}-${item.start}`}
-                className="break-inside-avoid-page"
+                className="cv-job-item"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -104,13 +106,13 @@ export function CvPrintDocument({ data: DATA }: { data: MergedSiteData }) {
           </div>
         </section>
 
-        <section className={`break-inside-avoid-page ${sectionClass}`}>
+        <section className={`cv-section ${sectionClass}`}>
           <h2 className="cv-heading cv-section-heading mb-3 text-left text-lg font-semibold">
             Education
           </h2>
           <div className="space-y-3">
             {DATA.education.map((item) => (
-              <div key={`${item.school}-${item.start}`}>
+              <div key={`${item.school}-${item.start}`} className="cv-edu-item">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="font-semibold">{item.school}</p>
@@ -125,7 +127,7 @@ export function CvPrintDocument({ data: DATA }: { data: MergedSiteData }) {
           </div>
         </section>
 
-        <section className={sectionClass}>
+        <section className={`cv-section ${sectionClass}`}>
           <div className="cv-skills-block">
             <h2 className="cv-heading cv-section-heading mb-3 text-left text-lg font-semibold">
               Skills
@@ -142,13 +144,13 @@ export function CvPrintDocument({ data: DATA }: { data: MergedSiteData }) {
           </div>
         </section>
 
-        <section className={sectionClass}>
+        <section className={`cv-section ${sectionClass}`}>
           <h2 className="cv-heading cv-section-heading mb-3 text-left text-lg font-semibold">
             Key Projects
           </h2>
           <div className="space-y-3">
             {topProjects.map((project) => (
-              <div key={project.title} className="break-inside-avoid-page">
+              <div key={project.title} className="cv-project-item">
                 <div className="flex items-start justify-between gap-2">
                   <h3 className="text-left font-semibold leading-snug">
                     {project.title}
@@ -157,7 +159,7 @@ export function CvPrintDocument({ data: DATA }: { data: MergedSiteData }) {
                     {"dates" in project ? (project.dates ?? "") : ""}
                   </p>
                 </div>
-                <p className="mt-1 text-left text-[8.8pt] text-black/80">
+                <p className="cv-project-desc mt-1 text-left text-[8.8pt] text-black/80">
                   {project.description}
                 </p>
                 <ul className="cv-project-tags mt-1 list-none p-0">
@@ -176,7 +178,8 @@ export function CvPrintDocument({ data: DATA }: { data: MergedSiteData }) {
             ))}
           </div>
         </section>
-      </article>
+        </article>
+      </CvPrintLayout>
       <style>{`
         .cv-heading {
           font-family: var(--font-cv-heading), serif;
@@ -255,9 +258,37 @@ export function CvPrintDocument({ data: DATA }: { data: MergedSiteData }) {
           .cv-project-tag-item {
             margin: 0 5px 7px 0 !important;
           }
-          article h2.cv-section-heading {
-            break-after: avoid-page;
+          article h2 {
+            break-after: avoid;
             page-break-after: avoid;
+          }
+          .cv-job-item,
+          .cv-edu-item,
+          .cv-project-item {
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+          .cv-section {
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+          .cv-skills-block {
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+          .cv-sidebar-section {
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+          article p {
+            orphans: 3;
+            widows: 3;
+          }
+          .cv-project-item .cv-project-desc {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
           }
         }
       `}</style>

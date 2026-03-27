@@ -1,4 +1,5 @@
 import { getAdminSession, isAdminAuthenticated } from "@/lib/admin-request";
+import { getAdminUserById } from "@/lib/admin-users";
 import { userBlogPostsCollection } from "@/data/blog";
 import { getFirestoreDb } from "@/lib/firebase-admin";
 import { revalidatePath } from "next/cache";
@@ -77,7 +78,8 @@ export async function POST(request: Request) {
     updatedAt: new Date().toISOString(),
   });
 
-  const userPath = `/${session.username}`;
+  const owner = await getAdminUserById(session.sub);
+  const userPath = `/${owner?.slug ?? session.username}`;
   revalidatePath("/", "layout");
   revalidatePath("/blog", "layout");
   revalidatePath(`${userPath}/blog`, "layout");

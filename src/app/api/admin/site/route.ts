@@ -1,5 +1,6 @@
 import type { SiteJson } from "@/data/site-defaults";
 import { getAdminSession } from "@/lib/admin-request";
+import { getAdminUserById } from "@/lib/admin-users";
 import {
   getEffectiveSiteJsonForUser,
   saveUserSiteJson,
@@ -48,8 +49,10 @@ export async function PUT(request: Request) {
     revalidatePath("/", "layout");
     revalidatePath("/portfolio", "layout");
     revalidatePath("/blog", "layout");
-    revalidatePath(`/${session.username}`, "layout");
-    revalidatePath(`/${session.username}/blog`, "layout");
+    const owner = await getAdminUserById(session.sub);
+    const publicSlug = owner?.slug ?? session.username;
+    revalidatePath(`/${publicSlug}`, "layout");
+    revalidatePath(`/${publicSlug}/blog`, "layout");
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error("PUT /api/admin/site:", e);

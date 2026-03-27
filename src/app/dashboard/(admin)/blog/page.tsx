@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/card";
 import { userBlogPostsCollection } from "@/data/blog";
 import { getAdminSession } from "@/lib/admin-request";
+import { getAdminUserById } from "@/lib/admin-users";
 import { getFirestoreDb } from "@/lib/firebase-admin";
 import { ExternalLink, Plus } from "lucide-react";
 import Link from "next/link";
@@ -22,6 +23,7 @@ export default async function DashboardBlogListPage() {
       <p className="text-sm text-muted-foreground">Sign in to manage posts.</p>
     );
   }
+  const adminUser = await getAdminUserById(session.sub);
   const db = getFirestoreDb();
   if (!db) {
     return (
@@ -50,7 +52,7 @@ export default async function DashboardBlogListPage() {
       a.publishedAt < b.publishedAt ? 1 : a.publishedAt > b.publishedAt ? -1 : 0,
     );
 
-  const publicBlogUrl = `/${session.username}/blog`;
+  const publicBlogUrl = `/${adminUser?.slug ?? session.username}/blog`;
 
   const latest = posts[0]?.publishedAt ?? "";
 
