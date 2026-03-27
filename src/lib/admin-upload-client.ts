@@ -7,7 +7,13 @@ export type AdminUploadKind =
   | "education-logo"
   | "testimonial-avatar";
 
-type UploadSuccess = { ok: true; url: string };
+type UploadSuccess = {
+  ok: true;
+  url: string;
+  originalBytes: number;
+  uploadedBytes: number;
+  optimized: boolean;
+};
 type UploadFailure = { ok: false; error: string };
 
 const SERVER_MAX_BYTES = 5 * 1024 * 1024;
@@ -108,7 +114,10 @@ export async function uploadAdminImage(
   file: File,
   kind: AdminUploadKind,
 ): Promise<UploadSuccess | UploadFailure> {
+  const originalBytes = file.size;
   const prepared = await optimizeImageBeforeUpload(file);
+  const uploadedBytes = prepared.size;
+  const optimized = uploadedBytes < originalBytes;
   if (prepared.size > SERVER_MAX_BYTES) {
     return {
       ok: false,
@@ -139,7 +148,13 @@ export async function uploadAdminImage(
     if (typeof data?.url !== "string" || !data.url) {
       return { ok: false, error: "Upload finished but URL was not returned." };
     }
-    return { ok: true, url: data.url };
+    return {
+      ok: true,
+      url: data.url,
+      originalBytes,
+      uploadedBytes,
+      optimized,
+    };
   } catch {
     return { ok: false, error: "Network error while uploading image." };
   }

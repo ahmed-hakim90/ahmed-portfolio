@@ -20,6 +20,18 @@ type Props = {
   disabled?: boolean;
 };
 
+function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
+  const units = ["B", "KB", "MB", "GB"] as const;
+  let size = bytes;
+  let idx = 0;
+  while (size >= 1024 && idx < units.length - 1) {
+    size /= 1024;
+    idx += 1;
+  }
+  return `${size.toFixed(idx === 0 ? 0 : 1)} ${units[idx]}`;
+}
+
 export function DriveUrlField({
   id,
   label,
@@ -46,7 +58,16 @@ export function DriveUrlField({
       return;
     }
     onChange(result.url);
-    setStatus("تم ضغط الصورة ورفعها وتحديث الرابط.");
+    const { originalBytes, uploadedBytes, optimized } = result;
+    if (optimized && originalBytes > uploadedBytes) {
+      const saved = originalBytes - uploadedBytes;
+      const ratio = Math.round((saved / originalBytes) * 100);
+      setStatus(
+        `تم الرفع بعد الضغط: ${formatBytes(originalBytes)} -> ${formatBytes(uploadedBytes)} (توفير ${ratio}%).`,
+      );
+    } else {
+      setStatus(`تم رفع الصورة (${formatBytes(uploadedBytes)}).`);
+    }
     setStatusError(false);
     setUploading(false);
   }
