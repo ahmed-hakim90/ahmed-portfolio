@@ -23,18 +23,6 @@ import type { RegisterOnboardingStepActionsFn } from "../onboarding-step-actions
 
 type SlugAvailDetail = "invalid" | "available" | "taken" | null;
 
-function initialsFromName(name: string): string {
-  const t = name.trim();
-  if (!t) return "";
-  const parts = t.split(/\s+/).filter(Boolean);
-  if (parts.length >= 2) {
-    const a = Array.from(parts[0]!)[0];
-    const b = Array.from(parts[1]!)[0];
-    return `${a ?? ""}${b ?? ""}`.toUpperCase();
-  }
-  return Array.from(t).slice(0, 2).join("").toUpperCase();
-}
-
 type Props = {
   siteData: SiteJson;
   profileSlug: string;
@@ -56,8 +44,6 @@ export function StepAccount({
 }: Props) {
   const busy = saving || controlsLocked;
 
-  const [name, setName] = useState(siteData.name);
-  const [phone, setPhone] = useState(siteData.contact.tel);
   const [slug, setSlug] = useState(profileSlug);
   const [slugCheck, setSlugCheck] = useState<{
     checking: boolean;
@@ -80,7 +66,6 @@ export function StepAccount({
       setSlugCheck({ checking: false, normalized: "", detail: null });
       return;
     }
-    // إذا لم يتغير الـ slug عن القيمة الأصلية، لا داعي للفحص
     if (raw === profileSlug) {
       setSlugCheck({ checking: false, normalized: raw, detail: "available" });
       return;
@@ -131,15 +116,8 @@ export function StepAccount({
       slug.trim() && (slugCheck.detail === "available" || slug.trim() === profileSlug)
         ? slugCheck.normalized || slug.trim()
         : profileSlug;
-    void onSaveAccount(
-      {
-        name: name.trim(),
-        initials: initialsFromName(name),
-        contact: { tel: phone.trim() } as SiteJson["contact"],
-      },
-      resolvedSlug,
-    );
-  }, [onSaveAccount, name, phone, slug, slugCheck, profileSlug]);
+    void onSaveAccount({}, resolvedSlug);
+  }, [onSaveAccount, slug, slugCheck, profileSlug]);
 
   const runSkip = useCallback(() => {
     onSkip();
@@ -163,57 +141,13 @@ export function StepAccount({
   return (
     <Card className="w-full border-border/80 shadow-lg">
       <CardHeader className="space-y-1 px-5 pb-2 pt-6 text-center sm:px-8 sm:pt-8">
-        <CardTitle className="text-xl sm:text-2xl">معلومات حسابك</CardTitle>
+        <CardTitle className="text-xl sm:text-2xl">مسار صفحتك العامة</CardTitle>
         <CardDescription>
-          اختر اسمك ورابط صفحتك العامة — يمكنك التعديل لاحقاً من الإعدادات.
+          اختر مسار رابطك العام — يمكنك التعديل لاحقاً من الإعدادات.
         </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-5 px-5 pb-6 pt-2 sm:px-8 sm:pb-8">
-        {/* الاسم الظاهر */}
-        <div className="space-y-2">
-          <label
-            htmlFor="account-name"
-            className="block text-sm font-medium text-foreground"
-          >
-            الاسم الظاهر
-          </label>
-          <input
-            id="account-name"
-            className={authFieldClass}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="اسمك الكامل"
-            disabled={busy}
-          />
-          <p className="text-xs text-muted-foreground">
-            يظهر في صفحتك العامة والـ CV.
-          </p>
-        </div>
-
-        {/* رقم الواتساب */}
-        <div className="space-y-2">
-          <label
-            htmlFor="account-phone"
-            className="block text-sm font-medium text-foreground"
-          >
-            رقم الواتساب{" "}
-            <span className="font-normal text-muted-foreground">(اختياري)</span>
-          </label>
-          <input
-            id="account-phone"
-            type="tel"
-            autoComplete="tel"
-            inputMode="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className={authFieldClass}
-            placeholder="+201234567890"
-            disabled={busy}
-            dir="ltr"
-          />
-        </div>
-
         {/* مسار صفحتك (slug) */}
         <div className="space-y-2">
           <label

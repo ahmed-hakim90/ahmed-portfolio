@@ -1,3 +1,4 @@
+import { PortfolioViewPing } from "@/components/analytics/portfolio-view-ping";
 import { PersonJsonLd } from "@/components/portfolio/person-json-ld";
 import { PortfolioPage } from "@/components/portfolio/portfolio-page";
 import { PortfolioSetupPlaceholder } from "@/components/portfolio/portfolio-setup-placeholder";
@@ -97,6 +98,7 @@ export default async function PublicUserPage({ params }: PageProps) {
   }
   return (
     <>
+      <PortfolioViewPing userId={user.id} />
       <PersonJsonLd data={data} pageUrl={pageUrl} siteOrigin={assetOrigin} />
       <PortfolioPage
         data={data}
