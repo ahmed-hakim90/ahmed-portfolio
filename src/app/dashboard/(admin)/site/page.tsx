@@ -5,16 +5,59 @@ import { SitePreviewPanel } from "@/components/dashboard/site-preview-panel";
 import { SiteShareCard } from "@/components/dashboard/site-share-card";
 import { SiteWorkProjectsEditor } from "@/components/dashboard/site-work-projects-editor";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { PortfolioTextDirection, SiteJson } from "@/data/site-defaults";
 import { captureAndSharePortfolioImage } from "@/lib/site-share-image";
 import { buildPublicPortfolioUrl, getEnvPublicSiteBase, resolvePublicSiteBase } from "@/lib/site-public-base";
 import { hydrateSiteJson, mergeSiteJsonForSave } from "@/lib/site-hydrate";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { ExternalLink, Loader2, Printer, Share2 } from "lucide-react";
+import { CheckCircle2, Circle, ExternalLink, Loader2, MoreHorizontal, Printer, Share2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+type SiteEditorTab = "general" | "hero" | "contact-skills" | "experience" | "projects-more";
+
+const SITE_TABS: readonly [SiteEditorTab, string][] = [
+  ["general",        "عام"],
+  ["hero",           "البطاقة الشخصية"],
+  ["contact-skills", "المهارات والتواصل"],
+  ["experience",     "الخبرة والتعليم"],
+  ["projects-more",  "المشاريع والمزيد"],
+];
+
+function SiteCompletenessBar({ data }: { data: SiteJson }) {
+  const checks = [
+    { label: "الاسم والعنوان", ok: data.name.trim().length >= 2 && data.description.trim().length > 0 },
+    { label: "التواصل",        ok: !!(data.contact.email || data.contact.tel) },
+    { label: "المهارات",       ok: data.skills.length > 0 },
+    { label: "الخبرة",         ok: data.work.length > 0 || data.education.length > 0 || data.projects.length > 0 },
+  ];
+  const score = checks.filter((c) => c.ok).length;
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-lg border border-border bg-muted/20 px-3 py-2 text-xs">
+      <span className="font-medium">{score}/{checks.length} مكتمل</span>
+      {checks.map((c) => (
+        <span
+          key={c.label}
+          className={cn(
+            "flex items-center gap-1",
+            c.ok ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground",
+          )}
+        >
+          {c.ok ? <CheckCircle2 className="size-3.5" aria-hidden /> : <Circle className="size-3.5" aria-hidden />}
+          {c.label}
+        </span>
+      ))}
+    </div>
+  );
+}
 
 type SlugAvailabilityDetail = "yours" | "available" | "taken" | "invalid";
 
@@ -39,7 +82,7 @@ function DashboardSitePageInner() {
   const [blogPostCount, setBlogPostCount] = useState(0);
   const [shareBusy, setShareBusy] = useState(false);
   const shareCardRef = useRef<HTMLDivElement>(null);
-  const [siteEditorTab, setSiteEditorTab] = useState<"general" | "profile" | "career">("general");
+  const [siteEditorTab, setSiteEditorTab] = useState<SiteEditorTab>("general");
   const [reopenWizardBusy, setReopenWizardBusy] = useState(false);
   const [editorEntranceDone, setEditorEntranceDone] = useState(false);
   const fromOnboardingParam = searchParams.get("fromOnboarding") === "1";
@@ -190,47 +233,92 @@ function DashboardSitePageInner() {
       return;
     }
     setHeaderActions(
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex min-w-0 items-center gap-2">
         <Button type="button" size="sm" onClick={save} disabled={saving}>
-          {saving ? "جاري الحفظ…" : "حفظ"}
-        </Button>
-        {publicUrl.trim() ? (
-          <Button variant="outline" size="sm" asChild>
-            <a href={publicUrl} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="me-1 size-4 opacity-80" aria-hidden />
-              زيارة موقعك
-            </a>
-          </Button>
-        ) : (
-          <Button variant="outline" size="sm" disabled>
-            <ExternalLink className="me-1 size-4 opacity-80" aria-hidden />
-            زيارة موقعك
-          </Button>
-        )}
-        <Button variant="outline" size="sm" asChild>
-          <Link href="/dashboard/cv-print">
-            <Printer className="me-1 size-4 opacity-80" aria-hidden />
-            طباعة السيرة
-          </Link>
-        </Button>
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          onClick={sharePortfolio}
-          disabled={shareBusy || !publicUrl.trim()}
-        >
-          {shareBusy ? (
-            "جاري التجهيز…"
-          ) : (
+          {saving ? (
             <>
-              <Share2 className="me-1 size-4 opacity-80" aria-hidden />
-              مشاركة
+              <Loader2 className="me-1.5 size-3.5 animate-spin" aria-hidden />
+              جاري الحفظ…
             </>
+          ) : (
+            "حفظ"
           )}
         </Button>
+
+        {/* Desktop: individual buttons */}
+        <div className="hidden items-center gap-2 sm:flex">
+          {publicUrl.trim() ? (
+            <Button variant="outline" size="sm" asChild>
+              <a href={publicUrl} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="me-1 size-4 opacity-80" aria-hidden />
+                زيارة موقعك
+              </a>
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" disabled>
+              <ExternalLink className="me-1 size-4 opacity-80" aria-hidden />
+              زيارة موقعك
+            </Button>
+          )}
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/dashboard/cv-print">
+              <Printer className="me-1 size-4 opacity-80" aria-hidden />
+              طباعة السيرة
+            </Link>
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={sharePortfolio}
+            disabled={shareBusy || !publicUrl.trim()}
+          >
+            {shareBusy ? (
+              "جاري التجهيز…"
+            ) : (
+              <>
+                <Share2 className="me-1 size-4 opacity-80" aria-hidden />
+                مشاركة
+              </>
+            )}
+          </Button>
+        </div>
+
+        {/* Mobile: overflow dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="icon" className="h-9 w-9 sm:hidden">
+              <MoreHorizontal className="size-4" aria-hidden />
+              <span className="sr-only">المزيد من الخيارات</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {publicUrl.trim() ? (
+              <DropdownMenuItem asChild>
+                <a href={publicUrl} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="me-2 size-4 opacity-70" aria-hidden />
+                  زيارة موقعك
+                </a>
+              </DropdownMenuItem>
+            ) : null}
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard/cv-print">
+                <Printer className="me-2 size-4 opacity-70" aria-hidden />
+                طباعة السيرة
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => void sharePortfolio()}
+              disabled={shareBusy || !publicUrl.trim()}
+            >
+              <Share2 className="me-2 size-4 opacity-70" aria-hidden />
+              {shareBusy ? "جاري التجهيز…" : "مشاركة"}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         {message ? (
-          <span className="max-w-[min(100vw-12rem,280px)] truncate text-sm text-muted-foreground">
+          <span className="hidden max-w-[min(100vw-12rem,200px)] truncate text-sm text-muted-foreground sm:inline">
             {message}
           </span>
         ) : null}
@@ -361,6 +449,8 @@ function DashboardSitePageInner() {
             </div>
             <Button
               type="button"
+              size="sm"
+              variant="outline"
               className="shrink-0 gap-2"
               onClick={() => void reopenOnboardingWizard()}
               disabled={reopenWizardBusy}
@@ -371,24 +461,18 @@ function DashboardSitePageInner() {
                   جاري الفتح…
                 </>
               ) : (
-                "العودة إلى معالج إعداد السيرة"
+                "معالج الإعداد"
               )}
             </Button>
           </div>
-          <div className="mt-4 flex flex-wrap gap-2 border-b border-border pb-3">
-            {(
-              [
-                ["general", "عام"],
-                ["profile", "الملف والتواصل"],
-                ["career", "السيرة والمشاريع"],
-              ] as const
-            ).map(([key, label]) => (
+          <div className="mt-4 flex gap-1.5 overflow-x-auto border-b border-border pb-3 [scrollbar-width:none]">
+            {SITE_TABS.map(([key, label]) => (
               <button
                 key={key}
                 type="button"
                 onClick={() => setSiteEditorTab(key)}
                 className={cn(
-                  "rounded-md px-3 py-1.5 text-sm transition-colors",
+                  "shrink-0 rounded-md px-2.5 py-1.5 text-xs transition-colors sm:text-sm",
                   siteEditorTab === key
                     ? "bg-primary text-primary-foreground"
                     : "bg-muted/60 text-muted-foreground hover:bg-muted",
@@ -398,6 +482,11 @@ function DashboardSitePageInner() {
               </button>
             ))}
           </div>
+          {siteEditorTab !== "general" ? (
+            <div className="mt-3">
+              <SiteCompletenessBar data={siteData} />
+            </div>
+          ) : null}
           {siteEditorTab === "general" ? (
           <>
           <div className="mt-4 rounded-lg border border-border bg-card p-4 shadow-sm">
@@ -561,11 +650,17 @@ function DashboardSitePageInner() {
           </>
           ) : null}
         </div>
-        {siteEditorTab === "profile" ? (
-          <SiteWorkProjectsEditor data={siteData} onChange={setSiteData} editorMode="profile" />
+        {siteEditorTab === "hero" ? (
+          <SiteWorkProjectsEditor data={siteData} onChange={setSiteData} editorMode="hero" />
         ) : null}
-        {siteEditorTab === "career" ? (
-          <SiteWorkProjectsEditor data={siteData} onChange={setSiteData} editorMode="career" />
+        {siteEditorTab === "contact-skills" ? (
+          <SiteWorkProjectsEditor data={siteData} onChange={setSiteData} editorMode="contact-skills" />
+        ) : null}
+        {siteEditorTab === "experience" ? (
+          <SiteWorkProjectsEditor data={siteData} onChange={setSiteData} editorMode="experience" />
+        ) : null}
+        {siteEditorTab === "projects-more" ? (
+          <SiteWorkProjectsEditor data={siteData} onChange={setSiteData} editorMode="projects-more" />
         ) : null}
       </div>
       <div id="site-preview" className="min-w-0 scroll-mt-28 xl:sticky xl:top-6">
