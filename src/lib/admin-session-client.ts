@@ -5,7 +5,7 @@
  */
 export async function exchangeIdTokenForAdminSession(
   idToken: string,
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<{ ok: true } | { ok: false; error: string; status: number }> {
   const res = await fetch("/api/admin/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -13,7 +13,11 @@ export async function exchangeIdTokenForAdminSession(
   });
   if (!res.ok) {
     const data = (await res.json().catch(() => ({}))) as { error?: string };
-    return { ok: false, error: data.error ?? "Login failed" };
+    return {
+      ok: false,
+      error: data.error ?? "Login failed",
+      status: res.status,
+    };
   }
   return { ok: true };
 }

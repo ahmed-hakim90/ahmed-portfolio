@@ -33,7 +33,7 @@ export async function generateMetadata({
   if (!(await isPortfolioPublishedForViewer(user))) {
     return {
       title: "المدونة | قيد الإعداد",
-      description: "هذه الصفحة غير متاحة حتى يكمل صاحبها إعداد المحفظة.",
+      description: "هذه الصفحة غير متاحة حتى يكمل صاحبها إعداد الموقع.",
       robots: { index: false, follow: false },
     };
   }

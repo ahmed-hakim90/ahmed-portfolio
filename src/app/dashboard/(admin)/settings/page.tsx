@@ -106,7 +106,7 @@ export default function DashboardSettingsPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">إعدادات الموقع العام</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          تحكّم في ظهور الأقسام والمدونة والشريط السفلي وثيم المحفظة. عدّل النصوص والصور من{" "}
+          تحكّم في ظهور الأقسام والمدونة والشريط السفلي وثيم الموقع. عدّل النصوص والصور من{" "}
           <Link href="/dashboard/site" className="font-medium text-primary underline-offset-4 hover:underline">
             المحرر
           </Link>

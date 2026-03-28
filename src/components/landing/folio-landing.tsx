@@ -56,7 +56,7 @@ export function FolioLanding({ stats }: FolioLandingProps) {
           <div className="folioTickerTrack">
             {(
               [
-                "محفظة احترافية",
+                "موقع احترافية",
                 "بدون كود",
                 "وضع داكن وفاتح",
                 "لوحة تحكم مركزية",
@@ -66,7 +66,7 @@ export function FolioLanding({ stats }: FolioLandingProps) {
             )
               .concat(
                 [
-                  "محفظة احترافية",
+                  "موقع احترافية",
                   "بدون كود",
                   "وضع داكن وفاتح",
                   "لوحة تحكم مركزية",
@@ -87,7 +87,7 @@ export function FolioLanding({ stats }: FolioLandingProps) {
             <div className="folioHeroText">
               <div className="folioHeroPill">
                 <i />
-                محفظة واحدة، تحكم كامل
+                موقع واحد، تحكم كامل
               </div>
               <h1 className="folioHeroTitle">
                 حوّل خبرتك
@@ -380,7 +380,7 @@ export function FolioLanding({ stats }: FolioLandingProps) {
               <div className="folioTcard">
                 <div className="folioTquote">&ldquo;</div>
                 <p>
-                  أخيراً قدرت أعمل محفظة احترافية بدون ما أضيع وقتي في الكود.
+                  أخيراً قدرت أعمل موقع احترافية بدون ما أضيع وقتي في الكود.
                   الإعداد أخذ أقل من ٥ دقائق وشكل الصفحة جميل جداً.
                 </p>
                 <div className="folioTauthor">

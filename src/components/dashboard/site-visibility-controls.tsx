@@ -181,7 +181,7 @@ export function SiteVisibilityControls({ data, onChange }: Props) {
         />
         <div className="sm:col-span-2 space-y-2 rounded-md border border-border bg-background/60 p-3">
           <p className="text-xs font-medium text-muted-foreground">
-            ثيم المحفظة العامة
+            ثيم الموقع العامة
           </p>
           <p className="text-[11px] text-muted-foreground">
             ألوان مميّزة للصفحة العامة؛ الوضع الفاتح/الداكن يبقى من مفتاح السمة.
@@ -223,10 +223,10 @@ export function SiteVisibilityControls({ data, onChange }: Props) {
         </div>
         <div className="sm:col-span-2 space-y-2 rounded-md border border-border bg-background/60 p-3">
           <p className="text-xs font-medium text-muted-foreground">
-            اتجاه ولغة المحفظة العامة
+            اتجاه ولغة الموقع العامة
           </p>
           <p className="text-[11px] text-muted-foreground">
-            يطبّق على صفحة المحفظة والمدونة تحت رابطك ومعاينة المحرر وطباعة السيرة. لوحة التحكم تبقى عربية.
+            يطبّق على صفحة الموقع والمدونة تحت رابطك ومعاينة المحرر وطباعة السيرة. لوحة التحكم تبقى عربية.
           </p>
           <div className="flex flex-wrap gap-2">
             {(
@@ -327,7 +327,7 @@ export function SiteVisibilityControls({ data, onChange }: Props) {
           Portfolio page sections
         </p>
         <p className="text-xs text-muted-foreground">
-          إظهار أو إخفاء أقسام الصفحة الرئيسية للمحفظة.
+          إظهار أو إخفاء أقسام الصفحة الرئيسية للموقع.
         </p>
         <ToggleRow
           id="hero-available-work"

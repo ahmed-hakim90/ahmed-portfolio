@@ -99,7 +99,7 @@ export function ProjectsDashboardClient() {
         <div>
           <h1 className="text-xl font-semibold tracking-tight">المشاريع</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            تعديل بطاقات المشاريع الظاهرة في المحفظة العامة. احفظ التغييرات في
+            تعديل بطاقات المشاريع الظاهرة في الموقع العامة. احفظ التغييرات في
             النهاية.
           </p>
         </div>

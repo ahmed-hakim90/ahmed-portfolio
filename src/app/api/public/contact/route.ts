@@ -88,7 +88,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error:
-          "صفحة التواصل غير متاحة حتى يكمل صاحبها إعداد المحفظة العامة.",
+          "صفحة التواصل غير متاحة حتى يكمل صاحبها إعداد الموقع العامة.",
       },
       { status: 403 },
     );

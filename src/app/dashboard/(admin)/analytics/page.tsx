@@ -156,7 +156,7 @@ export default async function PlatformAnalyticsPage() {
               color="#0284c7"
             />
             <p className="text-xs text-muted-foreground">
-              زر Download CV من صفحة المحفظة العامة.
+              زر Download CV من صفحة الموقع العامة.
             </p>
           </CardContent>
         </Card>

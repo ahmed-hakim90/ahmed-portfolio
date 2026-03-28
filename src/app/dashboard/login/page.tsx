@@ -25,16 +25,52 @@ import {
   GoogleAuthProvider,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signOut,
 } from "firebase/auth";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
+type ProfileForRedirect = {
+  onboardingCompleted?: boolean;
+  role?: "owner" | "client";
+};
+
+/** Only same-origin dashboard paths; blocks open redirects. */
+function sanitizeDashboardNext(raw: string | null): string {
+  if (raw == null || raw === "") return "/dashboard";
+  const trimmed = raw.trim();
+  if (!trimmed.startsWith("/dashboard")) return "/dashboard";
+  if (trimmed.startsWith("//")) return "/dashboard";
+  if (trimmed.includes("://")) return "/dashboard";
+  if (trimmed.includes("@")) return "/dashboard";
+  return trimmed;
+}
+
+function resolvePostAuthPath(
+  safeNext: string,
+  profile: ProfileForRedirect | null,
+): string {
+  let destination =
+    safeNext && safeNext !== "/dashboard/login" ? safeNext : "/dashboard";
+  if (!profile) return destination;
+  if (profile.onboardingCompleted === false) {
+    return "/dashboard/onboarding";
+  }
+  if (
+    profile.role === "owner" &&
+    (destination === "/dashboard/site" || destination === "/dashboard/site/")
+  ) {
+    return "/dashboard";
+  }
+  return destination;
+}
+
 export default function DashboardLoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/dashboard";
+  const safeNext = sanitizeDashboardNext(searchParams.get("next"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +79,19 @@ export default function DashboardLoginPage() {
 
   useEffect(() => {
     void (async () => {
+      try {
+        const profileRes = await fetch("/api/admin/profile", {
+          cache: "no-store",
+        });
+        if (profileRes.ok) {
+          const profile = (await profileRes.json()) as ProfileForRedirect;
+          router.replace(resolvePostAuthPath(safeNext, profile));
+          return;
+        }
+      } catch {
+        /* not logged in */
+      }
+
       try {
         const res = await fetch("/api/admin/bootstrap");
         const data = (await res.json()) as { needsBootstrap?: boolean };
@@ -56,25 +105,15 @@ export default function DashboardLoginPage() {
 
   /** Called after a successful idToken exchange — resolves destination and navigates. */
   async function afterLogin() {
-    let destination = next;
+    let destination = safeNext;
     try {
       const profileRes = await fetch("/api/admin/profile", { cache: "no-store" });
       if (profileRes.ok) {
-        const profile = (await profileRes.json()) as {
-          onboardingCompleted?: boolean;
-          role?: "owner" | "client";
-        };
-        if (profile.onboardingCompleted === false) {
-          destination = "/dashboard/onboarding";
-        } else if (
-          profile.role === "owner" &&
-          (destination === "/dashboard/site" || destination === "/dashboard/site/")
-        ) {
-          destination = "/dashboard";
-        }
+        const profile = (await profileRes.json()) as ProfileForRedirect;
+        destination = resolvePostAuthPath(safeNext, profile);
       }
     } catch {
-      /* keep next */
+      destination = resolvePostAuthPath(safeNext, null);
     }
     router.replace(destination);
     router.refresh();
@@ -136,6 +175,19 @@ export default function DashboardLoginPage() {
     }
     const session = await exchangeIdTokenForAdminSession(idToken);
     if (!session.ok) {
+      if (
+        session.status === 403 &&
+        session.error === "No dashboard access for this account"
+      ) {
+        try {
+          await signOut(getFirebaseAuth());
+        } catch {
+          /* still navigate */
+        }
+        setLoading(false);
+        router.replace("/signup");
+        return;
+      }
       setError(dashboardLoginServerErrorAr(session.error));
       setLoading(false);
       return;

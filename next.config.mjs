@@ -1,7 +1,29 @@
+import withPWAInit from "@ducanh2912/next-pwa";
 import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+
+const withPWA = withPWAInit({
+  dest: "public",
+  disable: process.env.NODE_ENV === "development",
+  register: true,
+  extendDefaultRuntimeCaching: true,
+  workboxOptions: {
+    runtimeCaching: [
+      {
+        urlPattern: ({ url, sameOrigin }) =>
+          sameOrigin && url.pathname.startsWith("/api/"),
+        handler: "NetworkOnly",
+      },
+      {
+        urlPattern: ({ url, sameOrigin }) =>
+          sameOrigin && url.pathname.startsWith("/dashboard"),
+        handler: "NetworkOnly",
+      },
+    ],
+  },
+});
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -56,4 +78,4 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+export default withPWA(nextConfig);

@@ -38,7 +38,7 @@ export async function generateMetadata({
   if (!(await isPortfolioPublishedForViewer(user))) {
     return {
       title: "مقال غير متاح",
-      description: "أكمل صاحب المحفظة إعداد الصفحة العامة أولاً.",
+      description: "أكمل صاحب الموقع إعداد الصفحة العامة أولاً.",
       robots: { index: false, follow: false },
     };
   }

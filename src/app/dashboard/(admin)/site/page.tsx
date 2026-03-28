@@ -556,7 +556,7 @@ function DashboardSitePageInner() {
               اتجاه ولغة المعاينة
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              نفس إعدادات المحفظة العامة؛ يُحفظ مع «حفظ». يفصل اتجاه المعاينة عن واجهة المحرر (عربي).
+              نفس إعدادات الموقع العامة؛ يُحفظ مع «حفظ». يفصل اتجاه المعاينة عن واجهة المحرر (عربي).
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               {(

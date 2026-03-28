@@ -3,13 +3,23 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { getEffectiveSiteJson, getMergedSiteData } from "@/lib/site-data";
 import { localeFromCookie } from "@/lib/i18n-messages";
 import { cn } from "@/lib/utils";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter as FontSans } from "next/font/google";
 import { cookies } from "next/headers";
 import { Toaster } from "sonner";
 import "./globals.css";
 
 export const dynamic = "force-dynamic";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fafafa" },
+    { media: "(prefers-color-scheme: dark)", color: "#171717" },
+  ],
+};
 
 const fontSans = FontSans({
   subsets: ["latin"],
@@ -31,6 +41,14 @@ export async function generateMetadata(): Promise<Metadata> {
     title: {
       default: "Portfolio",
       template: "%s",
+    },
+    appleWebApp: {
+      capable: true,
+      title: "Portfolio",
+      statusBarStyle: "default",
+    },
+    icons: {
+      apple: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
     },
     robots: {
       index: true,

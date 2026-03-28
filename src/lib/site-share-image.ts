@@ -32,7 +32,7 @@ export async function captureAndSharePortfolioImage(
   const file = new File([blob], filename, { type: "image/png" });
 
   const shareData: ShareData = {
-    title: "بطاقة المحفظة",
+    title: "بطاقة الموقع",
     text: options.publicUrl,
     url: options.publicUrl,
   };

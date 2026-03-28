@@ -149,10 +149,6 @@ export function SignupForm() {
   async function onGoogle() {
     setError(null);
     setMessage(null);
-    if (!inviteCode.trim()) {
-      setError("أدخل رمز الدعوة أولاً.");
-      return;
-    }
     setLoading(true);
     try {
       const auth = getFirebaseAuth();
