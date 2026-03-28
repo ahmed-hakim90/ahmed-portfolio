@@ -10,6 +10,7 @@ import {
   getEffectiveSiteJsonForUser,
   getMergedSiteDataForUser,
 } from "@/lib/site-data";
+import { recordPortfolioView } from "@/lib/user-analytics";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -79,6 +80,7 @@ export default async function PublicUserPage({ params }: PageProps) {
   if (!(await isPortfolioPublishedForViewer(user))) {
     return <PortfolioSetupPlaceholder />;
   }
+  void recordPortfolioView(user.id);
   const [data, siteJson] = await Promise.all([
     getMergedSiteDataForUser(user.id),
     getEffectiveSiteJsonForUser(user.id),

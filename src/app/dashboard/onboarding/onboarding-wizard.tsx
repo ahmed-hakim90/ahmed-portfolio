@@ -552,6 +552,7 @@ export function OnboardingWizard({
           ) : null}
           {step === 7 ? (
             <StepDone
+              siteData={siteData}
               onFinish={handleFinish}
               finishing={finishing}
               controlsLocked={controlsLocked}
