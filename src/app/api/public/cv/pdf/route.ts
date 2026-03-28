@@ -7,6 +7,7 @@ import { sanitizeCvPdfFilename } from "@/lib/cv-pdf-asset-url";
 import { getRequestOrigin } from "@/lib/request-origin";
 import { renderCvPdfBuffer } from "@/lib/render-cv-pdf";
 import { getMergedSiteData, getMergedSiteDataForUser } from "@/lib/site-data";
+import { recordCvDownload } from "@/lib/user-analytics";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -22,6 +23,7 @@ export async function GET(request: Request) {
   const slug = searchParams.get("slug")?.trim();
 
   let data;
+  let trackedUserId: string | null = null;
   if (slug) {
     const user = await getAdminUserBySlug(slug);
     if (!user || user.disabled) {
@@ -33,6 +35,7 @@ export async function GET(request: Request) {
     if (!(await isPortfolioPublishedForViewer(user))) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
+    trackedUserId = user.id;
     data = await getMergedSiteDataForUser(user.id);
   } else {
     data = await getMergedSiteData();
@@ -50,6 +53,7 @@ export async function GET(request: Request) {
     );
   }
 
+  if (trackedUserId) void recordCvDownload(trackedUserId);
   return new NextResponse(buffer, {
     status: 200,
     headers: {

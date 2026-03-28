@@ -15,9 +15,11 @@ import type { PortfolioTextDirection, SiteJson } from "@/data/site-defaults";
 import { captureAndSharePortfolioImage } from "@/lib/site-share-image";
 import { buildPublicPortfolioUrl, getEnvPublicSiteBase, resolvePublicSiteBase } from "@/lib/site-public-base";
 import { hydrateSiteJson, mergeSiteJsonForSave } from "@/lib/site-hydrate";
+import { getCvScore } from "@/lib/cv-score";
+import type { UserAnalyticsData } from "@/lib/user-analytics";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { CheckCircle2, Circle, ExternalLink, Loader2, MoreHorizontal, Printer, Share2 } from "lucide-react";
+import { CheckCircle2, Circle, Download, Eye, ExternalLink, Loader2, MoreHorizontal, Printer, Share2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -33,26 +35,31 @@ const SITE_TABS: readonly [SiteEditorTab, string][] = [
 ];
 
 function SiteCompletenessBar({ data }: { data: SiteJson }) {
-  const checks = [
-    { label: "الاسم والعنوان", ok: data.name.trim().length >= 2 && data.description.trim().length > 0 },
-    { label: "التواصل",        ok: !!(data.contact.email || data.contact.tel) },
-    { label: "المهارات",       ok: data.skills.length > 0 },
-    { label: "الخبرة",         ok: data.work.length > 0 || data.education.length > 0 || data.projects.length > 0 },
-  ];
-  const score = checks.filter((c) => c.ok).length;
+  const score = getCvScore(data);
+  const completed = score.breakdown.filter((i) => i.points === i.maxPoints).length;
+  const total = score.breakdown.length;
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-lg border border-border bg-muted/20 px-3 py-2 text-xs">
-      <span className="font-medium">{score}/{checks.length} مكتمل</span>
-      {checks.map((c) => (
+      <span className="font-medium">{completed}/{total} مكتمل ({score.total}%)</span>
+      {score.breakdown.map((item) => (
         <span
-          key={c.label}
+          key={item.key}
           className={cn(
             "flex items-center gap-1",
-            c.ok ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground",
+            item.points === item.maxPoints
+              ? "text-emerald-600 dark:text-emerald-400"
+              : item.points > 0
+                ? "text-amber-500 dark:text-amber-400"
+                : "text-muted-foreground",
           )}
+          title={item.hint}
         >
-          {c.ok ? <CheckCircle2 className="size-3.5" aria-hidden /> : <Circle className="size-3.5" aria-hidden />}
-          {c.label}
+          {item.points === item.maxPoints ? (
+            <CheckCircle2 className="size-3.5" aria-hidden />
+          ) : (
+            <Circle className="size-3.5" aria-hidden />
+          )}
+          {item.label}
         </span>
       ))}
     </div>
@@ -85,6 +92,7 @@ function DashboardSitePageInner() {
   const [siteEditorTab, setSiteEditorTab] = useState<SiteEditorTab>("general");
   const [reopenWizardBusy, setReopenWizardBusy] = useState(false);
   const [editorEntranceDone, setEditorEntranceDone] = useState(false);
+  const [analytics, setAnalytics] = useState<UserAnalyticsData | null>(null);
   const fromOnboardingParam = searchParams.get("fromOnboarding") === "1";
   const playEditorEntrance = fromOnboardingParam && !editorEntranceDone;
 
@@ -92,10 +100,11 @@ function DashboardSitePageInner() {
     let cancelled = false;
     (async () => {
       try {
-        const [siteRes, profileRes, postsRes] = await Promise.all([
+        const [siteRes, profileRes, postsRes, analyticsRes] = await Promise.all([
           fetch("/api/admin/site", { cache: "no-store" }),
           fetch("/api/admin/profile", { cache: "no-store" }),
           fetch("/api/admin/posts", { cache: "no-store" }),
+          fetch("/api/admin/my-analytics", { cache: "no-store" }),
         ]);
         if (!siteRes.ok) {
           setMessage("تعذّر تحميل بيانات الموقع");
@@ -119,6 +128,10 @@ function DashboardSitePageInner() {
           if (!cancelled && Array.isArray(posts)) {
             setBlogPostCount(posts.length);
           }
+        }
+        if (analyticsRes.ok) {
+          const a = (await analyticsRes.json()) as UserAnalyticsData;
+          if (!cancelled) setAnalytics(a);
         }
       } catch {
         if (!cancelled) setMessage("تعذّر تحميل بيانات الموقع");
@@ -489,6 +502,28 @@ function DashboardSitePageInner() {
           ) : null}
           {siteEditorTab === "general" ? (
           <>
+          {analytics !== null ? (
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-3 shadow-sm">
+                <Eye className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">زيارات موقعك</p>
+                  <p className="text-xl font-bold tabular-nums leading-tight">
+                    {analytics.totalPortfolioViews.toLocaleString("ar-EG")}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-3 shadow-sm">
+                <Download className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">تنزيلات السيرة</p>
+                  <p className="text-xl font-bold tabular-nums leading-tight">
+                    {analytics.totalCvDownloads.toLocaleString("ar-EG")}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : null}
           <div className="mt-4 rounded-lg border border-border bg-card p-4 shadow-sm">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               الرابط العام
