@@ -578,7 +578,7 @@ export function AdminDashboardShell({
                 لوحة التحكم
               </span>
             </div>
-            <div className="flex flex-wrap items-center gap-2">{headerActions}</div>
+            <div className="flex min-w-0 items-center gap-2">{headerActions}</div>
           </header>
           <main className="mx-auto max-w-7xl px-3 py-5 sm:px-4 sm:py-7 md:px-6 md:py-10">{children}</main>
         </div>
