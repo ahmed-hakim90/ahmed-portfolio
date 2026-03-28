@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!(await isPortfolioPublishedForViewer(user))) {
     return {
       title: "صفحة قيد الإعداد",
-      description: "صاحب الرابط لم يكمل إعداد المحفظة بعد.",
+      description: "صاحب الرابط لم يكمل إعداد الموقع الخاص به بعد.",
       robots: { index: false, follow: false },
     };
   }

@@ -1,5 +1,5 @@
 import { getAdminSession } from "@/lib/admin-request";
-import { getFirebaseStorageBucket } from "@/lib/firebase-admin";
+import { uploadImageToDrive } from "@/lib/google-drive-admin";
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 
@@ -55,14 +55,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const bucket = getFirebaseStorageBucket();
-  if (!bucket) {
-    return NextResponse.json(
-      { error: "Storage bucket is not configured" },
-      { status: 500 },
-    );
-  }
-
   const formData = await request.formData().catch(() => null);
   if (!formData) {
     return NextResponse.json({ error: "Invalid form data" }, { status: 400 });
@@ -96,28 +88,28 @@ export async function POST(request: Request) {
   const ext = extensionForMimeType(file.type);
   const folder = UPLOAD_KIND_TO_FOLDER[kind];
   const objectPath = `uploads/users/${session.sub}/${folder}/${Date.now()}-${randomUUID()}.${ext}`;
-  const token = randomUUID();
 
   try {
     const payload = Buffer.from(await file.arrayBuffer());
-    const target = bucket.file(objectPath);
-    await target.save(payload, {
-      resumable: false,
-      metadata: {
-        contentType: file.type,
-        cacheControl: "public,max-age=31536000,immutable",
-        metadata: {
-          firebaseStorageDownloadTokens: token,
-        },
-      },
+    const uploaded = await uploadImageToDrive({
+      userId: session.sub,
+      kind,
+      payload,
+      mimeType: file.type,
+      filename: objectPath.split("/").pop() ?? `upload-${Date.now()}.${ext}`,
     });
 
-    const encodedPath = encodeURIComponent(objectPath);
-    const url = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodedPath}?alt=media&token=${token}`;
-
-    return NextResponse.json({ ok: true, kind, url, path: objectPath });
+    return NextResponse.json({
+      ok: true,
+      kind,
+      url: uploaded.url,
+      path: objectPath,
+      driveFileId: uploaded.fileId,
+    });
   } catch (e) {
     console.error("POST /api/admin/uploads:", e);
-    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+    const message =
+      e instanceof Error && e.message.trim() ? e.message : "Upload failed";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

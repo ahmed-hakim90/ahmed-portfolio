@@ -1,11 +1,10 @@
-﻿"use client";
+"use client";
 
 import { Button } from "@/components/ui/button";
 import {
   uploadAdminImage,
   type AdminUploadKind,
 } from "@/lib/admin-upload-client";
-import { googleDriveShareUrlToViewUrl } from "@/lib/google-drive-url";
 import { cn } from "@/lib/utils";
 import { Loader2, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -100,19 +99,6 @@ export function DriveUrlField({
         placeholder="https://drive.google.com/file/d/…"
         disabled={disabled || uploading}
       />
-      <Button
-        type="button"
-        variant="secondary"
-        size="sm"
-        className="shrink-0 text-xs"
-        disabled={disabled || uploading}
-        onClick={() => {
-          const next = googleDriveShareUrlToViewUrl(displayUrl || value);
-          if (next) onChange(next);
-        }}
-      >
-        Convert Drive link
-      </Button>
     </div>
   );
 
@@ -151,7 +137,7 @@ export function DriveUrlField({
           {label}{" "}
           {!hideDriveHintInLabel ? (
             <span className="font-normal text-muted-foreground/80">
-              (Google Drive: paste share link, then convert — file must be shared)
+              (Google Drive: paste a shared file link)
             </span>
           ) : null}
         </label>
@@ -174,16 +160,18 @@ export function DriveUrlField({
       )}
       {uploadKind ? (
         status ? (
-          <p
-            className={cn(
-              "text-[11px]",
-              statusError
-                ? "text-destructive"
-                : "text-emerald-600 dark:text-emerald-400",
-            )}
-          >
-            {status}
-          </p>
+          statusError ? (
+            <div
+              role="alert"
+              className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm leading-relaxed text-destructive"
+            >
+              <p className="whitespace-pre-line break-words">{status}</p>
+            </div>
+          ) : (
+            <p className="text-sm leading-relaxed text-emerald-600 dark:text-emerald-400">
+              {status}
+            </p>
+          )
         ) : (
           <p className="text-[10px] text-muted-foreground">
             Supported: JPG/PNG/WebP/GIF/AVIF, max 5MB.

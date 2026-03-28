@@ -1,6 +1,7 @@
 import type { SiteJson } from "@/data/site-defaults";
 import { getAdminSession } from "@/lib/admin-request";
 import { getAdminUserById } from "@/lib/admin-users";
+import { validateSiteForSave } from "@/lib/site-validation";
 import {
   getEffectiveSiteJsonForUser,
   saveUserSiteJson,
@@ -11,7 +12,7 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function isValidSitePayload(body: unknown): body is Partial<SiteJson> {
+function isValidSitePayload(body: unknown): body is SiteJson {
   if (!body || typeof body !== "object") return false;
   const b = body as Record<string, unknown>;
   return (
@@ -19,7 +20,11 @@ function isValidSitePayload(body: unknown): body is Partial<SiteJson> {
     typeof b.url === "string" &&
     Array.isArray(b.navbar) &&
     b.contact !== null &&
-    typeof b.contact === "object"
+    typeof b.contact === "object" &&
+    Array.isArray(b.skills) &&
+    Array.isArray(b.work) &&
+    Array.isArray(b.education) &&
+    Array.isArray(b.projects)
   );
 }
 
@@ -41,6 +46,13 @@ export async function PUT(request: Request) {
     const body = await request.json().catch(() => null);
     if (!isValidSitePayload(body)) {
       return NextResponse.json({ error: "Invalid site JSON" }, { status: 400 });
+    }
+    const validationErrors = validateSiteForSave(body);
+    if (Object.keys(validationErrors).length > 0) {
+      return NextResponse.json(
+        { error: "بيانات الموقع غير مكتملة أو غير صحيحة.", details: validationErrors },
+        { status: 400 },
+      );
     }
     const saved = await saveUserSiteJson(session.sub, body);
     if (!saved.ok) {

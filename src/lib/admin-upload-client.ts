@@ -1,5 +1,7 @@
 "use client";
 
+import { formatUploadErrorForDisplay } from "@/lib/google-drive-upload-errors";
+
 export type AdminUploadKind =
   | "avatar"
   | "project"
@@ -139,10 +141,14 @@ export async function uploadAdminImage(
       | { url?: unknown; error?: unknown }
       | undefined;
     if (!res.ok) {
+      const raw =
+        typeof data?.error === "string"
+          ? data.error
+          : "Upload failed. Try again.";
+      const { title, detail } = formatUploadErrorForDisplay(raw);
       return {
         ok: false,
-        error:
-          typeof data?.error === "string" ? data.error : "Upload failed. Try again.",
+        error: detail ? `${title}\n\n${detail}` : title,
       };
     }
     if (typeof data?.url !== "string" || !data.url) {

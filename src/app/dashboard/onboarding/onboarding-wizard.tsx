@@ -14,7 +14,6 @@ import { ChevronRight, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { RegisteredOnboardingStepActions } from "./onboarding-step-actions";
-import { StepContact } from "./steps/step-contact";
 import { StepDone } from "./steps/step-done";
 import { StepEducation } from "./steps/step-education";
 import { StepPersonal } from "./steps/step-personal";
@@ -22,7 +21,7 @@ import { StepProjects } from "./steps/step-projects";
 import { StepSkills } from "./steps/step-skills";
 import { StepWork } from "./steps/step-work";
 
-const TOTAL_STEPS = 7;
+const TOTAL_STEPS = 6;
 const MAX_STEP_INDEX = TOTAL_STEPS - 1;
 
 function clampOnboardingStep(n: number): number {
@@ -32,8 +31,7 @@ function clampOnboardingStep(n: number): number {
 
 type CompletionHints =
   | null
-  | { type: "personal"; name: boolean; description: boolean }
-  | { type: "contact" }
+  | { type: "personal"; name: boolean; description: boolean; contact: boolean }
   | { type: "substantive" };
 
 function navigationFromGaps(gaps: MinimumPortfolioGaps): {
@@ -47,21 +45,18 @@ function navigationFromGaps(gaps: MinimumPortfolioGaps): {
         type: "personal",
         name: gaps.missingName,
         description: gaps.missingDescription,
+        contact: gaps.missingContact,
       },
     };
   }
-  if (gaps.missingContact) {
-    return { step: 1, hints: { type: "contact" } };
-  }
   if (gaps.missingSubstantive) {
-    return { step: 2, hints: { type: "substantive" } };
+    return { step: 1, hints: { type: "substantive" } };
   }
   return { step: 0, hints: null };
 }
 
 const STEP_TITLES = [
-  "المعلومات الشخصية",
-  "التواصل والشبكات",
+  "بيانات الموقع الأساسية",
   "المهارات",
   "الخبرة العملية",
   "التعليم",
@@ -94,14 +89,14 @@ export function OnboardingWizard({
     useState<RegisteredOnboardingStepActions | null>(null);
 
   const clearPersonalFieldHint = useCallback(
-    (field: "name" | "description") => {
+    (field: "name" | "description" | "contact") => {
       setCompletionHints((h) => {
         if (!h || h.type !== "personal") return h;
         const next = {
           ...h,
           [field]: false,
         };
-        if (!next.name && !next.description) return null;
+        if (!next.name && !next.description && !next.contact) return null;
         return next;
       });
     },
@@ -351,7 +346,7 @@ export function OnboardingWizard({
             </Button>
           ) : null}
 
-          {step < 6 && registeredActions?.kind === "form" ? (
+          {step < 5 && registeredActions?.kind === "form" ? (
             <>
               <Button
                 type="button"
@@ -381,7 +376,7 @@ export function OnboardingWizard({
             </>
           ) : null}
 
-          {step === 6 && registeredActions?.kind === "done" ? (
+          {step === 5 && registeredActions?.kind === "done" ? (
             <Button
               type="button"
               size="sm"
@@ -428,22 +423,13 @@ export function OnboardingWizard({
               completionHints?.type === "personal" &&
               completionHints.description
             }
+            invalidContact={
+              completionHints?.type === "personal" && completionHints.contact
+            }
             onClearPersonalFieldHint={clearPersonalFieldHint}
           />
         ) : null}
         {step === 1 ? (
-          <StepContact
-            siteData={wizardSiteData}
-            onSave={handleSave}
-            onSkip={handleSkip}
-            saving={saving}
-            controlsLocked={controlsLocked}
-            registerActions={setRegisteredActions}
-            highlightContactInvalid={completionHints?.type === "contact"}
-            onClearCompletionHints={clearCompletionHints}
-          />
-        ) : null}
-        {step === 2 ? (
           <StepSkills
             siteData={wizardSiteData}
             onSave={handleSave}
@@ -457,7 +443,7 @@ export function OnboardingWizard({
             onClearCompletionHints={clearCompletionHints}
           />
         ) : null}
-        {step === 3 ? (
+        {step === 2 ? (
           <StepWork
             siteData={wizardSiteData}
             onSave={handleSave}
@@ -467,7 +453,7 @@ export function OnboardingWizard({
             registerActions={setRegisteredActions}
           />
         ) : null}
-        {step === 4 ? (
+        {step === 3 ? (
           <StepEducation
             siteData={wizardSiteData}
             onSave={handleSave}
@@ -477,7 +463,7 @@ export function OnboardingWizard({
             registerActions={setRegisteredActions}
           />
         ) : null}
-        {step === 5 ? (
+        {step === 4 ? (
           <StepProjects
             siteData={wizardSiteData}
             onSave={handleSave}
@@ -487,7 +473,7 @@ export function OnboardingWizard({
             registerActions={setRegisteredActions}
           />
         ) : null}
-        {step === 6 ? (
+        {step === 5 ? (
           <StepDone
             onFinish={handleFinish}
             finishing={finishing}

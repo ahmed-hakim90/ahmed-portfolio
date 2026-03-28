@@ -68,6 +68,10 @@ Create `.env.local` in the project root (never commit secrets). Typical variable
 | `ADMIN_DASHBOARD_SECRET` | Yes (prod) | Secret for signing admin session cookies; **≥ 16 characters** recommended. |
 | `FIREBASE_SERVICE_ACCOUNT_JSON` | For Firebase | JSON string of the Firebase service account. |
 | `FIREBASE_SERVICE_ACCOUNT_PATH` | Alternative | Filesystem path to the service account JSON file. |
+| `GOOGLE_DRIVE_SERVICE_ACCOUNT_EMAIL` | For admin uploads | Google service account email used to upload images to Drive. |
+| `GOOGLE_DRIVE_PRIVATE_KEY` | For admin uploads | Private key for the service account (single-line with `\\n`). |
+| `GOOGLE_DRIVE_ROOT_FOLDER_ID` | For admin uploads | Root Drive folder where per-user upload folders are created. |
+| `GOOGLE_DRIVE_IMPERSONATE_USER` | Optional | Workspace delegated user email (if domain-wide delegation is configured). |
 | `ADMIN_BOOTSTRAP_USERNAME` | Bootstrap | Username for the one-time `/api/admin/bootstrap` flow. |
 | `ADMIN_BOOTSTRAP_PASSWORD` | Bootstrap | Password for bootstrap (use strong values). |
 | `SIGNUP_INVITE_SECRET` | For public signup | Secret used to validate invite-based sign-up requests. |

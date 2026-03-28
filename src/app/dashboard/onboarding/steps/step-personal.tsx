@@ -11,9 +11,17 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { DEFAULT_SITE_JSON, type SiteJson } from "@/data/site-defaults";
+import {
+  type SiteValidationErrors,
+  validateSiteForSave,
+} from "@/lib/site-validation";
 import { cn } from "@/lib/utils";
+import {
+  buildWaMeUrl,
+  parseWaMeDigitsFromUrl,
+} from "@/lib/whatsapp-wa-me";
 import { Loader2 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { RegisterOnboardingStepActionsFn } from "../onboarding-step-actions";
 
 const TEMPLATE_AVATAR = DEFAULT_SITE_JSON.avatarUrl.trim();
@@ -27,7 +35,10 @@ type Props = {
   registerActions: RegisterOnboardingStepActionsFn;
   invalidName?: boolean;
   invalidDescription?: boolean;
-  onClearPersonalFieldHint?: (field: "name" | "description") => void;
+  invalidContact?: boolean;
+  onClearPersonalFieldHint?: (
+    field: "name" | "description" | "contact",
+  ) => void;
 };
 
 export function StepPersonal({
@@ -39,6 +50,7 @@ export function StepPersonal({
   registerActions,
   invalidName = false,
   invalidDescription = false,
+  invalidContact = false,
   onClearPersonalFieldHint,
 }: Props) {
   const busy = saving || controlsLocked;
@@ -49,31 +61,136 @@ export function StepPersonal({
   const [description, setDescription] = useState(siteData.description);
   const [summary, setSummary] = useState(siteData.summary);
   const [avatarUrl, setAvatarUrl] = useState(siteData.avatarUrl);
-
-  const personalPatch = useCallback(
-    (): Partial<SiteJson> => ({
-      name,
-      initials,
-      location,
-      locationLink,
-      description,
-      summary,
-      avatarUrl,
-    }),
-    [
-      name,
-      initials,
-      location,
-      locationLink,
-      description,
-      summary,
-      avatarUrl,
-    ],
+  const social = siteData.contact.social;
+  const [email, setEmail] = useState(siteData.contact.email);
+  const [tel, setTel] = useState(siteData.contact.tel);
+  const [github, setGithub] = useState(social.GitHub?.url ?? "");
+  const [linkedin, setLinkedin] = useState(social.LinkedIn?.url ?? "");
+  const [x, setX] = useState(social.X?.url ?? "");
+  const [youtube, setYoutube] = useState(social.Youtube?.url ?? "");
+  const [whatsapp, setWhatsapp] = useState(() =>
+    parseWaMeDigitsFromUrl(social.WhatsApp?.url ?? ""),
   );
+  const [fieldErrors, setFieldErrors] = useState<SiteValidationErrors>({});
+
+  const personalPatch = useMemo((): Partial<SiteJson> => {
+    const socialWithoutWhatsApp = { ...siteData.contact.social };
+    delete socialWithoutWhatsApp.WhatsApp;
+    const mail = email.trim() ? `mailto:${email.trim()}` : "";
+    const waUrl = buildWaMeUrl(whatsapp);
+
+    return {
+      name,
+      initials,
+      location,
+      locationLink,
+      description,
+      summary,
+      avatarUrl,
+      contact: {
+        ...siteData.contact,
+        email: email.trim(),
+        tel: tel.trim(),
+        social: {
+          ...socialWithoutWhatsApp,
+          ...(github.trim()
+            ? {
+                GitHub: {
+                  name: "GitHub",
+                  url: github.trim(),
+                  icon: "github" as const,
+                  navbar: true,
+                  enabled: true,
+                },
+              }
+            : {}),
+          ...(linkedin.trim()
+            ? {
+                LinkedIn: {
+                  name: "LinkedIn",
+                  url: linkedin.trim(),
+                  icon: "linkedin" as const,
+                  navbar: true,
+                  enabled: true,
+                },
+              }
+            : {}),
+          ...(x.trim()
+            ? {
+                X: {
+                  name: "X",
+                  url: x.trim(),
+                  icon: "x" as const,
+                  navbar: true,
+                  enabled: true,
+                },
+              }
+            : {}),
+          ...(youtube.trim()
+            ? {
+                Youtube: {
+                  name: "Youtube",
+                  url: youtube.trim(),
+                  icon: "youtube" as const,
+                  navbar: false,
+                  enabled: true,
+                },
+              }
+            : {}),
+          ...(waUrl
+            ? {
+                WhatsApp: {
+                  name: "WhatsApp",
+                  url: waUrl,
+                  icon: "whatsapp" as const,
+                  navbar: false,
+                  enabled: true,
+                },
+              }
+            : {}),
+          ...(mail
+            ? {
+                email: {
+                  name: "Send Email",
+                  url: mail,
+                  icon: "email" as const,
+                  navbar: true,
+                  enabled: true,
+                },
+              }
+            : {}),
+        },
+      },
+    };
+  }, [
+    name,
+    initials,
+    location,
+    locationLink,
+    description,
+    summary,
+    avatarUrl,
+    email,
+    tel,
+    github,
+    linkedin,
+    x,
+    youtube,
+    whatsapp,
+    siteData.contact,
+  ]);
 
   const runSave = useCallback(() => {
-    void onSave(personalPatch());
-  }, [onSave, personalPatch]);
+    const merged = {
+      ...siteData,
+      ...personalPatch,
+      contact: personalPatch.contact ?? siteData.contact,
+    } as SiteJson;
+    const errors = validateSiteForSave(merged);
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+    void onSave(personalPatch);
+  }, [onSave, personalPatch, siteData]);
 
   const runSkip = useCallback(() => {
     onSkip();
@@ -87,6 +204,15 @@ export function StepPersonal({
     setDescription(siteData.description);
     setSummary(siteData.summary);
     setAvatarUrl(siteData.avatarUrl);
+    setEmail(siteData.contact.email);
+    setTel(siteData.contact.tel);
+    const s = siteData.contact.social;
+    setGithub(s.GitHub?.url ?? "");
+    setLinkedin(s.LinkedIn?.url ?? "");
+    setX(s.X?.url ?? "");
+    setYoutube(s.Youtube?.url ?? "");
+    setWhatsapp(parseWaMeDigitsFromUrl(s.WhatsApp?.url ?? ""));
+    setFieldErrors({});
   }, [siteData]);
 
   useEffect(() => {
@@ -104,10 +230,10 @@ export function StepPersonal({
   return (
     <Card className="w-full border-border/80 shadow-lg">
       <CardHeader className="space-y-1 px-5 pb-2 pt-6 text-center sm:px-8 sm:pt-8">
-        <CardTitle className="text-xl sm:text-2xl">المعلومات الشخصية</CardTitle>
+        <CardTitle className="text-xl sm:text-2xl">بيانات الموقع الأساسية</CardTitle>
         <CardDescription>
-          لنشر المحفظة للزوار لاحقاً يلزم الاسم الظاهر والعنوان الوظيفي (السطر الرئيسي)
-          في هذه الخطوة؛ باقي الحقول اختيارية.
+          أكمِل بياناتك الشخصية والتواصل في خطوة واحدة. مطلوب: الاسم الظاهر + العنوان
+          الوظيفي + وسيلة تواصل واحدة على الأقل.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 px-5 pb-6 pt-2 sm:px-8 sm:pb-8">
@@ -122,6 +248,7 @@ export function StepPersonal({
             onChange={(e) => {
               setName(e.target.value);
               onClearPersonalFieldHint?.("name");
+              setFieldErrors((prev) => ({ ...prev, name: undefined }));
             }}
             placeholder="اسمك الكامل"
             disabled={busy}
@@ -158,7 +285,11 @@ export function StepPersonal({
             onChange={(e) => setLocationLink(e.target.value)}
             placeholder="https://maps.google.com/..."
             disabled={busy}
+            aria-invalid={Boolean(fieldErrors.locationLink) || undefined}
           />
+          {fieldErrors.locationLink ? (
+            <p className="text-xs text-destructive">{fieldErrors.locationLink}</p>
+          ) : null}
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium">العنوان الوظيفي / السطر الرئيسي</label>
@@ -171,11 +302,196 @@ export function StepPersonal({
             onChange={(e) => {
               setDescription(e.target.value);
               onClearPersonalFieldHint?.("description");
+              setFieldErrors((prev) => ({ ...prev, description: undefined }));
             }}
             placeholder="مطوّر واجهات، مهندس برمجيات…"
             disabled={busy}
             aria-invalid={invalidDescription || undefined}
           />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">البريد الإلكتروني</label>
+          <input
+            type="email"
+            className={cn(
+              authFieldClass,
+              (invalidContact || fieldErrors.email || fieldErrors.contact) &&
+                "border-destructive ring-1 ring-destructive",
+            )}
+            dir="ltr"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              onClearPersonalFieldHint?.("contact");
+              setFieldErrors((prev) => ({
+                ...prev,
+                email: undefined,
+                contact: undefined,
+              }));
+            }}
+            placeholder="name@example.com"
+            disabled={busy}
+            aria-invalid={Boolean(fieldErrors.email || fieldErrors.contact) || undefined}
+          />
+          {fieldErrors.email ? (
+            <p className="text-xs text-destructive">{fieldErrors.email}</p>
+          ) : null}
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">الهاتف</label>
+          <input
+            className={cn(
+              authFieldClass,
+              (invalidContact || fieldErrors.tel || fieldErrors.contact) &&
+                "border-destructive ring-1 ring-destructive",
+            )}
+            dir="ltr"
+            value={tel}
+            onChange={(e) => {
+              setTel(e.target.value);
+              onClearPersonalFieldHint?.("contact");
+              setFieldErrors((prev) => ({
+                ...prev,
+                tel: undefined,
+                contact: undefined,
+              }));
+            }}
+            placeholder="+20..."
+            disabled={busy}
+            aria-invalid={Boolean(fieldErrors.tel || fieldErrors.contact) || undefined}
+          />
+          {fieldErrors.tel ? (
+            <p className="text-xs text-destructive">{fieldErrors.tel}</p>
+          ) : null}
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">GitHub</label>
+          <input
+            className={cn(
+              authFieldClass,
+              (invalidContact || fieldErrors.social || fieldErrors.contact) &&
+                "border-destructive ring-1 ring-destructive",
+            )}
+            dir="ltr"
+            value={github}
+            onChange={(e) => {
+              setGithub(e.target.value);
+              onClearPersonalFieldHint?.("contact");
+              setFieldErrors((prev) => ({
+                ...prev,
+                social: undefined,
+                contact: undefined,
+              }));
+            }}
+            placeholder="https://github.com/..."
+            disabled={busy}
+            aria-invalid={Boolean(fieldErrors.social || fieldErrors.contact) || undefined}
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">LinkedIn</label>
+          <input
+            className={cn(
+              authFieldClass,
+              (invalidContact || fieldErrors.social || fieldErrors.contact) &&
+                "border-destructive ring-1 ring-destructive",
+            )}
+            dir="ltr"
+            value={linkedin}
+            onChange={(e) => {
+              setLinkedin(e.target.value);
+              onClearPersonalFieldHint?.("contact");
+              setFieldErrors((prev) => ({
+                ...prev,
+                social: undefined,
+                contact: undefined,
+              }));
+            }}
+            placeholder="https://linkedin.com/in/..."
+            disabled={busy}
+            aria-invalid={Boolean(fieldErrors.social || fieldErrors.contact) || undefined}
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">X (Twitter)</label>
+          <input
+            className={cn(
+              authFieldClass,
+              (invalidContact || fieldErrors.social || fieldErrors.contact) &&
+                "border-destructive ring-1 ring-destructive",
+            )}
+            dir="ltr"
+            value={x}
+            onChange={(e) => {
+              setX(e.target.value);
+              onClearPersonalFieldHint?.("contact");
+              setFieldErrors((prev) => ({
+                ...prev,
+                social: undefined,
+                contact: undefined,
+              }));
+            }}
+            placeholder="https://x.com/..."
+            disabled={busy}
+            aria-invalid={Boolean(fieldErrors.social || fieldErrors.contact) || undefined}
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">YouTube</label>
+          <input
+            className={cn(
+              authFieldClass,
+              (invalidContact || fieldErrors.social || fieldErrors.contact) &&
+                "border-destructive ring-1 ring-destructive",
+            )}
+            dir="ltr"
+            value={youtube}
+            onChange={(e) => {
+              setYoutube(e.target.value);
+              onClearPersonalFieldHint?.("contact");
+              setFieldErrors((prev) => ({
+                ...prev,
+                social: undefined,
+                contact: undefined,
+              }));
+            }}
+            placeholder="https://youtube.com/..."
+            disabled={busy}
+            aria-invalid={Boolean(fieldErrors.social || fieldErrors.contact) || undefined}
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">رقم واتساب</label>
+          <input
+            className={cn(
+              authFieldClass,
+              (invalidContact || fieldErrors.social || fieldErrors.contact) &&
+                "border-destructive ring-1 ring-destructive",
+            )}
+            dir="ltr"
+            inputMode="tel"
+            autoComplete="tel"
+            value={whatsapp}
+            onChange={(e) => {
+              setWhatsapp(e.target.value);
+              onClearPersonalFieldHint?.("contact");
+              setFieldErrors((prev) => ({
+                ...prev,
+                social: undefined,
+                contact: undefined,
+              }));
+            }}
+            placeholder="2010…"
+            disabled={busy}
+            aria-invalid={Boolean(fieldErrors.social || fieldErrors.contact) || undefined}
+          />
+          <p className="text-xs text-muted-foreground">يُحفظ تلقائياً كرابط wa.me</p>
+          {fieldErrors.social ? (
+            <p className="text-xs text-destructive">{fieldErrors.social}</p>
+          ) : null}
+          {fieldErrors.contact ? (
+            <p className="text-xs text-destructive">{fieldErrors.contact}</p>
+          ) : null}
         </div>
         <div className="space-y-2 rounded-md border border-border/60 bg-muted/20 p-3">
           <p className="text-sm font-medium">صورة الملف الشخصية (اختياري)</p>
