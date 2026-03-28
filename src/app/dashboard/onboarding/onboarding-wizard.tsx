@@ -14,6 +14,8 @@ import { ChevronRight, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { RegisteredOnboardingStepActions } from "./onboarding-step-actions";
+import { StepAccount } from "./steps/step-account";
+import { StepContact } from "./steps/step-contact";
 import { StepDone } from "./steps/step-done";
 import { StepEducation } from "./steps/step-education";
 import { StepPersonal } from "./steps/step-personal";
@@ -21,7 +23,7 @@ import { StepProjects } from "./steps/step-projects";
 import { StepSkills } from "./steps/step-skills";
 import { StepWork } from "./steps/step-work";
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 8;
 const MAX_STEP_INDEX = TOTAL_STEPS - 1;
 
 function clampOnboardingStep(n: number): number {
@@ -32,6 +34,7 @@ function clampOnboardingStep(n: number): number {
 type CompletionHints =
   | null
   | { type: "personal"; name: boolean; description: boolean; contact: boolean }
+  | { type: "contact" }
   | { type: "substantive" };
 
 function navigationFromGaps(gaps: MinimumPortfolioGaps): {
@@ -40,23 +43,28 @@ function navigationFromGaps(gaps: MinimumPortfolioGaps): {
 } {
   if (gaps.missingName || gaps.missingDescription) {
     return {
-      step: 0,
+      step: 1,
       hints: {
         type: "personal",
         name: gaps.missingName,
         description: gaps.missingDescription,
-        contact: gaps.missingContact,
+        contact: false,
       },
     };
   }
-  if (gaps.missingSubstantive) {
-    return { step: 1, hints: { type: "substantive" } };
+  if (gaps.missingContact) {
+    return { step: 2, hints: { type: "contact" } };
   }
-  return { step: 0, hints: null };
+  if (gaps.missingSubstantive) {
+    return { step: 3, hints: { type: "substantive" } };
+  }
+  return { step: 1, hints: null };
 }
 
 const STEP_TITLES = [
-  "بيانات الموقع الأساسية",
+  "معلومات حسابك",
+  "المعلومات الشخصية",
+  "التواصل والشبكات",
   "المهارات",
   "الخبرة العملية",
   "التعليم",
@@ -67,10 +75,12 @@ const STEP_TITLES = [
 export function OnboardingWizard({
   initialStep,
   prefillOnboardingInputs,
+  initialSlug,
 }: {
   initialStep: number;
   /** When true (e.g. reopened wizard after completing once), show saved site data in inputs. */
   prefillOnboardingInputs: boolean;
+  initialSlug: string;
 }) {
   const router = useRouter();
   const [siteData, setSiteData] = useState<SiteJson | null>(null);
@@ -87,6 +97,7 @@ export function OnboardingWizard({
     useState<CompletionHints>(null);
   const [registeredActions, setRegisteredActions] =
     useState<RegisteredOnboardingStepActions | null>(null);
+  const [profileSlug, setProfileSlug] = useState(initialSlug);
 
   const clearPersonalFieldHint = useCallback(
     (field: "name" | "description" | "contact") => {
@@ -195,6 +206,57 @@ export function OnboardingWizard({
     [siteData, step, persistOnboardingStep],
   );
 
+  /** خاص بـ Step 0: يحفظ الـ slug أولاً ثم بيانات الموقع (name, tel). */
+  const handleSaveAccountStep = useCallback(
+    async (patch: Partial<SiteJson>, slug: string) => {
+      if (!siteData) return;
+      setError(null);
+      setSaving(true);
+      try {
+        if (slug.trim() && slug.trim() !== profileSlug) {
+          const slugRes = await fetch("/api/admin/profile", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ slug }),
+          });
+          if (!slugRes.ok) {
+            const d = await slugRes.json().catch(() => ({}));
+            setError(
+              typeof d.error === "string" ? d.error : "تعذّر حفظ مسار الموقع",
+            );
+            return;
+          }
+          setProfileSlug(slug.trim());
+        }
+        const merged = deepMergeSite(siteData, patch);
+        const res = await fetch("/api/admin/site", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(merged),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setError(
+            typeof data.error === "string" ? data.error : "فشل الحفظ. حاول مرة أخرى.",
+          );
+          return;
+        }
+        setSiteData(merged);
+        setUsedRealSiteData(true);
+        setCompletionHints(null);
+        const nextStep = Math.min(step + 1, MAX_STEP_INDEX);
+        const persisted = await persistOnboardingStep(nextStep);
+        if (!persisted) return;
+        setStep(nextStep);
+      } catch {
+        setError("فشل الحفظ.");
+      } finally {
+        setSaving(false);
+      }
+    },
+    [siteData, step, persistOnboardingStep, profileSlug],
+  );
+
   const handleSkip = useCallback(() => {
     setError(null);
     setSkipPending(true);
@@ -270,7 +332,6 @@ export function OnboardingWizard({
   }, [router, siteData]);
 
   const controlsLocked = backPending || skipPending;
-
   const toolbarBusy =
     saving || finishing || backPending || skipPending || !registeredActions;
 
@@ -346,7 +407,7 @@ export function OnboardingWizard({
             </Button>
           ) : null}
 
-          {step < 5 && registeredActions?.kind === "form" ? (
+          {step < 7 && registeredActions?.kind === "form" ? (
             <>
               <Button
                 type="button"
@@ -376,7 +437,7 @@ export function OnboardingWizard({
             </>
           ) : null}
 
-          {step === 5 && registeredActions?.kind === "done" ? (
+          {step === 7 && registeredActions?.kind === "done" ? (
             <Button
               type="button"
               size="sm"
@@ -398,102 +459,122 @@ export function OnboardingWizard({
       </div>
 
       <div className="-mx-4 space-y-6 px-4 sm:-mx-6 sm:px-6">
-      {error ? (
-        <div
-          className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-center text-sm text-destructive"
-          role="alert"
-        >
-          {error}
+        {error ? (
+          <div
+            className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-center text-sm text-destructive"
+            role="alert"
+          >
+            {error}
+          </div>
+        ) : null}
+
+        <div className="space-y-6">
+          {step === 0 ? (
+            <StepAccount
+              siteData={wizardSiteData}
+              profileSlug={profileSlug}
+              onSaveAccount={handleSaveAccountStep}
+              onSkip={handleSkip}
+              saving={saving}
+              controlsLocked={controlsLocked}
+              registerActions={setRegisteredActions}
+            />
+          ) : null}
+          {step === 1 ? (
+            <StepPersonal
+              siteData={wizardSiteData}
+              onSave={handleSave}
+              onSkip={handleSkip}
+              saving={saving}
+              controlsLocked={controlsLocked}
+              registerActions={setRegisteredActions}
+              invalidName={
+                completionHints?.type === "personal" && completionHints.name
+              }
+              invalidDescription={
+                completionHints?.type === "personal" &&
+                completionHints.description
+              }
+              onClearPersonalFieldHint={clearPersonalFieldHint}
+            />
+          ) : null}
+          {step === 2 ? (
+            <StepContact
+              siteData={wizardSiteData}
+              onSave={handleSave}
+              onSkip={handleSkip}
+              saving={saving}
+              controlsLocked={controlsLocked}
+              registerActions={setRegisteredActions}
+              highlightContactInvalid={completionHints?.type === "contact"}
+              onClearCompletionHints={clearCompletionHints}
+            />
+          ) : null}
+          {step === 3 ? (
+            <StepSkills
+              siteData={wizardSiteData}
+              onSave={handleSave}
+              onSkip={handleSkip}
+              saving={saving}
+              controlsLocked={controlsLocked}
+              registerActions={setRegisteredActions}
+              highlightSubstantiveInvalid={
+                completionHints?.type === "substantive"
+              }
+              onClearCompletionHints={clearCompletionHints}
+            />
+          ) : null}
+          {step === 4 ? (
+            <StepWork
+              siteData={wizardSiteData}
+              onSave={handleSave}
+              onSkip={handleSkip}
+              saving={saving}
+              controlsLocked={controlsLocked}
+              registerActions={setRegisteredActions}
+            />
+          ) : null}
+          {step === 5 ? (
+            <StepEducation
+              siteData={wizardSiteData}
+              onSave={handleSave}
+              onSkip={handleSkip}
+              saving={saving}
+              controlsLocked={controlsLocked}
+              registerActions={setRegisteredActions}
+            />
+          ) : null}
+          {step === 6 ? (
+            <StepProjects
+              siteData={wizardSiteData}
+              onSave={handleSave}
+              onSkip={handleSkip}
+              saving={saving}
+              controlsLocked={controlsLocked}
+              registerActions={setRegisteredActions}
+            />
+          ) : null}
+          {step === 7 ? (
+            <StepDone
+              onFinish={handleFinish}
+              finishing={finishing}
+              controlsLocked={controlsLocked}
+              registerActions={setRegisteredActions}
+            />
+          ) : null}
         </div>
-      ) : null}
 
-      <div className="space-y-6">
-        {step === 0 ? (
-          <StepPersonal
-            siteData={wizardSiteData}
-            onSave={handleSave}
-            onSkip={handleSkip}
-            saving={saving}
-            controlsLocked={controlsLocked}
-            registerActions={setRegisteredActions}
-            invalidName={
-              completionHints?.type === "personal" && completionHints.name
-            }
-            invalidDescription={
-              completionHints?.type === "personal" &&
-              completionHints.description
-            }
-            invalidContact={
-              completionHints?.type === "personal" && completionHints.contact
-            }
-            onClearPersonalFieldHint={clearPersonalFieldHint}
-          />
-        ) : null}
-        {step === 1 ? (
-          <StepSkills
-            siteData={wizardSiteData}
-            onSave={handleSave}
-            onSkip={handleSkip}
-            saving={saving}
-            controlsLocked={controlsLocked}
-            registerActions={setRegisteredActions}
-            highlightSubstantiveInvalid={
-              completionHints?.type === "substantive"
-            }
-            onClearCompletionHints={clearCompletionHints}
-          />
-        ) : null}
-        {step === 2 ? (
-          <StepWork
-            siteData={wizardSiteData}
-            onSave={handleSave}
-            onSkip={handleSkip}
-            saving={saving}
-            controlsLocked={controlsLocked}
-            registerActions={setRegisteredActions}
-          />
-        ) : null}
-        {step === 3 ? (
-          <StepEducation
-            siteData={wizardSiteData}
-            onSave={handleSave}
-            onSkip={handleSkip}
-            saving={saving}
-            controlsLocked={controlsLocked}
-            registerActions={setRegisteredActions}
-          />
-        ) : null}
-        {step === 4 ? (
-          <StepProjects
-            siteData={wizardSiteData}
-            onSave={handleSave}
-            onSkip={handleSkip}
-            saving={saving}
-            controlsLocked={controlsLocked}
-            registerActions={setRegisteredActions}
-          />
-        ) : null}
-        {step === 5 ? (
-          <StepDone
-            onFinish={handleFinish}
-            finishing={finishing}
-            controlsLocked={controlsLocked}
-            registerActions={setRegisteredActions}
-          />
-        ) : null}
-      </div>
-
-      <p className="text-center">
-        <Button
-          type="button"
-          variant="link"
-          className="h-auto text-xs text-muted-foreground"
-          disabled={finishing || saving || backPending || skipPending}
-          onClick={() => void handleFinish()}
-        >
-          تخطّي كل الخطوات والذهاب للمحرر
-        </Button>
-      </p>
+        <p className="text-center">
+          <Button
+            type="button"
+            variant="link"
+            className="h-auto text-xs text-muted-foreground"
+            disabled={finishing || saving || backPending || skipPending}
+            onClick={() => void handleFinish()}
+          >
+            تخطّي كل الخطوات والذهاب للمحرر
+          </Button>
+        </p>
       </div>
     </div>
   );

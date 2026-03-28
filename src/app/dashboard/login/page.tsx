@@ -54,6 +54,33 @@ export default function DashboardLoginPage() {
     })();
   }, []);
 
+  /** Called after a successful idToken exchange — resolves destination and navigates. */
+  async function afterLogin() {
+    let destination = next;
+    try {
+      const profileRes = await fetch("/api/admin/profile", { cache: "no-store" });
+      if (profileRes.ok) {
+        const profile = (await profileRes.json()) as {
+          onboardingCompleted?: boolean;
+          role?: "owner" | "client";
+        };
+        if (profile.onboardingCompleted === false) {
+          destination = "/dashboard/onboarding";
+        } else if (
+          profile.role === "owner" &&
+          (destination === "/dashboard/site" || destination === "/dashboard/site/")
+        ) {
+          destination = "/dashboard";
+        }
+      }
+    } catch {
+      /* keep next */
+    }
+    router.replace(destination);
+    router.refresh();
+    setLoading(false);
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -78,29 +105,7 @@ export default function DashboardLoginPage() {
       setLoading(false);
       return;
     }
-    let destination = next;
-    try {
-      const profileRes = await fetch("/api/admin/profile", { cache: "no-store" });
-      if (profileRes.ok) {
-        const profile = (await profileRes.json()) as {
-          onboardingCompleted?: boolean;
-          role?: "owner" | "client";
-        };
-        if (profile.onboardingCompleted === false) {
-          destination = "/dashboard/onboarding";
-        } else if (
-          profile.role === "owner" &&
-          (destination === "/dashboard/site" || destination === "/dashboard/site/")
-        ) {
-          destination = "/dashboard";
-        }
-      }
-    } catch {
-      /* keep next */
-    }
-    router.replace(destination);
-    router.refresh();
-    setLoading(false);
+    await afterLogin();
   }
 
   async function onGoogle() {
@@ -135,29 +140,7 @@ export default function DashboardLoginPage() {
       setLoading(false);
       return;
     }
-    let destination = next;
-    try {
-      const profileRes = await fetch("/api/admin/profile", { cache: "no-store" });
-      if (profileRes.ok) {
-        const profile = (await profileRes.json()) as {
-          onboardingCompleted?: boolean;
-          role?: "owner" | "client";
-        };
-        if (profile.onboardingCompleted === false) {
-          destination = "/dashboard/onboarding";
-        } else if (
-          profile.role === "owner" &&
-          (destination === "/dashboard/site" || destination === "/dashboard/site/")
-        ) {
-          destination = "/dashboard";
-        }
-      }
-    } catch {
-      /* keep next */
-    }
-    router.replace(destination);
-    router.refresh();
-    setLoading(false);
+    await afterLogin();
   }
 
   return (

@@ -116,12 +116,15 @@ export function PortfolioPage({
       </section>
       ) : null}
       {pv.about ? (
-      <section id="about">
+      <section id="about" className="min-w-0">
         <BlurFade delay={BLUR_FADE_DELAY * 3}>
           <h2 className="text-xl font-bold">About</h2>
         </BlurFade>
-        <BlurFade delay={BLUR_FADE_DELAY * 4}>
-          <Markdown className="prose max-w-full text-pretty font-sans text-sm text-muted-foreground dark:prose-invert print:text-foreground">
+        <BlurFade
+          delay={BLUR_FADE_DELAY * 4}
+          className="min-w-0 w-full max-w-full"
+        >
+          <Markdown className="prose max-w-full min-w-0 break-words text-pretty font-sans text-sm text-muted-foreground dark:prose-invert print:text-foreground">
             {DATA.summary}
           </Markdown>
         </BlurFade>

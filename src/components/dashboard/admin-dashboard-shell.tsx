@@ -126,7 +126,7 @@ function SidebarContent({
   const onSite = navActive(pathname, "/dashboard/site");
 
   return (
-    <div className="flex h-full flex-col gap-6">
+    <div className="flex flex-col gap-6">
       <div>
         <p className="mb-2 px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
           اللوحة
@@ -244,13 +244,11 @@ function SidebarContent({
 
       <Separator />
 
-      <div className="min-h-0 flex-1 rounded-lg border border-border/60 bg-muted/10 p-3">
+      <div className="shrink-0 rounded-lg border border-border/60 bg-muted/10 p-3">
         <p className="mb-1.5 px-0.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
           مدونتك
         </p>
-        <p className="mb-3 px-0.5 text-[11px] leading-relaxed text-muted-foreground">
-          يفتح الزوار المدونة من الرابط العام دون تسجيل إذا كان مسار المدونة مفعّلاً في إعدادات الموقع.
-        </p>
+       
         <div className="mb-3 flex flex-col gap-2">
           <Button variant="outline" size="sm" className="w-full justify-start gap-2" asChild>
             <Link href="/dashboard/blog/new" onClick={onNavigate}>
@@ -258,12 +256,12 @@ function SidebarContent({
               مقال جديد
             </Link>
           </Button>
-          <Button variant="secondary" size="sm" className="w-full justify-start gap-2" asChild>
+          {/* <Button variant="secondary" size="sm" className="w-full justify-start gap-2" asChild>
             <Link href={publicBlogUrl} target="_blank" rel="noopener noreferrer" onClick={onNavigate}>
               <ExternalLink className="size-4" aria-hidden />
               فتح المدونة العامة
             </Link>
-          </Button>
+          </Button> */}
         </div>
         <p className="mb-2 truncate px-0.5 font-mono text-[11px] text-muted-foreground" title={publicBlogUrl}>
           {publicBlogUrl}
@@ -327,8 +325,7 @@ function SidebarContent({
           </div>
         ) : (
           <p className="px-0.5 text-[10px] leading-relaxed text-muted-foreground">
-            القائمة الكاملة في صفحة «المدونة». افتح القائمة هنا عند الحاجة.
-          </p>
+قائمة المدونات          </p>
         )}
       </div>
 
@@ -578,7 +575,7 @@ export function AdminDashboardShell({
                 لوحة التحكم
               </span>
             </div>
-            <div className="flex flex-wrap items-center gap-2">{headerActions}</div>
+            <div className="flex min-w-0 items-center gap-2">{headerActions}</div>
           </header>
           <main className="mx-auto max-w-7xl px-3 py-5 sm:px-4 sm:py-7 md:px-6 md:py-10">{children}</main>
         </div>

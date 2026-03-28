@@ -145,14 +145,14 @@ export function ContactMessagesClient() {
   return (
     <div className="space-y-4" dir="rtl">
       <div className="flex flex-col gap-4 rounded-lg border border-border/60 bg-muted/20 p-4">
-        <div className="flex flex-wrap items-end gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:flex sm:flex-wrap sm:items-end">
           <div className="space-y-1">
             <label className="text-xs text-muted-foreground" htmlFor="msg-read-filter">
               الحالة
             </label>
             <select
               id="msg-read-filter"
-              className="flex h-9 min-w-[10rem] rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring sm:w-auto sm:min-w-[10rem]"
               value={readFilter}
               onChange={(e) =>
                 setReadFilter(e.target.value as ReadFilter)
@@ -163,6 +163,7 @@ export function ContactMessagesClient() {
               <option value="read">مقروءة</option>
             </select>
           </div>
+          <div className="grid grid-cols-2 gap-3 sm:contents">
           <div className="space-y-1">
             <label className="text-xs text-muted-foreground" htmlFor="msg-date-from">
               من تاريخ
@@ -170,7 +171,7 @@ export function ContactMessagesClient() {
             <input
               id="msg-date-from"
               type="date"
-              className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
             />
@@ -182,10 +183,11 @@ export function ContactMessagesClient() {
             <input
               id="msg-date-to"
               type="date"
-              className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
             />
+          </div>
           </div>
           {(dateFrom || dateTo) ? (
             <Button

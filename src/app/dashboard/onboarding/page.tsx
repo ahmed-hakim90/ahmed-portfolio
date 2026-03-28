@@ -21,6 +21,7 @@ export default async function OnboardingPage() {
     <OnboardingWizard
       initialStep={user.onboardingStep}
       prefillOnboardingInputs={user.onboardingEverCompletedOnce}
+      initialSlug={user.slug}
     />
   );
 }

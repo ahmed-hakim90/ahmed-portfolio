@@ -210,7 +210,7 @@ function newCustomSectionId(): string {
   return `custom-${Date.now()}`;
 }
 
-export type SiteEditorMode = "all" | "profile" | "career";
+export type SiteEditorMode = "all" | "profile" | "career" | "hero" | "contact-skills" | "experience" | "projects-more";
 
 type Props = {
   data: SiteJson;
@@ -230,8 +230,10 @@ export function SiteWorkProjectsEditor({
     fn(next);
     onChange(next);
   };
-  const showProfile = editorMode === "all" || editorMode === "profile";
-  const showCareer = editorMode === "all" || editorMode === "career";
+  const showHero = editorMode === "all" || editorMode === "profile" || editorMode === "hero";
+  const showContactSkills = editorMode === "all" || editorMode === "profile" || editorMode === "contact-skills";
+  const showExperience = editorMode === "all" || editorMode === "career" || editorMode === "experience";
+  const showProjectsMore = editorMode === "all" || editorMode === "career" || editorMode === "projects-more";
   const addSkillFromInput = () => {
     const value = skillInput.trim();
     if (!value) return;
@@ -242,7 +244,7 @@ export function SiteWorkProjectsEditor({
 
   return (
     <div className="space-y-6 rounded-lg border border-border bg-muted/30 p-4">
-      {showProfile ? (
+      {showHero ? (
       <>
       <div id="site-profile" className="scroll-mt-28 space-y-4">
         <SectionHeaderWithVisibility
@@ -328,8 +330,12 @@ export function SiteWorkProjectsEditor({
         <div className="space-y-1 sm:col-span-2"><label className="text-xs text-muted-foreground">Summary</label><textarea className={cn(fieldClass(), "min-h-[100px] resize-y")} value={data.summary} onChange={(e) => apply((j) => { j.summary = e.target.value; })} /></div>
         </div>
       </div>
+      </>
+      ) : null}
 
-      <div id="site-skills" className="scroll-mt-28 space-y-4 border-t border-border pt-4">
+      {showContactSkills ? (
+      <>
+      <div id="site-skills" className={cn("scroll-mt-28 space-y-4 pt-4", showHero && "border-t border-border")}>
         <SectionHeaderWithVisibility
           title="المهارات"
           description="اكتب مهارة ثم اضغط Enter."
@@ -509,9 +515,9 @@ export function SiteWorkProjectsEditor({
       </>
       ) : null}
 
-      {showCareer ? (
+      {showProjectsMore ? (
       <>
-      <div id="site-about-me" className="scroll-mt-28 space-y-4 border-t border-border pt-4">
+      <div id="site-about-me" className={cn("scroll-mt-28 space-y-4 pt-4", showContactSkills && "border-t border-border")}>
         <SectionHeaderWithVisibility
           title="نبذة عني (مميزة)"
           description="قبل التواصل في الصفحة العامة. اترك الحقول فارغة لاستخدام النص الإنجليزي الافتراضي."
@@ -689,8 +695,12 @@ export function SiteWorkProjectsEditor({
           إضافة قسم
         </Button>
       </div>
+      </>
+      ) : null}
 
-      <div id="site-education" className="scroll-mt-28 space-y-4 border-t border-border pt-4">
+      {showExperience ? (
+      <>
+      <div id="site-education" className={cn("scroll-mt-28 space-y-4 pt-4", showProjectsMore && "border-t border-border")}>
         <SectionHeaderWithVisibility
           title="التعليم"
           sectionKey="education"
@@ -711,8 +721,12 @@ export function SiteWorkProjectsEditor({
         />
       </div>
       <div className="space-y-4">{data.work.map((w, i) => <div key={`work-${i}`} className="space-y-2 rounded-md border border-border bg-background p-3"><div className="flex flex-wrap items-center justify-between gap-2"><span className="text-xs font-medium text-muted-foreground">Job #{i + 1}</span><Button type="button" variant="destructive" size="sm" className="h-7 text-xs" onClick={() => apply((j) => { j.work.splice(i, 1); })}>Remove</Button></div><div className="grid gap-2 sm:grid-cols-2"><div className="space-y-1"><label className="text-xs text-muted-foreground">Company</label><input className={fieldClass()} value={w.company} onChange={(e) => apply((j) => { if (j.work[i]) j.work[i].company = e.target.value; })} /></div><div className="space-y-1"><label className="text-xs text-muted-foreground">Title</label><input className={fieldClass()} value={w.title} onChange={(e) => apply((j) => { if (j.work[i]) j.work[i].title = e.target.value; })} /></div><div className="space-y-1 sm:col-span-2"><label className="text-xs text-muted-foreground">Company URL</label><input className={fieldClass()} value={w.href} onChange={(e) => apply((j) => { if (j.work[i]) j.work[i].href = e.target.value; })} /></div><DriveUrlField id={`work-logo-${i}`} label="Logo URL" value={w.logoUrl} onChange={(v) => apply((j) => { if (j.work[i]) j.work[i].logoUrl = v; })} uploadKind="work-logo" className="sm:col-span-2" /><div className="space-y-1"><label className="text-xs text-muted-foreground">Start</label><input className={fieldClass()} value={w.start} onChange={(e) => apply((j) => { if (j.work[i]) j.work[i].start = e.target.value; })} /></div><div className="space-y-1"><label className="text-xs text-muted-foreground">End</label><input className={fieldClass()} value={w.end} onChange={(e) => apply((j) => { if (j.work[i]) j.work[i].end = e.target.value; })} /></div><div className="space-y-1"><label className="text-xs text-muted-foreground">Location</label><input className={fieldClass()} value={w.location} onChange={(e) => apply((j) => { if (j.work[i]) j.work[i].location = e.target.value; })} /></div><div className="space-y-1"><label className="text-xs text-muted-foreground">Badges (comma-separated)</label><input className={fieldClass()} value={w.badges.join(", ")} onChange={(e) => apply((j) => { if (!j.work[i]) return; j.work[i].badges = e.target.value.split(",").map((s) => s.trim()).filter(Boolean); })} /></div><div className="space-y-1 sm:col-span-2"><label className="text-xs text-muted-foreground">Description</label><textarea className={cn(fieldClass(), "min-h-[72px] resize-y")} value={w.description} onChange={(e) => apply((j) => { if (j.work[i]) j.work[i].description = e.target.value; })} /></div></div></div>)}<Button type="button" variant="outline" size="sm" className="text-xs" onClick={() => apply((j) => { j.work.push({ ...EMPTY_WORK }); })}>Add work experience</Button></div>
+      </>
+      ) : null}
 
-      <div id="site-projects" className="scroll-mt-28 space-y-4 border-t border-border pt-4">
+      {showProjectsMore ? (
+      <>
+      <div id="site-projects" className={cn("scroll-mt-28 space-y-4 pt-4", showExperience && "border-t border-border")}>
         <SectionHeaderWithVisibility
           title="المشاريع"
           sectionKey="projects"
