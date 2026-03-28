@@ -54,8 +54,8 @@ type AdminUserDoc = {
   publicPortfolioExpiresAt?: string | null;
 };
 
-/** Inclusive max step index for the 7-step onboarding wizard. */
-export const ONBOARDING_MAX_STEP_INDEX = 6;
+/** Inclusive max step index for the 8-step onboarding wizard. */
+export const ONBOARDING_MAX_STEP_INDEX = 7;
 
 export function normalizeOnboardingStep(raw: unknown): number {
   const n =
@@ -319,7 +319,7 @@ export type NewClientProfile = {
   slug: string;
 };
 
-/** Validates name, phone, slug (including global slug availability). */
+/** Validates name, phone (optional), slug (optional — auto-generated when empty). */
 export async function validateNewClientProfileInput(
   profile: NewClientProfile,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
@@ -329,15 +329,17 @@ export async function validateNewClientProfileInput(
   if (displayName.length < 2) {
     return { ok: false, error: "Invalid display name" };
   }
-  if (phone.length < 5) {
+  if (phone.length > 0 && phone.length < 5) {
     return { ok: false, error: "Invalid phone number" };
   }
-  const normalizedSlug = normalizeSlug(slugRaw);
-  if (!isSlugAllowed(normalizedSlug)) {
-    return { ok: false, error: "Invalid slug" };
-  }
-  if (await isSlugTaken(normalizedSlug)) {
-    return { ok: false, error: "Slug is already taken" };
+  if (slugRaw.length > 0) {
+    const normalizedSlug = normalizeSlug(slugRaw);
+    if (!isSlugAllowed(normalizedSlug)) {
+      return { ok: false, error: "Invalid slug" };
+    }
+    if (await isSlugTaken(normalizedSlug)) {
+      return { ok: false, error: "Slug is already taken" };
+    }
   }
   return { ok: true };
 }

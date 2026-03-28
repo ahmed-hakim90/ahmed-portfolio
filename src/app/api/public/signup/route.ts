@@ -2,6 +2,7 @@ import {
   countAdminUsers,
   getAdminUserById,
   registerClientProfileAfterAuth,
+  usernameFromEmail,
 } from "@/lib/admin-users";
 import { isSignupInviteValid } from "@/lib/signup-invite";
 import { getFirebaseAdminAuth } from "@/lib/firebase-admin";
@@ -86,6 +87,10 @@ export async function POST(request: Request) {
     if (fromAuth.length >= 2) {
       resolvedName = fromAuth;
     }
+  }
+  // Fallback: derive a temporary name from email so displayName is never empty
+  if (resolvedName.length < 2) {
+    resolvedName = usernameFromEmail(email);
   }
 
   const created = await registerClientProfileAfterAuth(decoded.uid, email, {
