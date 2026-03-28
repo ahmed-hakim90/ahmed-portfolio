@@ -1,3 +1,7 @@
+import {
+  ADMIN_SESSION_COOKIE,
+  signAdminSessionToken,
+} from "@/lib/admin-auth";
 import { getAdminSession } from "@/lib/admin-request";
 import {
   getAdminUserById,
@@ -6,6 +10,7 @@ import {
   updateAdminUserOnboardingStep,
   updateAdminUserSlug,
 } from "@/lib/admin-users";
+import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
@@ -107,6 +112,29 @@ export async function PATCH(request: Request) {
   }
 
   const user = await getAdminUserById(session.sub);
+
+  // Re-issue JWT so middleware picks up the updated onboardingCompleted status.
+  if ((markDone || reopenWizard) && user) {
+    try {
+      const newJwt = await signAdminSessionToken({
+        sub: user.id,
+        username: user.username,
+        role: user.role,
+        onboardingCompleted: user.onboardingCompleted,
+      });
+      const cookieStore = await cookies();
+      cookieStore.set(ADMIN_SESSION_COOKIE, newJwt, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 7,
+      });
+    } catch {
+      // Non-fatal: JWT re-issue failed, middleware will rely on old token
+    }
+  }
+
   return NextResponse.json({
     ok: true,
     ...(hasSlugUpdate && user

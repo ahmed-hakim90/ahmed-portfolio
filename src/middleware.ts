@@ -26,6 +26,19 @@ export async function middleware(request: NextRequest) {
     url.pathname = "/dashboard/site";
     return NextResponse.redirect(url);
   }
+
+  // Guard: clients who haven't completed onboarding must stay in the wizard.
+  // Owners are exempt (they manage the platform and never go through onboarding).
+  if (
+    session.role === "client" &&
+    session.onboardingCompleted === false &&
+    !pathname.startsWith("/dashboard/onboarding")
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboard/onboarding";
+    return NextResponse.redirect(url);
+  }
+
   return NextResponse.next();
 }
 
