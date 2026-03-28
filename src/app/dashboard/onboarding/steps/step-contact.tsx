@@ -11,10 +11,7 @@ import {
 } from "@/components/ui/card";
 import type { SiteJson } from "@/data/site-defaults";
 import { cn } from "@/lib/utils";
-import {
-  buildWaMeUrl,
-  parseWaMeDigitsFromUrl,
-} from "@/lib/whatsapp-wa-me";
+import { buildWaMeUrl } from "@/lib/whatsapp-wa-me";
 import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { RegisterOnboardingStepActionsFn } from "../onboarding-step-actions";
@@ -54,9 +51,6 @@ export function StepContact({
   const [linkedin, setLinkedin] = useState(social.LinkedIn?.url ?? "");
   const [x, setX] = useState(social.X?.url ?? "");
   const [youtube, setYoutube] = useState(social.Youtube?.url ?? "");
-  const [whatsapp, setWhatsapp] = useState(() =>
-    parseWaMeDigitsFromUrl(social.WhatsApp?.url ?? ""),
-  );
 
   useEffect(() => {
     setEmail(siteData.contact.email);
@@ -66,14 +60,13 @@ export function StepContact({
     setLinkedin(s.LinkedIn?.url ?? "");
     setX(s.X?.url ?? "");
     setYoutube(s.Youtube?.url ?? "");
-    setWhatsapp(parseWaMeDigitsFromUrl(s.WhatsApp?.url ?? ""));
   }, [siteData]);
 
   const patch = useMemo((): Partial<SiteJson> => {
     const mail = mailtoFromEmail(email);
+    const waUrl = buildWaMeUrl(tel);
     const socialWithoutWhatsApp = { ...siteData.contact.social };
     delete socialWithoutWhatsApp.WhatsApp;
-    const waUrl = buildWaMeUrl(whatsapp);
     return {
       contact: {
         ...siteData.contact,
@@ -150,16 +143,7 @@ export function StepContact({
         },
       },
     };
-  }, [
-    email,
-    tel,
-    github,
-    linkedin,
-    x,
-    youtube,
-    whatsapp,
-    siteData.contact,
-  ]);
+  }, [email, tel, github, linkedin, x, youtube, siteData.contact]);
 
   useEffect(() => {
     registerActions({
@@ -202,19 +186,25 @@ export function StepContact({
           />
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium">الهاتف / واتساب</label>
+          <label className="text-sm font-medium">رقم الهاتف / واتساب</label>
           <input
             className={contactFieldClass}
             dir="ltr"
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
             value={tel}
             onChange={(e) => {
               setTel(e.target.value);
               onClearCompletionHints?.();
             }}
-            placeholder="+20..."
+            placeholder="+201234567890"
             disabled={busy}
             aria-invalid={highlightContactInvalid ? true : undefined}
           />
+          <p className="text-xs text-muted-foreground">
+            يُستخدم أيضاً لزر واتساب في صفحتك.
+          </p>
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium">GitHub</label>
@@ -275,26 +265,6 @@ export function StepContact({
             disabled={busy}
             aria-invalid={highlightContactInvalid ? true : undefined}
           />
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">رقم واتساب</label>
-          <input
-            className={contactFieldClass}
-            dir="ltr"
-            inputMode="tel"
-            autoComplete="tel"
-            value={whatsapp}
-            onChange={(e) => {
-              setWhatsapp(e.target.value);
-              onClearCompletionHints?.();
-            }}
-            placeholder="2010…"
-            disabled={busy}
-            aria-invalid={highlightContactInvalid ? true : undefined}
-          />
-          <p className="text-xs text-muted-foreground">
-            يُحفظ تلقائياً كرابط wa.me
-          </p>
         </div>
         <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-between">
           <Button type="button" variant="ghost" onClick={onSkip} disabled={busy}>

@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/card";
 import { type SiteJson } from "@/data/site-defaults";
 import { buildPublicPortfolioUrl } from "@/lib/site-public-base";
-import { buildWaMeUrl } from "@/lib/whatsapp-wa-me";
 import { cn } from "@/lib/utils";
 import {
   AlertCircle,
@@ -45,7 +44,6 @@ export function StepAccount({
 }: Props) {
   const busy = saving || controlsLocked;
 
-  const [phone, setPhone] = useState(siteData.contact.tel);
   const [slug, setSlug] = useState(profileSlug);
   const [slugCheck, setSlugCheck] = useState<{
     checking: boolean;
@@ -68,7 +66,6 @@ export function StepAccount({
       setSlugCheck({ checking: false, normalized: "", detail: null });
       return;
     }
-    // إذا لم يتغير الـ slug عن القيمة الأصلية، لا داعي للفحص
     if (raw === profileSlug) {
       setSlugCheck({ checking: false, normalized: raw, detail: "available" });
       return;
@@ -119,29 +116,8 @@ export function StepAccount({
       slug.trim() && (slugCheck.detail === "available" || slug.trim() === profileSlug)
         ? slugCheck.normalized || slug.trim()
         : profileSlug;
-    const waUrl = buildWaMeUrl(phone.trim());
-    void onSaveAccount(
-      {
-        contact: {
-          tel: phone.trim(),
-          ...(waUrl
-            ? {
-                social: {
-                  WhatsApp: {
-                    name: "WhatsApp",
-                    url: waUrl,
-                    icon: "whatsapp" as const,
-                    navbar: false,
-                    enabled: true,
-                  },
-                },
-              }
-            : {}),
-        } as SiteJson["contact"],
-      },
-      resolvedSlug,
-    );
-  }, [onSaveAccount, phone, slug, slugCheck, profileSlug]);
+    void onSaveAccount({}, resolvedSlug);
+  }, [onSaveAccount, slug, slugCheck, profileSlug]);
 
   const runSkip = useCallback(() => {
     onSkip();
@@ -165,39 +141,13 @@ export function StepAccount({
   return (
     <Card className="w-full border-border/80 shadow-lg">
       <CardHeader className="space-y-1 px-5 pb-2 pt-6 text-center sm:px-8 sm:pt-8">
-        <CardTitle className="text-xl sm:text-2xl">معلومات حسابك</CardTitle>
+        <CardTitle className="text-xl sm:text-2xl">مسار صفحتك العامة</CardTitle>
         <CardDescription>
-          اختر رابط صفحتك العامة ورقم الواتساب — يمكنك التعديل لاحقاً من الإعدادات.
+          اختر مسار رابطك العام — يمكنك التعديل لاحقاً من الإعدادات.
         </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-5 px-5 pb-6 pt-2 sm:px-8 sm:pb-8">
-        {/* رقم الواتساب */}
-        <div className="space-y-2">
-          <label
-            htmlFor="account-phone"
-            className="block text-sm font-medium text-foreground"
-          >
-            رقم الواتساب{" "}
-            <span className="font-normal text-muted-foreground">(اختياري)</span>
-          </label>
-          <input
-            id="account-phone"
-            type="tel"
-            autoComplete="tel"
-            inputMode="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className={authFieldClass}
-            placeholder="+201234567890"
-            disabled={busy}
-            dir="ltr"
-          />
-          <p className="text-xs text-muted-foreground">
-            سيُستخدم كرابط تواصل مباشر في صفحتك العامة.
-          </p>
-        </div>
-
         {/* مسار صفحتك (slug) */}
         <div className="space-y-2">
           <label
