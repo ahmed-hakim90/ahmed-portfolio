@@ -66,9 +66,14 @@ export function SignupForm() {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
+      // Already registered → redirect to login instead of showing a dead-end error
+      if (data.error === "This account is already registered") {
+        setMessage("هذا الحساب مسجّل مسبقاً. جاري توجيهك لتسجيل الدخول…");
+        setTimeout(() => router.replace("/dashboard/login"), 900);
+        return;
+      }
       const msgMap: Record<string, string> = {
         "Invalid or missing invite code": "رمز الدعوة غير صالح أو مفقود.",
-        "This account is already registered": "هذا الحساب مسجّل مسبقاً.",
         "Owner is not initialized yet. Complete setup at /dashboard/bootstrap.":
           "لم يكتمل إعداد المنصة بعد. تواصل مع المالك.",
       };
@@ -144,6 +149,10 @@ export function SignupForm() {
   async function onGoogle() {
     setError(null);
     setMessage(null);
+    if (!inviteCode.trim()) {
+      setError("أدخل رمز الدعوة أولاً.");
+      return;
+    }
     setLoading(true);
     try {
       const auth = getFirebaseAuth();
