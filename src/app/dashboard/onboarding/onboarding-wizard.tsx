@@ -33,7 +33,7 @@ function clampOnboardingStep(n: number): number {
 
 type CompletionHints =
   | null
-  | { type: "personal"; name: boolean; description: boolean; contact: boolean }
+  | { type: "personal"; name: boolean; description: boolean }
   | { type: "contact" }
   | { type: "substantive" };
 
@@ -48,7 +48,6 @@ function navigationFromGaps(gaps: MinimumPortfolioGaps): {
         type: "personal",
         name: gaps.missingName,
         description: gaps.missingDescription,
-        contact: false,
       },
     };
   }
@@ -100,14 +99,14 @@ export function OnboardingWizard({
   const [profileSlug, setProfileSlug] = useState(initialSlug);
 
   const clearPersonalFieldHint = useCallback(
-    (field: "name" | "description" | "contact") => {
+    (field: "name" | "description") => {
       setCompletionHints((h) => {
         if (!h || h.type !== "personal") return h;
         const next = {
           ...h,
           [field]: false,
         };
-        if (!next.name && !next.description && !next.contact) return null;
+        if (!next.name && !next.description) return null;
         return next;
       });
     },
@@ -483,6 +482,7 @@ export function OnboardingWizard({
           {step === 1 ? (
             <StepPersonal
               siteData={wizardSiteData}
+              saveMergeBase={siteData}
               onSave={handleSave}
               onSkip={handleSkip}
               saving={saving}

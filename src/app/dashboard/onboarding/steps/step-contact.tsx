@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import type { SiteJson } from "@/data/site-defaults";
 import { cn } from "@/lib/utils";
-import { buildWaMeUrl } from "@/lib/whatsapp-wa-me";
+import { buildWaMeUrl, parseWaMeDigitsFromUrl } from "@/lib/whatsapp-wa-me";
 import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { RegisterOnboardingStepActionsFn } from "../onboarding-step-actions";
@@ -33,6 +33,12 @@ function mailtoFromEmail(email: string) {
   return `mailto:${t}`;
 }
 
+function initialTelFromContact(contact: SiteJson["contact"]): string {
+  const saved = contact.tel.trim();
+  if (saved) return saved;
+  return parseWaMeDigitsFromUrl(contact.social?.WhatsApp?.url ?? "");
+}
+
 export function StepContact({
   siteData,
   onSave,
@@ -46,7 +52,7 @@ export function StepContact({
   const busy = saving || controlsLocked;
   const social = siteData.contact.social;
   const [email, setEmail] = useState(siteData.contact.email);
-  const [tel, setTel] = useState(siteData.contact.tel);
+  const [tel, setTel] = useState(() => initialTelFromContact(siteData.contact));
   const [github, setGithub] = useState(social.GitHub?.url ?? "");
   const [linkedin, setLinkedin] = useState(social.LinkedIn?.url ?? "");
   const [x, setX] = useState(social.X?.url ?? "");
@@ -54,7 +60,7 @@ export function StepContact({
 
   useEffect(() => {
     setEmail(siteData.contact.email);
-    setTel(siteData.contact.tel);
+    setTel(initialTelFromContact(siteData.contact));
     const s = siteData.contact.social;
     setGithub(s.GitHub?.url ?? "");
     setLinkedin(s.LinkedIn?.url ?? "");
