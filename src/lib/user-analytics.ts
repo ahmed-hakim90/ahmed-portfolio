@@ -13,6 +13,51 @@ export type UserAnalyticsData = {
   lastViewedAt: string | null;
 };
 
+const USER_VIEW_DEVICES = "user_view_devices";
+
+/**
+ * Records a portfolio page view with device-level deduplication.
+ * Only counts once per (userId, deviceId) pair per calendar day (UTC).
+ * Uses a Firestore transaction to prevent double-counting.
+ */
+export async function recordPortfolioViewDeduped(
+  userId: string,
+  deviceId: string,
+): Promise<void> {
+  const db = getFirestoreDb();
+  if (!db) return;
+  const today = utcDateKey();
+  const deviceDocId = `${userId}_${deviceId}`;
+  const deviceRef = db.collection(USER_VIEW_DEVICES).doc(deviceDocId);
+  const userRef = db.collection(USER_ANALYTICS).doc(userId);
+  try {
+    await db.runTransaction(async (tx) => {
+      const deviceDoc = await tx.get(deviceRef);
+      const viewedDates = (
+        (deviceDoc.data() ?? {}).viewedDates ?? {}
+      ) as Record<string, boolean>;
+      if (viewedDates[today]) return; // already counted today
+
+      tx.set(
+        deviceRef,
+        { userId, deviceId, viewedDates: { ...viewedDates, [today]: true } },
+        { merge: true },
+      );
+      tx.set(
+        userRef,
+        {
+          totalPortfolioViews: FieldValue.increment(1),
+          lastViewedAt: new Date().toISOString(),
+          [`dailyViews.${today}`]: FieldValue.increment(1),
+        },
+        { merge: true },
+      );
+    });
+  } catch (e) {
+    console.error("recordPortfolioViewDeduped:", e);
+  }
+}
+
 /** Records a portfolio page view for a specific user (non-blocking safe to void). */
 export async function recordPortfolioView(userId: string): Promise<void> {
   const db = getFirestoreDb();

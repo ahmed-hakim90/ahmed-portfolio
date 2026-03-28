@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { type SiteJson } from "@/data/site-defaults";
 import { buildPublicPortfolioUrl } from "@/lib/site-public-base";
+import { buildWaMeUrl } from "@/lib/whatsapp-wa-me";
 import { cn } from "@/lib/utils";
 import {
   AlertCircle,
@@ -22,18 +23,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { RegisterOnboardingStepActionsFn } from "../onboarding-step-actions";
 
 type SlugAvailDetail = "invalid" | "available" | "taken" | null;
-
-function initialsFromName(name: string): string {
-  const t = name.trim();
-  if (!t) return "";
-  const parts = t.split(/\s+/).filter(Boolean);
-  if (parts.length >= 2) {
-    const a = Array.from(parts[0]!)[0];
-    const b = Array.from(parts[1]!)[0];
-    return `${a ?? ""}${b ?? ""}`.toUpperCase();
-  }
-  return Array.from(t).slice(0, 2).join("").toUpperCase();
-}
 
 type Props = {
   siteData: SiteJson;
@@ -56,7 +45,6 @@ export function StepAccount({
 }: Props) {
   const busy = saving || controlsLocked;
 
-  const [name, setName] = useState(siteData.name);
   const [phone, setPhone] = useState(siteData.contact.tel);
   const [slug, setSlug] = useState(profileSlug);
   const [slugCheck, setSlugCheck] = useState<{
@@ -131,15 +119,29 @@ export function StepAccount({
       slug.trim() && (slugCheck.detail === "available" || slug.trim() === profileSlug)
         ? slugCheck.normalized || slug.trim()
         : profileSlug;
+    const waUrl = buildWaMeUrl(phone.trim());
     void onSaveAccount(
       {
-        name: name.trim(),
-        initials: initialsFromName(name),
-        contact: { tel: phone.trim() } as SiteJson["contact"],
+        contact: {
+          tel: phone.trim(),
+          ...(waUrl
+            ? {
+                social: {
+                  WhatsApp: {
+                    name: "WhatsApp",
+                    url: waUrl,
+                    icon: "whatsapp" as const,
+                    navbar: false,
+                    enabled: true,
+                  },
+                },
+              }
+            : {}),
+        } as SiteJson["contact"],
       },
       resolvedSlug,
     );
-  }, [onSaveAccount, name, phone, slug, slugCheck, profileSlug]);
+  }, [onSaveAccount, phone, slug, slugCheck, profileSlug]);
 
   const runSkip = useCallback(() => {
     onSkip();
@@ -165,32 +167,11 @@ export function StepAccount({
       <CardHeader className="space-y-1 px-5 pb-2 pt-6 text-center sm:px-8 sm:pt-8">
         <CardTitle className="text-xl sm:text-2xl">معلومات حسابك</CardTitle>
         <CardDescription>
-          اختر اسمك ورابط صفحتك العامة — يمكنك التعديل لاحقاً من الإعدادات.
+          اختر رابط صفحتك العامة ورقم الواتساب — يمكنك التعديل لاحقاً من الإعدادات.
         </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-5 px-5 pb-6 pt-2 sm:px-8 sm:pb-8">
-        {/* الاسم الظاهر */}
-        <div className="space-y-2">
-          <label
-            htmlFor="account-name"
-            className="block text-sm font-medium text-foreground"
-          >
-            الاسم الظاهر
-          </label>
-          <input
-            id="account-name"
-            className={authFieldClass}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="اسمك الكامل"
-            disabled={busy}
-          />
-          <p className="text-xs text-muted-foreground">
-            يظهر في صفحتك العامة والـ CV.
-          </p>
-        </div>
-
         {/* رقم الواتساب */}
         <div className="space-y-2">
           <label
@@ -212,6 +193,9 @@ export function StepAccount({
             disabled={busy}
             dir="ltr"
           />
+          <p className="text-xs text-muted-foreground">
+            سيُستخدم كرابط تواصل مباشر في صفحتك العامة.
+          </p>
         </div>
 
         {/* مسار صفحتك (slug) */}
