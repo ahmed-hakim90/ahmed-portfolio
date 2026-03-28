@@ -66,12 +66,12 @@ export default function DashboardSettingsPage() {
       return;
     }
     setHeaderActions(
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex min-w-0 items-center gap-2">
         <Button type="button" size="sm" onClick={save} disabled={saving}>
           {saving ? "جاري الحفظ…" : "حفظ الإعدادات"}
         </Button>
         {message ? (
-          <span className="max-w-[min(100vw-12rem,280px)] truncate text-sm text-muted-foreground">
+          <span className="hidden max-w-[min(100vw-12rem,200px)] truncate text-sm text-muted-foreground sm:inline">
             {message}
           </span>
         ) : null}

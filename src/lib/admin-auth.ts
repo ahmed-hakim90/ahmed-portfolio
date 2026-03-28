@@ -6,6 +6,8 @@ export type AdminJwtPayload = {
   sub: string;
   username: string;
   role: "owner" | "client";
+  /** false = onboarding wizard not yet completed; true (or absent in old tokens) = done */
+  onboardingCompleted: boolean;
 };
 
 function getSecretBytes(): Uint8Array | null {
@@ -25,6 +27,7 @@ export async function signAdminSessionToken(
     sub: claims.sub,
     username: claims.username,
     role: claims.role,
+    onboardingCompleted: claims.onboardingCompleted,
   })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
@@ -49,7 +52,11 @@ export async function verifyAdminSessionToken(
     ) {
       return null;
     }
-    return { sub, username, role };
+    // Legacy tokens without onboardingCompleted are treated as completed
+    // (users who existed before the wizard was introduced).
+    const onboardingCompleted =
+      payload.onboardingCompleted === false ? false : true;
+    return { sub, username, role, onboardingCompleted };
   } catch {
     return null;
   }

@@ -62,6 +62,7 @@ export async function POST(request: Request) {
     sub: user.id,
     username: user.username,
     role: user.role,
+    onboardingCompleted: user.onboardingCompleted,
   });
   const cookieStore = await cookies();
   cookieStore.set(ADMIN_SESSION_COOKIE, jwt, {
