@@ -19,6 +19,10 @@ import { PortfolioSpotlightBlock } from "@/components/portfolio/portfolio-spotli
 import type { SiteJson } from "@/data/site-defaults";
 import { DEFAULT_ABOUT_ME_SPOTLIGHT } from "@/lib/portfolio-default-copy";
 import { buildHeroGreetingLine } from "@/lib/portfolio-hero-text";
+import {
+  projectDetailHref,
+  stableProjectListKey,
+} from "@/lib/project-keys";
 import type { MergedSiteData } from "@/lib/site-data";
 import Markdown from "react-markdown";
 
@@ -39,6 +43,11 @@ type PortfolioPageProps = {
   cvDownloadTitle?: string;
   /** For contact form API routing in dashboard preview. */
   contactOwnerSlug?: string | null;
+  /**
+   * Public portfolio root path (no trailing slash), e.g. `/portfolio` or `/username`.
+   * Used to build in-site project URLs when a project has a valid `slug`.
+   */
+  portfolioBasePath?: string;
 };
 
 export function PortfolioPage({
@@ -48,6 +57,7 @@ export function PortfolioPage({
   cvDownloadLabel,
   cvDownloadTitle,
   contactOwnerSlug,
+  portfolioBasePath = "/portfolio",
 }: PortfolioPageProps) {
   const heroLine = buildHeroGreetingLine(
     DATA.name,
@@ -205,6 +215,7 @@ export function PortfolioPage({
             projects={projectsRaw}
             externalLinksEnabled={pc.sections.projects.linksEnabled}
             blurStart={BLUR_FADE_DELAY * 11}
+            portfolioBasePath={portfolioBasePath}
           />
         ) : (
           <div className="w-full space-y-12 py-12 print:space-y-6 print:py-4">
@@ -227,11 +238,14 @@ export function PortfolioPage({
             <div className="mx-auto grid max-w-[800px] grid-cols-1 gap-3 sm:grid-cols-2 print:grid-cols-1">
               {DATA.projects.map((project, id) => (
                 <BlurFade
-                  key={project.title}
+                  key={stableProjectListKey(project, id)}
                   delay={BLUR_FADE_DELAY * 12 + id * 0.05}
                 >
                   <ProjectCard
-                    href={project.href}
+                    href={
+                      projectDetailHref(portfolioBasePath, project) ??
+                      project.href
+                    }
                     title={project.title}
                     description={project.description}
                     dates={"dates" in project ? project.dates ?? " " : " "}

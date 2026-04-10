@@ -56,16 +56,13 @@ export default async function UserSlugLayout({
   const posts = await getBlogPostsForUser(user.id);
   const commandSearch = {
     homeHref: `/${user.slug}`,
+    portfolioBasePath: `/${user.slug}`,
     blogPosts: posts.map((p) => ({
       title: p.metadata.title,
       href: p.href,
       summary: p.metadata.summary,
     })),
-    projects: json.projects.map((p) => ({
-      title: p.title,
-      href: p.href,
-      description: p.description,
-    })),
+    projects: json.projects,
   };
   const nav = json.navbar.map((item) => ({
     ...item,

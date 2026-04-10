@@ -12,8 +12,13 @@ import {
   type SocialIconKey,
 } from "@/data/site-defaults";
 import { buildWaMeUrl, parseWaMeDigitsFromUrl } from "@/lib/whatsapp-wa-me";
+import {
+  collectProjectSlugConflicts,
+  isValidProjectSlug,
+  normalizeProjectSlug,
+} from "@/lib/project-keys";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 type PortfolioSectionKey = keyof typeof DEFAULT_SITE_JSON.publicControls.portfolioSections;
 
@@ -118,7 +123,17 @@ const SOCIAL_ICON_OPTIONS: SocialIconKey[] = [
   "whatsapp",
 ];
 const EMPTY_WORK: SiteJson["work"][number] = { company: "", href: "", badges: [], location: "", title: "", logoUrl: "", start: "", end: "", description: "" };
-const EMPTY_PROJECT: SiteJson["projects"][number] = { title: "", href: "", dates: "", active: true, description: "", technologies: [], links: [], image: "", video: "" };
+const EMPTY_PROJECT: SiteJson["projects"][number] = {
+  title: "",
+  href: "",
+  dates: "",
+  active: true,
+  description: "",
+  technologies: [],
+  links: [],
+  image: "",
+  video: "",
+};
 const EMPTY_LINK: SiteJson["projects"][number]["links"][number] = { type: "Website", href: "", icon: "globe" };
 const EMPTY_EDUCATION: SiteJson["education"][number] = { school: "", href: "", degree: "", logoUrl: "", start: "", end: "" };
 const EMPTY_TESTIMONIAL: SiteTestimonial = {
@@ -208,6 +223,47 @@ function newCustomSectionId(): string {
     return crypto.randomUUID();
   }
   return `custom-${Date.now()}`;
+}
+
+function ProjectSlugHint({
+  slug,
+  projects,
+  index,
+}: {
+  slug: string | undefined;
+  projects: SiteJson["projects"];
+  index: number;
+}) {
+  const raw = (slug ?? "").trim();
+  const dupSet = useMemo(
+    () => collectProjectSlugConflicts(projects),
+    [projects],
+  );
+  if (!raw) {
+    return (
+      <p className="text-[10px] text-muted-foreground">
+        Optional. Enables a page at …/project/your-slug (lowercase, hyphens).
+      </p>
+    );
+  }
+  if (!isValidProjectSlug(raw)) {
+    return (
+      <p className="text-[10px] text-destructive">
+        Slug must be lowercase letters, digits, and hyphens only (no spaces).
+      </p>
+    );
+  }
+  const otherSame = projects.some(
+    (p, i) => i !== index && p.slug?.trim() === raw,
+  );
+  if (dupSet.has(raw) || otherSame) {
+    return (
+      <p className="text-[10px] text-destructive">
+        This slug is used by more than one project. Each slug must be unique.
+      </p>
+    );
+  }
+  return <p className="text-[10px] text-emerald-600 dark:text-emerald-400">Slug is valid.</p>;
 }
 
 export type SiteEditorMode = "all" | "profile" | "career" | "hero" | "contact-skills" | "experience" | "projects-more";
@@ -735,14 +791,292 @@ export function SiteWorkProjectsEditor({
           apply={apply}
         />
       </div>
-      <div className="space-y-4">{data.projects.map((p, pi) => <div key={`proj-${pi}`} className="space-y-2 rounded-md border border-border bg-background p-3"><div className="flex flex-wrap items-center justify-between gap-2"><span className="text-xs font-medium text-muted-foreground">Project #{pi + 1}</span><Button type="button" variant="destructive" size="sm" className="h-7 text-xs" onClick={() => apply((j) => { j.projects.splice(pi, 1); })}>Remove</Button></div><div className="grid gap-2 sm:grid-cols-2"><div className="space-y-1"><label className="text-xs text-muted-foreground">Title</label><input className={fieldClass()} value={p.title} onChange={(e) => apply((j) => { if (j.projects[pi]) j.projects[pi].title = e.target.value; })} /></div><div className="space-y-1"><label className="text-xs text-muted-foreground">Main URL</label><input className={fieldClass()} value={p.href} onChange={(e) => apply((j) => { if (j.projects[pi]) j.projects[pi].href = e.target.value; })} /></div><div className="space-y-1"><label className="text-xs text-muted-foreground">Dates</label><input className={fieldClass()} value={p.dates ?? ""} onChange={(e) => apply((j) => { if (j.projects[pi]) j.projects[pi].dates = e.target.value; })} /></div><label className="flex items-center gap-2 text-xs text-muted-foreground"><input type="checkbox" className="size-4 accent-primary" checked={p.active} onChange={(e) => apply((j) => { if (j.projects[pi]) j.projects[pi].active = e.target.checked; })} />Active</label><DriveUrlField id={`proj-img-${pi}`} label="Image URL" value={p.image} onChange={(v) => apply((j) => { if (j.projects[pi]) j.projects[pi].image = v; })} uploadKind="project" className="sm:col-span-2" /><div className="space-y-1 sm:col-span-2"><label className="text-xs text-muted-foreground">Video URL</label><input className={fieldClass()} value={p.video} onChange={(e) => apply((j) => { if (j.projects[pi]) j.projects[pi].video = e.target.value; })} /></div><ProjectTechnologiesInput
-                  technologies={p.technologies}
-                  onChange={(next) =>
+      <div className="space-y-4">
+        {data.projects.map((p, pi) => (
+          <div
+            key={`proj-${pi}`}
+            className="space-y-2 rounded-md border border-border bg-background p-3"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs font-medium text-muted-foreground">
+                Project #{pi + 1}
+              </span>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() =>
+                  apply((j) => {
+                    j.projects.splice(pi, 1);
+                  })
+                }
+              >
+                Remove
+              </Button>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Title</label>
+                <input
+                  className={fieldClass()}
+                  value={p.title}
+                  onChange={(e) =>
                     apply((j) => {
-                      if (j.projects[pi]) j.projects[pi].technologies = next;
+                      if (j.projects[pi]) j.projects[pi].title = e.target.value;
                     })
                   }
-                /><div className="space-y-1 sm:col-span-2"><label className="text-xs text-muted-foreground">Description</label><textarea className={cn(fieldClass(), "min-h-[80px] resize-y")} value={p.description} onChange={(e) => apply((j) => { if (j.projects[pi]) j.projects[pi].description = e.target.value; })} /></div></div><div className="space-y-2 border-t border-dashed border-border pt-2"><p className="text-xs font-medium text-muted-foreground">Links</p>{(p.links ?? []).map((link, li) => <div key={`${pi}-link-${li}`} className="flex flex-wrap items-end gap-2"><div className="min-w-[100px] flex-1 space-y-1"><label className="text-[10px] text-muted-foreground">Label</label><input className={fieldClass()} value={link.type} onChange={(e) => apply((j) => { const L = j.projects[pi]?.links?.[li]; if (L) L.type = e.target.value; })} /></div><div className="min-w-[140px] flex-[2] space-y-1"><label className="text-[10px] text-muted-foreground">URL</label><input className={fieldClass()} value={link.href} onChange={(e) => apply((j) => { const L = j.projects[pi]?.links?.[li]; if (L) L.href = e.target.value; })} /></div><div className="space-y-1"><label className="text-[10px] text-muted-foreground">Icon</label><select className={fieldClass()} value={link.icon} onChange={(e) => apply((j) => { const L = j.projects[pi]?.links?.[li]; if (L) L.icon = e.target.value as ProjectLinkIconKey; })}>{ICON_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}</select></div><Button type="button" variant="ghost" size="sm" className="h-8 text-xs text-destructive" onClick={() => apply((j) => { j.projects[pi]?.links?.splice(li, 1); })}>×</Button></div>)}<Button type="button" variant="outline" size="sm" className="text-xs" onClick={() => apply((j) => { if (!j.projects[pi]) return; if (!j.projects[pi].links) j.projects[pi].links = []; j.projects[pi].links.push({ ...EMPTY_LINK }); })}>Add link</Button></div></div>)}<Button type="button" variant="outline" size="sm" className="text-xs" onClick={() => apply((j) => { j.projects.push({ ...EMPTY_PROJECT, links: [{ ...EMPTY_LINK }] }); })}>Add project</Button></div>
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Main URL</label>
+                <input
+                  className={fieldClass()}
+                  value={p.href}
+                  onChange={(e) =>
+                    apply((j) => {
+                      if (j.projects[pi]) j.projects[pi].href = e.target.value;
+                    })
+                  }
+                />
+              </div>
+              <div className="space-y-1 sm:col-span-2">
+                <label className="text-xs text-muted-foreground">
+                  Page slug (optional)
+                </label>
+                <input
+                  className={fieldClass()}
+                  placeholder="my-project"
+                  value={p.slug ?? ""}
+                  onChange={(e) =>
+                    apply((j) => {
+                      if (!j.projects[pi]) return;
+                      const next = normalizeProjectSlug(e.target.value);
+                      j.projects[pi].slug = next || undefined;
+                    })
+                  }
+                />
+                <ProjectSlugHint
+                  slug={p.slug}
+                  projects={data.projects}
+                  index={pi}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Dates</label>
+                <input
+                  className={fieldClass()}
+                  value={p.dates ?? ""}
+                  onChange={(e) =>
+                    apply((j) => {
+                      if (j.projects[pi]) j.projects[pi].dates = e.target.value;
+                    })
+                  }
+                />
+              </div>
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <input
+                  type="checkbox"
+                  className="size-4 accent-primary"
+                  checked={p.active}
+                  onChange={(e) =>
+                    apply((j) => {
+                      if (j.projects[pi]) j.projects[pi].active = e.target.checked;
+                    })
+                  }
+                />
+                Active
+              </label>
+              <DriveUrlField
+                id={`proj-img-${pi}`}
+                label="Image URL"
+                value={p.image}
+                onChange={(v) =>
+                  apply((j) => {
+                    if (j.projects[pi]) j.projects[pi].image = v;
+                  })
+                }
+                uploadKind="project"
+                className="sm:col-span-2"
+              />
+              <div className="space-y-1 sm:col-span-2">
+                <label className="text-xs text-muted-foreground">Video URL</label>
+                <input
+                  className={fieldClass()}
+                  value={p.video}
+                  onChange={(e) =>
+                    apply((j) => {
+                      if (j.projects[pi]) j.projects[pi].video = e.target.value;
+                    })
+                  }
+                />
+              </div>
+              <ProjectTechnologiesInput
+                technologies={p.technologies}
+                onChange={(next) =>
+                  apply((j) => {
+                    if (j.projects[pi]) j.projects[pi].technologies = next;
+                  })
+                }
+              />
+              <div className="space-y-1 sm:col-span-2">
+                <label className="text-xs text-muted-foreground">
+                  Short description (card)
+                </label>
+                <textarea
+                  className={cn(fieldClass(), "min-h-[80px] resize-y")}
+                  value={p.description}
+                  onChange={(e) =>
+                    apply((j) => {
+                      if (j.projects[pi])
+                        j.projects[pi].description = e.target.value;
+                    })
+                  }
+                />
+              </div>
+              <div className="space-y-1 sm:col-span-2">
+                <label className="text-xs text-muted-foreground">
+                  Detail page (Markdown, optional)
+                </label>
+                <textarea
+                  className={cn(fieldClass(), "min-h-[120px] resize-y font-mono")}
+                  placeholder="Longer write-up shown only on the project page…"
+                  value={p.bodyMarkdown ?? ""}
+                  onChange={(e) =>
+                    apply((j) => {
+                      if (!j.projects[pi]) return;
+                      const v = e.target.value.trim();
+                      j.projects[pi].bodyMarkdown = v || undefined;
+                    })
+                  }
+                />
+              </div>
+              <div className="space-y-1 sm:col-span-2">
+                <label className="text-xs text-muted-foreground">
+                  Gallery image URLs (one per line)
+                </label>
+                <textarea
+                  className={cn(fieldClass(), "min-h-[72px] resize-y font-mono")}
+                  value={(p.gallery ?? []).join("\n")}
+                  onChange={(e) =>
+                    apply((j) => {
+                      if (!j.projects[pi]) return;
+                      const lines = e.target.value
+                        .split("\n")
+                        .map((s) => s.trim())
+                        .filter(Boolean);
+                      j.projects[pi].gallery = lines.length ? lines : undefined;
+                    })
+                  }
+                />
+              </div>
+            </div>
+            <div className="space-y-2 border-t border-dashed border-border pt-2">
+              <p className="text-xs font-medium text-muted-foreground">Links</p>
+              {(p.links ?? []).map((link, li) => (
+                <div
+                  key={`${pi}-link-${li}`}
+                  className="flex flex-wrap items-end gap-2"
+                >
+                  <div className="min-w-[100px] flex-1 space-y-1">
+                    <label className="text-[10px] text-muted-foreground">
+                      Label
+                    </label>
+                    <input
+                      className={fieldClass()}
+                      value={link.type}
+                      onChange={(e) =>
+                        apply((j) => {
+                          const L = j.projects[pi]?.links?.[li];
+                          if (L) L.type = e.target.value;
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="min-w-[140px] flex-[2] space-y-1">
+                    <label className="text-[10px] text-muted-foreground">
+                      URL
+                    </label>
+                    <input
+                      className={fieldClass()}
+                      value={link.href}
+                      onChange={(e) =>
+                        apply((j) => {
+                          const L = j.projects[pi]?.links?.[li];
+                          if (L) L.href = e.target.value;
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-muted-foreground">
+                      Icon
+                    </label>
+                    <select
+                      className={fieldClass()}
+                      value={link.icon}
+                      onChange={(e) =>
+                        apply((j) => {
+                          const L = j.projects[pi]?.links?.[li];
+                          if (L)
+                            L.icon = e.target.value as ProjectLinkIconKey;
+                        })
+                      }
+                    >
+                      {ICON_OPTIONS.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 text-xs text-destructive"
+                    onClick={() =>
+                      apply((j) => {
+                        j.projects[pi]?.links?.splice(li, 1);
+                      })
+                    }
+                  >
+                    ×
+                  </Button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="text-xs"
+                onClick={() =>
+                  apply((j) => {
+                    if (!j.projects[pi]) return;
+                    if (!j.projects[pi].links) j.projects[pi].links = [];
+                    j.projects[pi].links.push({ ...EMPTY_LINK });
+                  })
+                }
+              >
+                Add link
+              </Button>
+            </div>
+          </div>
+        ))}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="text-xs"
+          onClick={() =>
+            apply((j) => {
+              j.projects.push({ ...EMPTY_PROJECT, links: [{ ...EMPTY_LINK }] });
+            })
+          }
+        >
+          Add project
+        </Button>
+      </div>
 
       <div id="site-testimonials" className="scroll-mt-28 space-y-4 border-t border-border pt-4">
         <SectionHeaderWithVisibility

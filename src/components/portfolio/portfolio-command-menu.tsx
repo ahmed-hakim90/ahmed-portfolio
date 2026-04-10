@@ -14,14 +14,18 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { commandMenuProjectHref } from "@/lib/project-keys";
+import type { SiteJson } from "@/data/site-defaults";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 export type CommandSearchIndex = {
   homeHref: string;
+  /** Base path for in-site project pages, e.g. `/portfolio` or `/username` */
+  portfolioBasePath: string;
   blogPosts: { title: string; href: string; summary: string }[];
-  projects: { title: string; href: string; description: string }[];
+  projects: SiteJson["projects"];
 };
 
 type Props = {
@@ -113,11 +117,13 @@ export function PortfolioCommandMenu({ index }: Props) {
           ) : null}
           {index.projects.length > 0 ? (
             <CommandGroup heading="Projects">
-              {index.projects.map((p) => (
+              {index.projects.map((p, i) => (
                 <CommandItem
-                  key={p.title}
+                  key={p.slug?.trim() ? `slug:${p.slug}` : `p-${i}-${p.title}`}
                   value={`${p.title} ${p.description}`}
-                  onSelect={() => go(p.href)}
+                  onSelect={() =>
+                    go(commandMenuProjectHref(index.portfolioBasePath, p))
+                  }
                 >
                   {p.title}
                 </CommandItem>

@@ -702,6 +702,9 @@ function DashboardSitePageInner() {
         <SitePreviewPanel
           data={siteData}
           contactOwnerSlug={slug.trim() || undefined}
+          portfolioBasePath={
+            slug.trim() ? `/${slug.trim()}` : "/portfolio"
+          }
         />
       </div>
     </motion.div>

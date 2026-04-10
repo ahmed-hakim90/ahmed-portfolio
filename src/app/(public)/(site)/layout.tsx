@@ -1,6 +1,7 @@
 import Navbar from "@/components/navbar";
 import { SiteTopBar } from "@/components/site-top-bar";
 import { getBlogPosts } from "@/data/blog";
+import { getPortfolioHtmlAttrs } from "@/lib/portfolio-display";
 import { getEffectiveSiteJson } from "@/lib/site-data";
 import { getUiMessages, localeFromCookie } from "@/lib/i18n-messages";
 import { cn } from "@/lib/utils";
@@ -15,8 +16,10 @@ export default async function SiteLayout({
   const ui = getUiMessages(locale);
   const siteJson = await getEffectiveSiteJson();
   const posts = await getBlogPosts();
+  const { dir, lang } = getPortfolioHtmlAttrs(siteJson.publicControls.ui);
   const commandSearch = {
     homeHref: "/portfolio",
+    portfolioBasePath: "/portfolio",
     blogPosts: posts
       .filter((p) => p.href.startsWith("/blog/"))
       .map((p) => ({
@@ -24,20 +27,19 @@ export default async function SiteLayout({
         href: p.href,
         summary: p.metadata.summary,
       })),
-    projects: siteJson.projects.map((p) => ({
-      title: p.title,
-      href: p.href,
-      description: p.description,
-    })),
+    projects: siteJson.projects,
   };
   return (
     <>
       <SiteTopBar locale={locale} topBar={ui.topBar} />
       <div
+        dir={dir}
+        lang={lang}
         className={cn(
-          "mx-auto w-full max-w-2xl pt-12 pb-24",
+          "mx-auto w-full max-w-2xl pt-12 pb-24 [unicode-bidi:isolate]",
           "print:max-w-none print:pb-0 print:pt-0",
         )}
+        data-portfolio-theme={siteJson.publicControls.ui.themePreset ?? "default"}
       >
         {children}
       </div>
