@@ -12,7 +12,7 @@ import {
 import { Icons } from "@/components/icons";
 import type { SiteJson } from "@/data/site-defaults";
 import type { ProjectLinkIconKey } from "@/data/site-defaults";
-import { useReducedMotion } from "framer-motion";
+import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import { ArrowLeft, ImageIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -38,7 +38,7 @@ export function ProjectDetailView({
   portfolioHomeHref,
   externalLinksEnabled,
 }: Props) {
-  const reduceMotion = useReducedMotion() ?? false;
+  const reduceMotion = usePrefersReducedMotion();
   const hasVideo = Boolean(project.video?.trim());
   const hasImage = Boolean(project.image?.trim());
   const useVideo = hasVideo && !reduceMotion;

@@ -8,8 +8,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import { cn } from "@/lib/utils";
-import { useReducedMotion } from "framer-motion";
 import { ImageIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -50,7 +50,7 @@ export function ProjectCard({
   className,
   externalLinksEnabled = true,
 }: Props) {
-  const reduceMotion = useReducedMotion() ?? false;
+  const reduceMotion = usePrefersReducedMotion();
   const hasVideo = Boolean(video);
   const hasImage = Boolean(image);
   const useVideo = hasVideo && !reduceMotion;
