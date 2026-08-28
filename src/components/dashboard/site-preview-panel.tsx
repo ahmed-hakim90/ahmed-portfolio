@@ -11,9 +11,15 @@ type Props = {
   data: SiteJson;
   /** Public slug so the preview contact form can post to the same inbox as the live site. */
   contactOwnerSlug?: string | null;
+  /** Matches live URLs: `/username` or `/portfolio` for the global site. */
+  portfolioBasePath?: string;
 };
 
-export function SitePreviewPanel({ data, contactOwnerSlug }: Props) {
+export function SitePreviewPanel({
+  data,
+  contactOwnerSlug,
+  portfolioBasePath = "/portfolio",
+}: Props) {
   const normalized = useMemo(() => mergeSiteJsonForSave(data), [data]);
   const mergedData = useMemo(() => hydrateSiteJson(normalized), [normalized]);
   const { dir, lang } = getPortfolioHtmlAttrs(mergedData.publicControls.ui);
@@ -38,6 +44,7 @@ export function SitePreviewPanel({ data, contactOwnerSlug }: Props) {
             cvDownloadLabel="تحميل السيرة PDF"
             cvDownloadTitle="يحمّل السيرة المحفوظة من الخادم. احفظ من المحرر أولاً لتحديث الملف."
             contactOwnerSlug={contactOwnerSlug}
+            portfolioBasePath={portfolioBasePath}
           />
         </div>
         <Navbar

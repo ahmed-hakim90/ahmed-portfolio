@@ -6,6 +6,10 @@ import { Icons } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import type { SiteJson } from "@/data/site-defaults";
 import type { ProjectLinkIconKey } from "@/data/site-defaults";
+import {
+  projectDetailHref,
+  stableProjectListKey,
+} from "@/lib/project-keys";
 import { LayoutGroup, motion } from "framer-motion";
 import { useMemo, useState } from "react";
 
@@ -23,12 +27,15 @@ type Props = {
   projects: SiteJson["projects"];
   externalLinksEnabled: boolean;
   blurStart: number;
+  /** e.g. `/portfolio` or `/username` — for in-site project detail links */
+  portfolioBasePath?: string;
 };
 
 export function PortfolioProjectsSection({
   projects,
   externalLinksEnabled,
   blurStart,
+  portfolioBasePath = "/portfolio",
 }: Props) {
   const tags = useMemo(() => {
     const s = new Set<string>();
@@ -44,6 +51,14 @@ export function PortfolioProjectsSection({
     if (!active) return projects;
     return projects.filter((p) => p.technologies.includes(active));
   }, [projects, active]);
+
+  const projectIndexByRef = useMemo(() => {
+    const m = new Map<(typeof projects)[number], number>();
+    projects.forEach((p, i) => {
+      m.set(p, i);
+    });
+    return m;
+  }, [projects]);
 
   return (
     <div className="w-full space-y-12 py-12 print:space-y-6 print:py-4">
@@ -65,11 +80,16 @@ export function PortfolioProjectsSection({
       </BlurFade>
 
       {tags.length > 0 ? (
-        <div className="flex flex-wrap items-center justify-center gap-2 print:hidden">
+        <div
+          className="flex flex-wrap items-center justify-center gap-2 print:hidden"
+          role="group"
+          aria-label="Filter projects by technology"
+        >
           <Button
             type="button"
             variant={active === null ? "default" : "outline"}
             size="sm"
+            aria-pressed={active === null}
             onClick={() => setActive(null)}
           >
             All
@@ -80,6 +100,7 @@ export function PortfolioProjectsSection({
               type="button"
               variant={active === tag ? "default" : "outline"}
               size="sm"
+              aria-pressed={active === tag}
               onClick={() => setActive(tag)}
             >
               {tag}
@@ -93,9 +114,11 @@ export function PortfolioProjectsSection({
           layout
           className="mx-auto grid max-w-[800px] grid-cols-1 gap-3 sm:grid-cols-2 print:grid-cols-1"
         >
-          {filtered.map((project, id) => (
+          {filtered.map((project, id) => {
+            const originalIndex = projectIndexByRef.get(project) ?? id;
+            return (
             <motion.div
-              key={project.title}
+              key={stableProjectListKey(project, originalIndex)}
               layout
               transition={{ type: "spring", stiffness: 350, damping: 30 }}
             >
@@ -104,7 +127,10 @@ export function PortfolioProjectsSection({
                 className="h-full"
               >
                 <ProjectCard
-                  href={project.href}
+                  href={
+                    projectDetailHref(portfolioBasePath, project) ??
+                    project.href
+                  }
                   title={project.title}
                   description={project.description}
                   dates={"dates" in project ? project.dates ?? " " : " "}
@@ -122,7 +148,8 @@ export function PortfolioProjectsSection({
                 />
               </BlurFade>
             </motion.div>
-          ))}
+            );
+          })}
         </motion.div>
       </LayoutGroup>
     </div>

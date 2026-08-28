@@ -162,9 +162,18 @@ export interface SiteJson {
   projects: Array<{
     title: string;
     href: string;
+    /**
+     * Optional URL slug for an on-site project page (`…/project/{slug}`).
+     * Lowercase letters, digits, and hyphens only; unique per site.
+     */
+    slug?: string;
     dates?: string;
     active: boolean;
     description: string;
+    /** Long-form Markdown for the project detail page (optional). */
+    bodyMarkdown?: string;
+    /** Extra image URLs shown on the project detail page. */
+    gallery?: string[];
     technologies: string[];
     links: Array<{
       type: string;

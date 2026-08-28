@@ -105,6 +105,7 @@ export default async function PublicUserPage({ params }: PageProps) {
         projectsRaw={siteJson.projects}
         cvPdfDownloadUrl={`/api/public/cv/pdf?slug=${encodeURIComponent(user.slug)}`}
         contactOwnerSlug={user.slug}
+        portfolioBasePath={`/${user.slug}`}
       />
     </>
   );
